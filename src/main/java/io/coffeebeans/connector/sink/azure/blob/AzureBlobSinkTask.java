@@ -1,4 +1,4 @@
-package sink.azure.blob;
+package io.coffeebeans.connector.sink.azure.blob;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
