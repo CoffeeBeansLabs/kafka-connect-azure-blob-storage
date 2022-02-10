@@ -1,9 +1,11 @@
 {
   "name": "sink-connector-config-example",
   "config": {
-    "connector.class":"AzureBlobSinkConnector",
+    "connector.class":"io.coffeebeans.connector.sink.azure.blob.AzureBlobSinkConnector",
+    "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":"org.apache.kafka.connect.storage.StringConverter",
     "tasks.max":"1",
     "topics":"connect-demo",
-    "schemas.enable":false
+    "schema.ignore":"true"
   }
 }
