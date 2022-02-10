@@ -1,0 +1,9 @@
+{
+  "name": "sink-connector-config-example",
+  "config": {
+    "connector.class":"AzureBlobSinkConnector",
+    "tasks.max":"1",
+    "topics":"connect-demo",
+    "schemas.enable":false
+  }
+}
