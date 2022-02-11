@@ -47,7 +47,7 @@ $KAFKA/config/connect-distributed.properties
 For standalone:
 
 ```
-$KAFKA/config/connect-distributed.properties
+$KAFKA/config/connect-standalone.properties
 ```
 
 Add the target directory path of the connector project to the plugin.path property.
