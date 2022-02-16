@@ -62,10 +62,9 @@ $KAFKA/bin/connect-distributed.sh $KAFKA/config/connect-distributed.properties
 2. Configure the connector with REST API
 
 ```
-curl -X PUT -H "Content-Type: application/json" \ 
+curl -X POST -H "Content-Type: application/json" \ 
     -d @sink-connector-config-example.json \ 
     http://localhost:8083/connectors
 ```
 
-PUT request will update the connector configuration if already present else it will create a new one.
 
