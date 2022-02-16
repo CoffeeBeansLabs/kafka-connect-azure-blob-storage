@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.azure.blob;
 
+import io.coffeebeans.connector.sink.azure.blob.util.Version;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -43,6 +44,6 @@ public class AzureBlobSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return "1";
+        return Version.getVersion();
     }
 }

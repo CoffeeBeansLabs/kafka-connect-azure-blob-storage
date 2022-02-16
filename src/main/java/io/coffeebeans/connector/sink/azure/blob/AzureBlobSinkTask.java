@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.azure.blob;
 
+import io.coffeebeans.connector.sink.azure.blob.util.Version;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -15,7 +16,7 @@ public class AzureBlobSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return "1";
+        return Version.getVersion();
     }
 
     @Override
