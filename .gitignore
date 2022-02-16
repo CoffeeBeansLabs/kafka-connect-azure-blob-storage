@@ -3,7 +3,7 @@
 
 # Intellij
 .idea
+*.iml
 
 # Build files
 target
-
