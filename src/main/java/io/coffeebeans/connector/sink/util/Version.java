@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink.azure.blob.util;
+package io.coffeebeans.connector.sink.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
