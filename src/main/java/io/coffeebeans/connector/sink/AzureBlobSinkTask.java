@@ -1,6 +1,6 @@
-package io.coffeebeans.connector.sink.azure.blob;
+package io.coffeebeans.connector.sink;
 
-import io.coffeebeans.connector.sink.azure.blob.util.Version;
+import io.coffeebeans.connector.sink.util.Version;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -11,8 +11,6 @@ import java.util.Map;
 
 public class AzureBlobSinkTask extends SinkTask {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkTask.class);
-
-    public AzureBlobSinkTask() {}
 
     @Override
     public String version() {
@@ -26,8 +24,8 @@ public class AzureBlobSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> collection) {
-        for (SinkRecord records : collection) {
-            logger.info("Task record value: " + records.value());
+        for (SinkRecord record : collection) {
+            logger.info("Task record value: " + record.value());
         }
     }
 
