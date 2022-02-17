@@ -11,19 +11,28 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <connect.api.version>3.1.0</connect.api.version>
+        <azure.storage.blob.version>12.14.4</azure.storage.blob.version>
+        <junit.version>5.8.2</junit.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>3.1.0</version>
+            <version>${connect.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
-            <version>12.14.4</version>
+            <version>${azure.storage.blob.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
