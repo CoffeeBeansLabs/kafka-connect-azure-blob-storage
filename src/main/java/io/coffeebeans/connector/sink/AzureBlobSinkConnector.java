@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink;
 
+import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.util.Version;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
@@ -14,10 +15,12 @@ import java.util.Map;
 
 public class AzureBlobSinkConnector extends SinkConnector {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkConnector.class);
+    private Map<String, String> configProps;
 
     @Override
-    public void start(Map<String, String> map) {
-        logger.info("Starting Sink Connector ...................");
+    public void start(Map<String, String> props) {
+        logger.info("Starting Azure Blob Sink Connector ...................");
+        this.configProps = props;
     }
 
     @Override
@@ -27,19 +30,23 @@ public class AzureBlobSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        ArrayList<Map<String, String>> configs = new ArrayList<>();
-        configs.add(new HashMap<>());
+        logger.info("Maximum tasks to be configured: {}", maxTasks);
+
+        final List<Map<String, String>> configs = new ArrayList<>();
+        for (int i = 0; i < maxTasks; i++) {
+            configs.add(configProps);
+        }
         return configs;
     }
 
     @Override
     public void stop() {
-        logger.info("Stopping Sink Connector ...................");
+        logger.info("Stopping Azure Blob Sink Connector ...................");
     }
 
     @Override
     public ConfigDef config() {
-        return new ConfigDef();
+        return AzureBlobSinkConfig.getConfig();
     }
 
     @Override
