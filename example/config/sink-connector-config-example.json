@@ -1,15 +1,14 @@
 {
   "name": "sink-connector",
   "config": {
-    "connector.class": "io.coffeebeans.connector.sink.azure.blob.AzureBlobSinkConnector",
+    "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
     "tasks.max": "1",
     "topics": "connect-demo",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "key.converter.schemas.enable": "false",
-    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": "false",
     "schema.ignore": "true",
     "errors.tolerance": "all",
-    "azure.blob.connection": "your-connection-string"
+    "azure.blob.connection": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
+    "azure.blob.container.name": "test-container"
   }
 }

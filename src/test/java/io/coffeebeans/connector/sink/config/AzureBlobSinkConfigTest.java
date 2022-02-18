@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class AzureBlobSinkConfigTest {
     private static final String CONN_STR = "http://localhost:port/";
+    private static final String CONTAINER_NAME = "test-container";
 
 
     /**
@@ -19,6 +20,7 @@ public class AzureBlobSinkConfigTest {
         Map<String, String> parsedConfig = new HashMap<>();
 
         parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF, CONN_STR);
+        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
         return parsedConfig;
     }
 
@@ -36,8 +38,11 @@ public class AzureBlobSinkConfigTest {
      */
     @Test
     public void test_getConnectionString_withNoConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
+
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> { AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(new HashMap<>()); },
+                () -> { AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(config); },
                 "Missing required configuration \"" +
                         AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF + "\" which has no default value."
                 );
