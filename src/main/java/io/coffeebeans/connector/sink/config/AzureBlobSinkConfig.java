@@ -13,13 +13,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String AZURE_BLOB_IDENTIFIER_KEY = "azure.blob.identifier.key";
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new NonEmptyString();
 
-    private final String connectionString;
+    private final String connectionUrl;
     private final String containerName;
     private final String blobIdentifier;
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
-        this.connectionString = this.getString(AZURE_BLOB_CONN_STRING_CONF);
+        this.connectionUrl = this.getString(AZURE_BLOB_CONN_STRING_CONF);
         this.containerName = this.getString(AZURE_BLOB_CONTAINER_NAME_CONF);
         this.blobIdentifier = this.getString(AZURE_BLOB_IDENTIFIER_KEY);
     }
@@ -63,8 +63,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 );
     }
 
-    public String getConnectionString() {
-        return this.connectionString;
+    public String getConnectionUrl() {
+        return this.connectionUrl;
     }
 
     public String getContainerName() {

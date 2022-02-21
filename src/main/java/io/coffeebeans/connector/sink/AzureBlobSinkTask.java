@@ -33,11 +33,11 @@ public class AzureBlobSinkTask extends SinkTask {
         containerName = config.getContainerName();
         blobIdentifierKey = config.getBlobIdentifier();
         objectMapper = new ObjectMapper();
-        storageManager = new AzureBlobStorageManager(config.getConnectionString());
+        storageManager = new AzureBlobStorageManager(config.getConnectionUrl());
 
         logger.debug("Blob identifier key: {}", this.blobIdentifierKey);
         logger.debug("Container name: {}", this.containerName);
-        logger.debug("Connection url: {}", config.getConnectionString());
+        logger.debug("Connection url: {}", config.getConnectionUrl());
     }
 
     @Override
