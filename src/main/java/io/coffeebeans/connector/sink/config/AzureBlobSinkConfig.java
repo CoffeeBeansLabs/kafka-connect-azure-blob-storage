@@ -8,14 +8,14 @@ import org.apache.kafka.common.config.ConfigDef.Validator;
 import java.util.Map;
 
 public class AzureBlobSinkConfig extends AbstractConfig {
-    public static final String AZURE_BLOB_CONN_STRING_CONF = "azure.blob.connection";
+    public static final String AZURE_BLOB_CONN_STRING_CONF = "azure.blob.connection.url";
     public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "azure.blob.container.name";
     public static final String AZURE_BLOB_IDENTIFIER_KEY = "azure.blob.identifier.key";
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new NonEmptyString();
 
-    private String connectionString;
-    private String containerName;
-    private String blobIdentifier;
+    private final String connectionString;
+    private final String containerName;
+    private final String blobIdentifier;
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
