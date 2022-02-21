@@ -10,16 +10,15 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 public class AzureBlobSinkTask extends SinkTask {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkTask.class);
-    private AzureBlobSinkConfig config;
-    private AzureBlobStorageManager storageManager;
+
     private String containerName;
     private String blobIdentifierKey;
     private ObjectMapper objectMapper;
+    private AzureBlobStorageManager storageManager;
 
     @Override
     public String version() {
@@ -27,34 +26,47 @@ public class AzureBlobSinkTask extends SinkTask {
     }
 
     @Override
-    public void start(Map<String, String> config) {
+    public void start(Map<String, String> configProps) {
         logger.info("Starting Sink Task ....................");
-        this.config = new AzureBlobSinkConfig(config);
+        AzureBlobSinkConfig config = new AzureBlobSinkConfig(configProps);
 
-        containerName = this.config.getContainerName();
-        blobIdentifierKey = this.config.getBlobIdentifier();
+        containerName = config.getContainerName();
+        blobIdentifierKey = config.getBlobIdentifier();
         objectMapper = new ObjectMapper();
+        storageManager = new AzureBlobStorageManager(config.getConnectionString());
 
-        String connectionString = this.config.getConnectionString();
-        storageManager = new AzureBlobStorageManager(connectionString);
-//        logger.info("Connection String: {}", connectionString);
-//        logger.info("Container Name: {}", this.containerName);
+        logger.debug("Blob identifier key: {}", this.blobIdentifierKey);
+        logger.debug("Container name: {}", this.containerName);
+        logger.debug("Connection url: {}", config.getConnectionString());
     }
 
     @Override
     public void put(Collection<SinkRecord> collection) {
-        for (SinkRecord record : collection) {
+        List<SinkRecord> records = new ArrayList<>(collection);
+        logger.debug("Received {} records", records.size());
+
+        for (SinkRecord record : records) {
             logger.info("Task record value: " + record.value());
 
+            // Processing only JSON messages
             if (record.value() instanceof Map) {
-                try {
-                    Map<?, ?> values = (Map<?, ?>) record.value();
-                    String blobName = (String) values.get(blobIdentifierKey);
+                byte[] data;
 
-                    byte[] data = objectMapper.writeValueAsBytes(record.value());
+                Map<?, ?> value = (Map<?, ?>) record.value();
+
+                // Check if the JSON has no keys
+                if (value.isEmpty()) {
+                    return;
+                }
+                String blobName = (String) value.get(blobIdentifierKey);
+
+                try {
+                    // Converting Map to byte array
+                    data = objectMapper.writeValueAsBytes(record.value());
                     this.storageManager.upload(this.containerName, blobName, data);
                 } catch (JsonProcessingException e) {
-                    logger.error("Error storing values. " + e);
+                    logger.error("Error processing JSON value");
+                    logger.error(e.toString());
                 }
             }
         }
@@ -64,4 +76,5 @@ public class AzureBlobSinkTask extends SinkTask {
     public void stop() {
         logger.info("Stopping Sink Task ...................");
     }
+
 }
