@@ -11,16 +11,18 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <connect.api.version>3.1.0</connect.api.version>
+        <kafka.connect.api.version>3.1.0</kafka.connect.api.version>
         <azure.storage.blob.version>12.14.4</azure.storage.blob.version>
         <junit.version>5.8.2</junit.version>
+        <mockito.version>4.3.1</mockito.version>
+        <apache.commons.lang.version>3.12.0</apache.commons.lang.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>${connect.api.version}</version>
+            <version>${kafka.connect.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -28,10 +30,30 @@
             <artifactId>azure-storage-blob</artifactId>
             <version>${azure.storage.blob.version}</version>
         </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-runtime</artifactId>
+            <version>${kafka.connect.api.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${apache.commons.lang.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
