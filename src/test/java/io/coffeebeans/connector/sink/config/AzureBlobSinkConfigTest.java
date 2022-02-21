@@ -30,7 +30,7 @@ public class AzureBlobSinkConfigTest {
     @Test
     public void test_getConnectionString_withCorrectConfig() {
         AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(getParsedConfig());
-        Assertions.assertEquals(CONN_STR, azureBlobSinkConfig.getConnectionString());
+        Assertions.assertEquals(CONN_STR, azureBlobSinkConfig.getConnectionUrl());
     }
 
     /**
@@ -42,7 +42,7 @@ public class AzureBlobSinkConfigTest {
         config.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
 
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> { AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(config); },
+                () -> new AzureBlobSinkConfig(config),
                 "Missing required configuration \"" +
                         AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF + "\" which has no default value."
                 );
