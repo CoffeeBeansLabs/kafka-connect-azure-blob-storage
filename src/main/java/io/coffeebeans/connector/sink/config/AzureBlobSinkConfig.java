@@ -10,15 +10,18 @@ import java.util.Map;
 public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String AZURE_BLOB_CONN_STRING_CONF = "azure.blob.connection";
     public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "azure.blob.container.name";
+    public static final String AZURE_BLOB_IDENTIFIER_KEY = "azure.blob.identifier.key";
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new NonEmptyString();
 
-    private final String connectionString;
-    private final String containerName;
+    private String connectionString;
+    private String containerName;
+    private String blobIdentifier;
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
         this.connectionString = this.getString(AZURE_BLOB_CONN_STRING_CONF);
         this.containerName = this.getString(AZURE_BLOB_CONTAINER_NAME_CONF);
+        this.blobIdentifier = this.getString(AZURE_BLOB_IDENTIFIER_KEY);
     }
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -49,6 +52,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         NON_EMPTY_STRING_VALIDATOR,
                         ConfigDef.Importance.HIGH,
                         "Container name to store the blobs"
+                )
+                .define(
+                  AZURE_BLOB_IDENTIFIER_KEY,
+                  ConfigDef.Type.STRING,
+                  "blobName",
+                  NON_EMPTY_STRING_VALIDATOR,
+                  ConfigDef.Importance.MEDIUM,
+                  "Key to identify blob"
                 );
     }
 
@@ -59,4 +70,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public String getContainerName() {
         return this.containerName;
     }
+
+    public String getBlobIdentifier() {return this.blobIdentifier;}
 }
