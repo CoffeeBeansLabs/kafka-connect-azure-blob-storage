@@ -1,5 +1,7 @@
 package io.coffeebeans.connector.sink;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
 import io.coffeebeans.connector.sink.util.Version;
@@ -16,6 +18,8 @@ public class AzureBlobSinkTask extends SinkTask {
     private AzureBlobSinkConfig config;
     private AzureBlobStorageManager storageManager;
     private String containerName;
+    private String blobIdentifierKey;
+    private ObjectMapper objectMapper;
 
     @Override
     public String version() {
@@ -27,18 +31,32 @@ public class AzureBlobSinkTask extends SinkTask {
         logger.info("Starting Sink Task ....................");
         this.config = new AzureBlobSinkConfig(config);
 
+        containerName = this.config.getContainerName();
+        blobIdentifierKey = this.config.getBlobIdentifier();
+        objectMapper = new ObjectMapper();
+
         String connectionString = this.config.getConnectionString();
-        this.containerName = this.config.getContainerName();
-        logger.info("Connection String: {}", connectionString);
-        logger.info("Container Name: {}", this.containerName);
-        this.storageManager = new AzureBlobStorageManager(connectionString);
+        storageManager = new AzureBlobStorageManager(connectionString);
+//        logger.info("Connection String: {}", connectionString);
+//        logger.info("Container Name: {}", this.containerName);
     }
 
     @Override
     public void put(Collection<SinkRecord> collection) {
         for (SinkRecord record : collection) {
             logger.info("Task record value: " + record.value());
-            this.storageManager.upload(this.containerName, record.value());
+
+            if (record.value() instanceof Map) {
+                try {
+                    Map<?, ?> values = (Map<?, ?>) record.value();
+                    String blobName = (String) values.get(blobIdentifierKey);
+
+                    byte[] data = objectMapper.writeValueAsBytes(record.value());
+                    this.storageManager.upload(this.containerName, blobName, data);
+                } catch (JsonProcessingException e) {
+                    logger.error("Error storing values. " + e);
+                }
+            }
         }
     }
 

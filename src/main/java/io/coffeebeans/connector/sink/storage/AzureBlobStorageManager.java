@@ -1,12 +1,11 @@
 package io.coffeebeans.connector.sink.storage;
 
-import com.azure.core.util.BinaryData;
-import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.specialized.AppendBlobClient;
 
-import java.util.UUID;
+import java.io.ByteArrayInputStream;
 
 public class AzureBlobStorageManager {
     private final BlobServiceClient serviceClient;
@@ -18,12 +17,15 @@ public class AzureBlobStorageManager {
                 .buildClient();
     }
 
-    public void upload(String containerName, Object data) {
+    public void upload(String containerName, String blobName, byte[] data) {
         BlobContainerClient containerClient = this.serviceClient
                 .getBlobContainerClient(containerName);
 
-        String blobName = UUID.randomUUID().toString();
-        BlobClient blobClient = containerClient.getBlobClient(blobName);
-        blobClient.upload(BinaryData.fromObject(data));
+        AppendBlobClient appendBlobClient = containerClient.getBlobClient(blobName).getAppendBlobClient();
+
+        if (!appendBlobClient.exists()) {
+            appendBlobClient.create();
+        }
+        appendBlobClient.appendBlock(new ByteArrayInputStream(data), data.length);
     }
 }
