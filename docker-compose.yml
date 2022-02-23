@@ -22,6 +22,7 @@ services:
       - zookeeper
     ports:
       - 9092:9092
+      - 9093:9093
     environment:
       KAFKA_BROKER_ID: 1
       ALLOW_PLAINTEXT_LISTENER: yes
@@ -38,7 +39,30 @@ services:
       KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 18000
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_LISTENERS: CLIENT://:9092,EXTERNAL://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: CLIENT
 
+  schema-registry:
+    image: 'confluentinc/cp-schema-registry:7.0.1'
+    container_name: 'schema-registry'
+    networks:
+      - kafka-network
+    depends_on:
+      - kafka
+    ports:
+      - 8081:8081
+    environment:
+      CUB_CLASSPATH: '/usr/share/java/confluent-security/schema-registry/*:/usr/share/java/schema-registry/*:/usr/share/java/cp-base-new/*'
+      SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTNERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+      SCHEMA_REGISTRY_DEBUG: true
+      # https://docs.confluent.io/platform/current/schema-registry/installation/config.html
+      # All configuration parameters
 
   kafka-connect:
     image: 'confluentinc/cp-kafka-connect-base:7.0.1'
@@ -46,8 +70,7 @@ services:
     networks:
       - kafka-network
     depends_on:
-      - zookeeper
-      - kafka
+      - schema-registry
     ports:
       - 8083:8083
       - 8888:8888
