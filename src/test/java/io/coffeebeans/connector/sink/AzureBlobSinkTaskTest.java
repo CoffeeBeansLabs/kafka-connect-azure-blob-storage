@@ -24,7 +24,7 @@ public class AzureBlobSinkTaskTest {
     private AzureBlobStorageManager mockStorageManager;
     private AzureBlobSinkTask sinkTask;
 
-    @BeforeEach
+//    @BeforeEach
     public void init() throws IllegalAccessException {
         sinkTask = new AzureBlobSinkTask();
         mockStorageManager = Mockito.mock(AzureBlobStorageManager.class);
@@ -36,7 +36,8 @@ public class AzureBlobSinkTaskTest {
     }
 
     @Test
-    public void test_putString_shouldNotProcess() {
+    public void test_putString_shouldNotProcess() throws IllegalAccessException {
+        init();
         Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
 
         String message = "message";
@@ -49,7 +50,8 @@ public class AzureBlobSinkTaskTest {
     }
 
     @Test
-    public void test_putMap_shouldProcess() throws JsonProcessingException {
+    public void test_putMap_shouldProcess() throws JsonProcessingException, IllegalAccessException {
+        init();
         Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
         Schema mapSchema = new ConnectSchema(Schema.Type.MAP);
 
