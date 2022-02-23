@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
+import io.coffeebeans.connector.sink.util.StructToMap;
 import io.coffeebeans.connector.sink.util.Version;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -45,29 +47,39 @@ public class AzureBlobSinkTask extends SinkTask {
         List<SinkRecord> records = new ArrayList<>(collection);
         logger.debug("Received {} records", records.size());
 
+        // Loop through each record and store it in the blob storage.
         for (SinkRecord record : records) {
             logger.info("Task record value: " + record.value());
 
-            // Processing only JSON messages
+            Map<?, ?> valueMap;
+
+            // Only Map or Struct type objects are supported currently
+            // Check the type of record and get the Map representation
             if (record.value() instanceof Map) {
-                byte[] data;
+                valueMap = (Map<?, ?>) record.value();
 
-                Map<?, ?> value = (Map<?, ?>) record.value();
+            } else if (record.value() instanceof Struct){
+                // Convert Struct to Map
+                valueMap = StructToMap.toJsonMap((Struct) record.value());
 
-                // Check if the JSON has no keys
-                if (value.isEmpty()) {
-                    return;
-                }
-                String blobName = (String) value.get(blobIdentifierKey);
+            } else return;
 
-                try {
-                    // Converting Map to byte array
-                    data = objectMapper.writeValueAsBytes(record.value());
-                    this.storageManager.upload(this.containerName, blobName, data);
-                } catch (JsonProcessingException e) {
-                    logger.error("Error processing JSON value");
-                    logger.error(e.toString());
-                }
+
+            // Check if record is empty; if empty then return;
+            if (valueMap.isEmpty()) return;
+
+            // Get the blob name using the identifier key
+            String blobName = (String) valueMap.get(blobIdentifierKey);
+
+            byte[] data;
+            try {
+                // Get bytes array of the value map and persist it in the blob storage
+                data = getValueAsBytes(valueMap);
+                this.storageManager.upload(containerName, blobName, data);
+
+            } catch (Exception e) {
+                logger.error("Unable to process record");
+                logger.error(e.toString());
             }
         }
     }
@@ -75,6 +87,10 @@ public class AzureBlobSinkTask extends SinkTask {
     @Override
     public void stop() {
         logger.info("Stopping Sink Task ...................");
+    }
+
+    private byte[] getValueAsBytes(Map<?, ?> valueMap) throws JsonProcessingException {
+        return objectMapper.writeValueAsBytes(valueMap);
     }
 
 }
