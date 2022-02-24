@@ -1,47 +1,59 @@
 package io.coffeebeans.connector.sink.config;
 
+import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.config.ConfigDef.NonEmptyString;
 import org.apache.kafka.common.config.ConfigDef.Validator;
 
 import java.util.Map;
 
 public class AzureBlobSinkConfig extends AbstractConfig {
-    public static final String AZURE_BLOB_CONN_STRING_CONF = "azure.blob.connection.url";
-    public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "azure.blob.container.name";
-    public static final String AZURE_BLOB_IDENTIFIER_KEY = "azure.blob.identifier.key";
-    public static final Validator NON_EMPTY_STRING_VALIDATOR = new NonEmptyString();
 
-    private final String connectionUrl;
+    // Connection related configurations
+    public static final String AZURE_BLOB_CONN_STRING_CONF = "connection.string";
+    public static final Validator CONNECTION_STRING_VALIDATOR = new ConnectionStringValidator();
+
+    // Container related configurations
+    public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "container.name";
+
+    // Blob related configurations
+    public static final String AZURE_BLOB_IDENTIFIER_KEY = "blob.identifier.key";
+
+    // Common validators
+    public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
+
+
+    // properties
+    private final String connectionString;
     private final String containerName;
     private final String blobIdentifier;
-
-    public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
-        super(configDef, parsedConfig);
-        this.connectionUrl = this.getString(AZURE_BLOB_CONN_STRING_CONF);
-        this.containerName = this.getString(AZURE_BLOB_CONTAINER_NAME_CONF);
-        this.blobIdentifier = this.getString(AZURE_BLOB_IDENTIFIER_KEY);
-    }
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
     }
 
+    public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
+        super(configDef, parsedConfig);
+        this.connectionString = this.getString(AZURE_BLOB_CONN_STRING_CONF);
+        this.containerName = this.getString(AZURE_BLOB_CONTAINER_NAME_CONF);
+        this.blobIdentifier = this.getString(AZURE_BLOB_IDENTIFIER_KEY);
+    }
+
+
     public static ConfigDef getConfig() {
         ConfigDef configDef = new ConfigDef();
-        defineConnectionConfig(configDef);
+        defineConfig(configDef);
 
         return configDef;
     }
 
-    public static void defineConnectionConfig(ConfigDef configDef) {
+    public static void defineConfig(ConfigDef configDef) {
         configDef
                 .define(
                         AZURE_BLOB_CONN_STRING_CONF,
                         ConfigDef.Type.STRING,
                         ConfigDef.NO_DEFAULT_VALUE,
-                        NON_EMPTY_STRING_VALIDATOR,
+                        CONNECTION_STRING_VALIDATOR,
                         ConfigDef.Importance.HIGH,
                         "Connection string of the azure blob storage"
                 )
@@ -63,8 +75,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 );
     }
 
-    public String getConnectionUrl() {
-        return this.connectionUrl;
+    public String getConnectionString() {
+        return this.connectionString;
     }
 
     public String getContainerName() {
