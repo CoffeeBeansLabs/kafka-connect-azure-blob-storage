@@ -43,11 +43,9 @@ public class AzureBlobSinkConfigTest {
      */
     @Test
     public void test_getConnectionString_withNoConfig() {
-        Map<String, String> config = new HashMap<>();
-        config.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
 
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new AzureBlobSinkConfig(config),
+                () -> new AzureBlobSinkConfig(new HashMap<>()),
                 "Missing required configuration \"" +
                         AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF + "\" which has no default value."
                 );
