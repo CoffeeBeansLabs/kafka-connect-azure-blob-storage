@@ -1,6 +1,7 @@
 package io.coffeebeans.connector.sink.config;
 
 import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
+import io.coffeebeans.connector.sink.config.validators.ContainerNameValidator;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Validator;
@@ -15,6 +16,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     // Container related configurations
     public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "container.name";
+    public static final String CONTAINER_NAME_DEFAULT = "default";
+    public static final Validator CONTAINER_NAME_VALIDATOR = new ContainerNameValidator();
 
     // Blob related configurations
     public static final String AZURE_BLOB_IDENTIFIER_KEY = "blob.identifier.key";
@@ -60,18 +63,18 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 .define(
                         AZURE_BLOB_CONTAINER_NAME_CONF,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
-                        NON_EMPTY_STRING_VALIDATOR,
+                        CONTAINER_NAME_DEFAULT,
+                        CONTAINER_NAME_VALIDATOR,
                         ConfigDef.Importance.HIGH,
                         "Container name to store the blobs"
                 )
                 .define(
-                  AZURE_BLOB_IDENTIFIER_KEY,
-                  ConfigDef.Type.STRING,
-                  "blobName",
-                  NON_EMPTY_STRING_VALIDATOR,
-                  ConfigDef.Importance.MEDIUM,
-                  "Key to identify blob"
+                        AZURE_BLOB_IDENTIFIER_KEY,
+                        ConfigDef.Type.STRING,
+                        "blobName",
+                        NON_EMPTY_STRING_VALIDATOR,
+                        ConfigDef.Importance.MEDIUM,
+                        "Key to identify blob"
                 );
     }
 
@@ -83,5 +86,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return this.containerName;
     }
 
-    public String getBlobIdentifier() {return this.blobIdentifier;}
+    public String getBlobIdentifier() {
+        return this.blobIdentifier;
+    }
 }
