@@ -8,7 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AzureBlobSinkConfigTest {
-    private static final String CONN_STR = "http://localhost:port/";
+    private static final String CONN_STR = "AccountName=devstoreaccount1;" +
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuF" +
+            "q2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProt" +
+            "ocol=http;BlobEndpoint=http://host.docker.internal:10000/dev" +
+            "storeaccount1;";
+    private static final String CONN_STR_INVALID = "http://localhost:1234/";
     private static final String CONTAINER_NAME = "test-container";
 
 
@@ -30,7 +35,7 @@ public class AzureBlobSinkConfigTest {
     @Test
     public void test_getConnectionString_withCorrectConfig() {
         AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(getParsedConfig());
-        Assertions.assertEquals(CONN_STR, azureBlobSinkConfig.getConnectionUrl());
+        Assertions.assertEquals(CONN_STR, azureBlobSinkConfig.getConnectionString());
     }
 
     /**
@@ -47,5 +52,20 @@ public class AzureBlobSinkConfigTest {
                         AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF + "\" which has no default value."
                 );
 
+    }
+
+    /**
+     * Should throw a ConfigException for providing invalid connection string
+     */
+    @Test
+    public void test_validateInvalidConnectionString() {
+        Map<String, String> parsedConfig = new HashMap<>();
+        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF, CONN_STR_INVALID);
+        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
+
+        Assertions.assertThrowsExactly(ConfigException.class,
+                () -> new AzureBlobSinkConfig(parsedConfig),
+                "Invalid connection string: " + CONN_STR_INVALID
+                );
     }
 }
