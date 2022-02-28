@@ -47,10 +47,10 @@ def produce_records(args):
             'word': word
         }
         # produce to kafka
-        # serializing_producer.produce(topic=args.topic, key='nokey', value=data)
+        serializing_producer.produce(topic=args.topic, key='nokey', value=data)
         print(data)
 
-    # serializing_producer.flush()
+    serializing_producer.flush()
 
 
 def load_json_schema_from_file(filePath):
