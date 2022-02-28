@@ -24,8 +24,8 @@ public class AzureBlobSinkConfigTest {
     public static Map<String, String> getParsedConfig() {
         Map<String, String> parsedConfig = new HashMap<>();
 
-        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF, CONN_STR);
-        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
+        parsedConfig.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONN_STR);
+        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
         return parsedConfig;
     }
 
@@ -47,7 +47,7 @@ public class AzureBlobSinkConfigTest {
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(new HashMap<>()),
                 "Missing required configuration \"" +
-                        AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF + "\" which has no default value."
+                        AzureBlobSinkConfig.CONN_STRING_CONF + "\" which has no default value."
                 );
 
     }
@@ -58,8 +58,8 @@ public class AzureBlobSinkConfigTest {
     @Test
     public void test_validateInvalidConnectionString() {
         Map<String, String> parsedConfig = new HashMap<>();
-        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONN_STRING_CONF, CONN_STR_INVALID);
-        parsedConfig.put(AzureBlobSinkConfig.AZURE_BLOB_CONTAINER_NAME_CONF, CONTAINER_NAME);
+        parsedConfig.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONN_STR_INVALID);
+        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
 
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(parsedConfig),
