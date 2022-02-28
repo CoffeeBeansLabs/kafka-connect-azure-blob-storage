@@ -11,16 +11,20 @@ import java.util.Map;
 public class AzureBlobSinkConfig extends AbstractConfig {
 
     // Connection related configurations
-    public static final String AZURE_BLOB_CONN_STRING_CONF = "connection.string";
-    public static final Validator CONNECTION_STRING_VALIDATOR = new ConnectionStringValidator();
+    public static final String CONN_STRING_CONF = "connection.string";
+    public static final Validator CONN_STRING_VALIDATOR = new ConnectionStringValidator();
+    public static final String CONN_STRING_DOC = "Connection string of the azure blob storage";
 
     // Container related configurations
-    public static final String AZURE_BLOB_CONTAINER_NAME_CONF = "container.name";
+    public static final String CONTAINER_NAME_CONF = "container.name";
     public static final String CONTAINER_NAME_DEFAULT = "default";
     public static final Validator CONTAINER_NAME_VALIDATOR = new ContainerNameValidator();
+    public static final String CONTAINER_NAME_DOC = "Container name to store the blobs";
 
     // Blob related configurations
-    public static final String AZURE_BLOB_IDENTIFIER_KEY = "blob.identifier.key";
+    public static final String BLOB_IDENTIFIER_KEY = "blob.identifier.key";
+    public static final String BLOB_IDENTIFIER_KEY_DEFAULT = "blob";
+    public static final String BLOB_IDENTIFIER_KEY_DOC = "Key to identify blob";
 
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
@@ -37,9 +41,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
-        this.connectionString = this.getString(AZURE_BLOB_CONN_STRING_CONF);
-        this.containerName = this.getString(AZURE_BLOB_CONTAINER_NAME_CONF);
-        this.blobIdentifier = this.getString(AZURE_BLOB_IDENTIFIER_KEY);
+        this.connectionString = this.getString(CONN_STRING_CONF);
+        this.containerName = this.getString(CONTAINER_NAME_CONF);
+        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
     }
 
 
@@ -53,28 +57,28 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static void defineConfig(ConfigDef configDef) {
         configDef
                 .define(
-                        AZURE_BLOB_CONN_STRING_CONF,
+                        CONN_STRING_CONF,
                         ConfigDef.Type.STRING,
                         ConfigDef.NO_DEFAULT_VALUE,
-                        CONNECTION_STRING_VALIDATOR,
+                        CONN_STRING_VALIDATOR,
                         ConfigDef.Importance.HIGH,
-                        "Connection string of the azure blob storage"
+                        CONN_STRING_DOC
                 )
                 .define(
-                        AZURE_BLOB_CONTAINER_NAME_CONF,
+                        CONTAINER_NAME_CONF,
                         ConfigDef.Type.STRING,
                         CONTAINER_NAME_DEFAULT,
                         CONTAINER_NAME_VALIDATOR,
                         ConfigDef.Importance.HIGH,
-                        "Container name to store the blobs"
+                        CONTAINER_NAME_DOC
                 )
                 .define(
-                        AZURE_BLOB_IDENTIFIER_KEY,
+                        BLOB_IDENTIFIER_KEY,
                         ConfigDef.Type.STRING,
-                        "blobName",
+                        BLOB_IDENTIFIER_KEY_DEFAULT,
                         NON_EMPTY_STRING_VALIDATOR,
                         ConfigDef.Importance.MEDIUM,
-                        "Key to identify blob"
+                        BLOB_IDENTIFIER_KEY_DOC
                 );
     }
 
