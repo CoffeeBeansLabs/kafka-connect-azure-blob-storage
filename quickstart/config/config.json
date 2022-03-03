@@ -1,5 +1,5 @@
 {
-  "name": "blob-sink-connector",
+  "name": "blob-sink",
   "config": {
     "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
     "tasks.max": "1",
@@ -10,6 +10,9 @@
     "errors.tolerance": "all",
     "connection.string": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "test-container",
-    "blob.identifier.key": "name"
+    "blob.identifier.key": "default",
+    "topic.dir": "field",
+    "partition.strategy": "FIELD",
+    "partition.strategy.field": "name"
   }
 }
