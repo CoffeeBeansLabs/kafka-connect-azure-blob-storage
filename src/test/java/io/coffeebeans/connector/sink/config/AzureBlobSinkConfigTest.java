@@ -18,27 +18,6 @@ public class AzureBlobSinkConfigTest {
 
 
     /**
-     * Add Connection string property to config map and return it.
-     * @return Map of parsed config
-     */
-    public static Map<String, String> getParsedConfig() {
-        Map<String, String> parsedConfig = new HashMap<>();
-
-        parsedConfig.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONN_STR);
-        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
-        return parsedConfig;
-    }
-
-    /**
-     * Should return the provided connection string.
-     */
-    @Test
-    public void test_getConnectionString_withCorrectConfig() {
-        AzureBlobSinkConfig azureBlobSinkConfig = new AzureBlobSinkConfig(getParsedConfig());
-        Assertions.assertEquals(CONN_STR, azureBlobSinkConfig.getConnectionString());
-    }
-
-    /**
      * Should throw a ConfigException for not providing required configuration i.e. connection string
      */
     @Test
