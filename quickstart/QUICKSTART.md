@@ -1,112 +1,162 @@
-#Quickstart
+# QUICKSTART
 
-###Start Azurite
- 
-Download Azurite docker image
+Quickly setup local azure blob storage emulator and kafka services to test the connector.
 
-```
-docker pull mcr.microsoft.com/azure-storage/azurite
-```
+<br>
 
-Run the azurite blob storage service
+## Pre-requisites
 
-```
-docker run -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0
-```
+1. Docker installed
+2. Python installed
+3. Azure storage explorer
 
-This will start blob storage service and listens on port 10000
+<br>
 
-### Start Azure Storage Explorer
-
-Download Microsoft Azure Storage Explorer
+Install Azure storage explorer from below link:
 
 https://azure.microsoft.com/en-in/features/storage-explorer/
 
-After installing run the applicartion.
+<br><hr><br>
 
-#### Connect to azurite
+## Starting blob storage service
 
-1. Select resource: Local storage emulator
-2. Remove queues port and tables port and leave everything as default
-3. Click next
-4. Click connect
+<br>
 
-Your containers will be visible under Blob Containers
+1. Start azurite (local azure blob storage emulator) with the following docker command
 
-### Start Kafka Connect
-
-#### Create jar
-
-Run the following command:
-
+```bash
+docker pull mcr.microsoft.com/azure-storage/azurite
 ```
+
+<br>
+
+2. Run azurite blob storage service
+
+```bash
+docker run -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0
+```
+
+> This will start blob storage service and listens on port 10000
+
+<br>
+
+3. Connect azurite with azure storage explorer
+
+    * Start azure storage explorer
+    * Select resource: Local storage emulator
+    * Remove queues port and tables port and leave everything as default
+    * Click next and then connect
+
+> Your containers will be visible under blob containers
+
+<br><hr><br>
+
+## Starting kafka services
+
+<br>
+
+1. Create jar with following command
+
+```bash
 mvn clean package
 ```
 
-From the project directory run docker-compose:
+> Jar will be created in the target folder
 
-```
+<br>
+
+2. Start docker containers. From parent directory run docker-compose.
+
+```bash
 docker-compose up -d
 ```
 
-Zookeeper, kafka broker and kafka-connect will start
+<br>
 
-#### Create the kafka topic
+> zookeeperk, kafka broker, schema-registry and kafka-connect services will start
 
-In another terminal execute
+<br><hr><br>
 
-```
+## Create kafka topic
+
+<br>
+
+1. Get terminal access of the kafka broker container with following command
+
+```bash
 docker exec -it kafka bash
 ```
 
-Inside the container execute following command:
+<br>
 
-```
+2. Create topic. Run the following command
+
+```bash
 kafka-topics.sh --create --topic connect-demo --bootstrap-server kafka:9092
 ```
-Kafka topic with name connect-demo will be created.
 
-#### Create the console producer
+> Kafka topic with name 'connect-demo' will be created
 
-From the inside the kafka broker container run the following command:
+<br><hr><br>
 
-```
-kafka-console-producer.sh --topic connect-demo --bootstrap-server kafka:9092
-```
+## Configure kafka-connect
 
-### Configuring kafka connector
+<br>
 
-In another terminal run the following command:
+1. In a terminal run the following command
 
-```
+```bash
 curl -X POST -H "Content-Type: application/json" \
-    -d @example/config/sink-connector-config-example.json \
+    -d @quickstart/config/config.json \
     http://localhost:8083/connectors
 ```
 
-This will configure the connector.
+> Connector will be configured
 
-To check the installed connectors run the following command:
+<br>
 
-```
+2. To check the installed connectors run the following command:
+
+```bash
 curl http://localhost:8083/connectors
 ```
 
-### Working
-Create a blob container with name provided in the config json file.
-Paste a json on the producer console and hit enter.
-The json should be stored in the blob container.
+<br><hr><br>
 
-### Stop the containers
+## Producing records
 
-Run the following command:
+1. Run the following command (for json with schema producer)
 
-To stop containers:
 ```
+python3 quickstart/producers/json-producer/producer.py --topic connect-demo --bootstrap-servers localhost:9093
+```
+
+> topic is mandatory
+
+> Default value of bootstrap-servers is ```localhost:9092```
+
+> Default value of schema-registry is ```http://localhost:8081```
+
+> Default value of schema is ```../../schemas/json-schema.json```
+
+<br><hr><br>
+
+## Stopping all the services
+
+<br>
+
+1. Stop all kafka services. Run the following command
+
+```bash
 docker-compose stop
 ```
 
-or to stop and remove containers:
-```
+> This will stop the containers
+
+or
+
+```bash
 docker-compose down
 ```
+
+> This will stop and remove all the containers
