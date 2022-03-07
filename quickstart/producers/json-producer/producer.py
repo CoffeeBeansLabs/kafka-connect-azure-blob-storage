@@ -36,12 +36,17 @@ def produce_records(args):
     # List of blobs
     blob_names = ['blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5']
 
+    start_timestamp = 1646109000000
+    end_timestamp = 1646368200000
+
     for e in range(499):
-        random_num = randrange(0, 4, 1)
+        random_num = randrange(0, 3, 1)
         word = random_words[e]
+        timestamp = randrange(start_timestamp, end_timestamp)
 
         # data to be produced in kafka
         data = {
+            'timestamp': timestamp,
             'name': blob_names[random_num],
             'num': e,
             'word': word
