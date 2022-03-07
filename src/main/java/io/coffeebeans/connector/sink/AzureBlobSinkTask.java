@@ -4,8 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
-import io.coffeebeans.connector.sink.partitioner.FieldPartitioner;
+import io.coffeebeans.connector.sink.partitioner.field.FieldPartitioner;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
+import io.coffeebeans.connector.sink.partitioner.time.TimeBasedPartitioner;
 import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
 import io.coffeebeans.connector.sink.util.StructToMap;
 import io.coffeebeans.connector.sink.util.Version;
@@ -110,6 +111,8 @@ public class AzureBlobSinkTask extends SinkTask {
     private void setPartitioner(Map<String, String> configProps) {
         switch (configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF)) {
             case "FIELD": partitioner = new FieldPartitioner();
+            break;
+            case "TIME": partitioner = new TimeBasedPartitioner();
             break;
 
             default: partitioner = new DefaultPartitioner();
