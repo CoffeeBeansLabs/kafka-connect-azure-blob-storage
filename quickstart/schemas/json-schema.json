@@ -2,6 +2,9 @@
   "type": "object",
   "title": "test",
   "properties": {
+    "timestamp": {
+      "type": "integer"
+    },
     "name": {
       "type": "string"
     },
@@ -13,6 +16,7 @@
     }
   },
   "required": [
+    "timestamp",
     "name",
     "num",
     "word"
