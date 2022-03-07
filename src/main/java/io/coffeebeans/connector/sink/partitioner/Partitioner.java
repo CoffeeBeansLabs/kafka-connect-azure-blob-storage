@@ -5,9 +5,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import java.util.Map;
 
 public interface Partitioner {
-    String folderDelimiter = "/";
-    String fileDelimiter = "+";
-    String format = "json";
 
     /**
      * Configure the partitioner
