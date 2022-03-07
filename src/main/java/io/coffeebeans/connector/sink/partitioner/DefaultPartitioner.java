@@ -6,27 +6,36 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import java.util.Map;
 
 public class DefaultPartitioner implements Partitioner {
-    private String topicDir;
-    private static final String kafkaPartitionProperty = "partition=";
+    public static final String FOLDER_DELIMITER = "/";
+    public static final String FILE_DELIMITER = "+";
+
+    protected String prefix;
+
+    private static final String kafkaPartitionProperty = "partition";
 
     @Override
     public void configure(Map<String, String> configProps) {
-        this.topicDir = configProps.get(AzureBlobSinkConfig.TOPIC_DIR);
+        this.prefix = configProps.get(AzureBlobSinkConfig.TOPIC_DIR);
     }
 
     /**
      * @param sinkRecord The record to be stored
-     * @return <prefix>/<topic>/partition=<kafkaPartition>/<topic>+<kafkaPartition>+<startOffset>.<format>
+     * @return <prefix>/<kafkaTopic>/partition=<kafkaPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
-        String topic = sinkRecord.topic();
-        long partition = sinkRecord.kafkaPartition();
+        String kafkaTopic = sinkRecord.topic();
+        long kafkaPartition = sinkRecord.kafkaPartition();
 
-        return topicDir + folderDelimiter +
-                topic + folderDelimiter +
-                kafkaPartitionProperty + partition + folderDelimiter +
-                topic + fileDelimiter + partition + fileDelimiter + startingOffset +
-                "." + format;
+        return prefix + FOLDER_DELIMITER + // <prefix>/
+
+                // <kafkaTopic>/
+                kafkaTopic + FOLDER_DELIMITER +
+
+                // partition=<kafkaPartition>/
+                kafkaPartitionProperty + "=" + kafkaPartition + FOLDER_DELIMITER +
+
+                // <kafkaTopic> + <kafkaPartition> + <startOffset>
+                kafkaTopic + FILE_DELIMITER + kafkaPartition + FILE_DELIMITER + startingOffset;
     }
 }
