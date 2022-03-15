@@ -13,7 +13,7 @@
     "blob.identifier.key": "d",
     "topic.dir": "default",
     "partition.strategy": "DEFAULT",
-    "partition.strategy.field": "timestamp",
+    "partition.strategy.time.field": "timestamp",
     "partition.duration.ms": 1,
     "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH/'zone'=z",
     "timezone": "Asia/Kolkata",

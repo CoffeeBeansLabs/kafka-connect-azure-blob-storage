@@ -17,7 +17,7 @@ public class FieldPartitioner extends DefaultPartitioner {
     @Override
     public void configure(Map<String, String> configProps) {
         super.configure(configProps);
-        this.fieldName = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_CONF);
+        this.fieldName = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_NAME_CONF);
     }
 
     /**
