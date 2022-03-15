@@ -1,70 +1,53 @@
-# azure-kafka-connector
+# Kafka Azure Blob Sink Connector
 
-$KAFKA represents the kafka directory
+- [About](#about)
+- [Installing](#installing)
+- [Configurations](#configurations)
+  - [Connection](#configurations-connection)
+  - [Partition](#configurations-partition)
+    - [Default partitioning](#configurations-partition-default)
+    - [Field partitioning](#configurations-partition-field)
+    - [Time partitioning](#configurations-partition-time)
+  - [Rolling file](#configurations-rolling-file)
 
-### Start Kafka
-1. Run the zookeeper server
+# About
+Kafka Azure Blob Sink Connector will consume records from kafka topic(s) and will
+store it to the azure blob storage.
 
-```
-$KAFKA/bin/zookeeper-server-start.sh $KAFKA/config/zookeeper.properties
-```
+# Installing
+For quickstart please refer to this <a href="https://github.com/CoffeeBeansLabs/azure-kafka-connector/blob/main/quickstart/QUICKSTART.md" target="_blank">documentation</a>.
 
-2. Run the kafka server
+# Configurations
 
-```
-$KAFKA/bin/kafka-server-start.sh $KAFKA/config/server.properties
-```
+## Connection
+Azure blob storage connection related configurations.
 
-3. Create a topic
+### Connection url
+key: ```connection.url```<br>
+value: azure blob storage connection string
 
-```
-$KAFKA/bin/kafka-topics.sh --create --topic connect-demo --bootstrap-server localhost:9092 
-```
+### Container name
+key: ```container.name```<br>
+value: name of the container<br>
+default: ```default```
 
-4. Start the producer
+## Partition
+Configurations to perform partition operations on the incoming records
 
-```
-$KAFKA/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic connect-demo
-```
+### Parent directory
+key: ```topic.dir```<br>
+value: name of the parent directory
 
+### Partition strategy
+key: ```partition.strategy```<br>
+valid values: ```TIME,FIELD```<br>
+default: ```DEFAULT```
 
-### Create jar of the connector
-Inside the project directory run the following command:
+### Default partitioning
 
-```
-mvn clean package
-```
+### Field partitioning
 
-### Update plugin path in connect properties file
-Open the properties file.
+### Time partitioning
 
-For distributed:
-
-```
-$KAFKA/config/connect-distributed.properties
-```
-
-For standalone:
-
-```
-$KAFKA/config/connect-standalone.properties
-```
-
-Add the target directory path of the connector project to the plugin.path property.
-
-### Start the connector
-1. Start connector
-
-```
-$KAFKA/bin/connect-distributed.sh $KAFKA/config/connect-distributed.properties
-```
-
-2. Configure the connector with REST API
-
-```
-curl -X POST -H "Content-Type: application/json" \ 
-    -d @sink-connector-config-example.json \ 
-    http://localhost:8083/connectors
-```
-
+## Rolling file
 
