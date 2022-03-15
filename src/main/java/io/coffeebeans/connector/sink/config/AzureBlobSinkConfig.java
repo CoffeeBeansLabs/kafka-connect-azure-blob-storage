@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.config;
 
+import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyFieldNameRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyRecommender;
 import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
 import io.coffeebeans.connector.sink.config.validators.ContainerNameValidator;
@@ -51,12 +52,20 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Recommender PARTITION_STRATEGY_RECOMMENDER = new PartitionStrategyRecommender();
     public static final String PARTITION_STRATEGY_DOC = "Partition strategy to be used";
 
-    // Field for partitioning configurations
-    public static final String PARTITION_STRATEGY_FIELD_CONF = "partition.strategy.field";
-    public static final String PARTITION_STRATEGY_FIELD_DEFAULT = null;
-    public static final String PARTITION_STRATEGY_FIELD_DOC = "Field name for partitioning";
+    /**
+     * Applicable only for field-based partitioning
+     */
+    // TODO: Add support for List of fields
+    public static final String PARTITION_STRATEGY_FIELD_NAME_CONF = "partition.strategy.field.name";
+    public static final String PARTITION_STRATEGY_FIELD_NAME_DOC = "Name of the field from which values should be " +
+            "extracted";
+    public static final Recommender PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER =
+            new PartitionStrategyFieldNameRecommender();
 
     // Time based partitioning configurations
+    /**
+     * Applicable only for time-based partitioning
+     */
     public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF = "path.format";
     public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC = "Output file path time partition format";
 
@@ -105,7 +114,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 //        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
         this.topicDir = this.getString(TOPIC_DIR);
         this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF);
-        this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_CONF);
+        this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_NAME_CONF);
         this.pathFormat = this.getString(PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF);
         this.timeBucket = this.getString(PARTITION_STRATEGY_TIME_BUCKET_MS_CONF);
         this.timezone = this.getString(PARTITION_STRATEGY_TIME_TIMEZONE_CONF);
@@ -168,11 +177,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         PARTITION_STRATEGY_RECOMMENDER
                 )
                 .define( // Field-based partition strategy configuration
-                        PARTITION_STRATEGY_FIELD_CONF,
+                        PARTITION_STRATEGY_FIELD_NAME_CONF,
                         ConfigDef.Type.STRING,
-                        PARTITION_STRATEGY_FIELD_DEFAULT,
+                        ConfigDef.NO_DEFAULT_VALUE,
+                        NON_EMPTY_STRING_VALIDATOR,
                         ConfigDef.Importance.MEDIUM,
-                        PARTITION_STRATEGY_FIELD_DOC
+                        PARTITION_STRATEGY_FIELD_NAME_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARTITION_STRATEGY_FIELD_NAME_CONF,
+                        PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF,
