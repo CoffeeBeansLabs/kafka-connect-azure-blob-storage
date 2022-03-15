@@ -43,6 +43,7 @@ public class AzureBlobSinkTask extends SinkTask {
         objectMapper = new ObjectMapper();
         storageManager = new AzureBlobStorageManager(config.getConnectionString());
 
+        storageManager.configure(configProps);
         setPartitioner(configProps);
 
         logger.debug("Blob identifier key: {}", this.blobIdentifierKey);

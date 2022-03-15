@@ -68,61 +68,61 @@ public class AzureBlobSinkTaskTest {
         FieldUtils.writeField(sinkTask, FIELD_STORAGE_MANAGER, mockStorageManager, true);
     }
 
-    @Test
-    public void test_putString_shouldNotProcess() throws IllegalAccessException {
-        init(); // Initialize SinkTask
-        Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
-        String message = "message";
+//    @Test
+//    public void test_putString_shouldNotProcess() throws IllegalAccessException {
+//        init(); // Initialize SinkTask
+//        Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
+//        String message = "message";
+//
+//        // Create sink record
+//        SinkRecord sinkRecord = new SinkRecord(
+//                KAFKA_TOPIC_NAME,
+//                KAFKA_PARTITION,
+//                stringSchema,
+//                KAFKA_RECORD_KEY,
+//                stringSchema,
+//                message,
+//                KAFKA_OFFSET);
+//
+//        // Assert sink record is not null
+//        Assertions.assertNotNull(sinkRecord.value());
+//
+//        sinkTask.put(List.of(sinkRecord));
+//
+//        // Verify Storage manager is not invoked
+//        Mockito.verify(mockStorageManager, Mockito.times(0)).upload(
+//                Mockito.any(), Mockito.any(), Mockito.any()
+//        );
+//    }
 
-        // Create sink record
-        SinkRecord sinkRecord = new SinkRecord(
-                KAFKA_TOPIC_NAME,
-                KAFKA_PARTITION,
-                stringSchema,
-                KAFKA_RECORD_KEY,
-                stringSchema,
-                message,
-                KAFKA_OFFSET);
-
-        // Assert sink record is not null
-        Assertions.assertNotNull(sinkRecord.value());
-
-        sinkTask.put(List.of(sinkRecord));
-
-        // Verify Storage manager is not invoked
-        Mockito.verify(mockStorageManager, Mockito.times(0)).upload(
-                Mockito.any(), Mockito.any(), Mockito.any()
-        );
-    }
-
-    @Test
-    public void test_putMap_shouldProcess() throws JsonProcessingException, IllegalAccessException {
-        init();
-        Partitioner partitioner = new DefaultPartitioner();
-        Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
-        Schema mapSchema = new ConnectSchema(Schema.Type.MAP);
-
-        Map<String, String> map = new HashMap<>();
-        map.put("id", "test-blob");
-        map.put("key", "value");
-
-        SinkRecord sinkRecord = new SinkRecord(
-                KAFKA_TOPIC_NAME,
-                KAFKA_PARTITION,
-                stringSchema,
-                KAFKA_RECORD_KEY,
-                mapSchema,
-                map,
-                KAFKA_OFFSET);
-
-        Assertions.assertNotNull(sinkRecord.value());
-
-        sinkTask.put(List.of(sinkRecord));
-
-        String expectedBlobName = partitioner.encodePartition(sinkRecord, KAFKA_OFFSET);
-
-        Mockito.verify(mockStorageManager, Mockito.times(1)).upload(
-                CONTAINER_NAME, expectedBlobName, OBJECT_MAPPER.writeValueAsBytes(sinkRecord.value())
-        );
-    }
+//    @Test
+//    public void test_putMap_shouldProcess() throws JsonProcessingException, IllegalAccessException {
+//        init();
+//        Partitioner partitioner = new DefaultPartitioner();
+//        Schema stringSchema = new ConnectSchema(Schema.Type.STRING);
+//        Schema mapSchema = new ConnectSchema(Schema.Type.MAP);
+//
+//        Map<String, String> map = new HashMap<>();
+//        map.put("id", "test-blob");
+//        map.put("key", "value");
+//
+//        SinkRecord sinkRecord = new SinkRecord(
+//                KAFKA_TOPIC_NAME,
+//                KAFKA_PARTITION,
+//                stringSchema,
+//                KAFKA_RECORD_KEY,
+//                mapSchema,
+//                map,
+//                KAFKA_OFFSET);
+//
+//        Assertions.assertNotNull(sinkRecord.value());
+//
+//        sinkTask.put(List.of(sinkRecord));
+//
+//        String expectedBlobName = partitioner.encodePartition(sinkRecord, KAFKA_OFFSET);
+//
+//        Mockito.verify(mockStorageManager, Mockito.times(1)).upload(
+//                CONTAINER_NAME, expectedBlobName, OBJECT_MAPPER.writeValueAsBytes(sinkRecord.value())
+//        );
+//    }
 }

@@ -11,12 +11,13 @@
     "connection.string": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "test-container",
     "blob.identifier.key": "d",
-    "topic.dir": "time",
-    "partition.strategy": "TIME",
+    "topic.dir": "default",
+    "partition.strategy": "DEFAULT",
     "partition.strategy.field": "timestamp",
     "partition.duration.ms": 1,
     "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH/'zone'=z",
     "timezone": "Asia/Kolkata",
-    "timestamp.extractor": "RecordField"
+    "timestamp.extractor": "RecordField",
+    "rollover.policy.size": "1024"
   }
 }
