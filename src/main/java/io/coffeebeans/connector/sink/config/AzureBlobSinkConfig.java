@@ -28,9 +28,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String CONTAINER_NAME_DOC = "Name of the container where blobs will be stored";
 
     // Blob related configurations
-    public static final String BLOB_IDENTIFIER_KEY = "blob.identifier.key";
-    public static final String BLOB_IDENTIFIER_KEY_DEFAULT = "blob";
-    public static final String BLOB_IDENTIFIER_KEY_DOC = "Key to identify blob";
+//    public static final String BLOB_IDENTIFIER_KEY = "blob.identifier.key";
+//    public static final String BLOB_IDENTIFIER_KEY_DEFAULT = "blob";
+//    public static final String BLOB_IDENTIFIER_KEY_DOC = "Key to identify blob";
 
     /**
      * Parent directory where blobs will be stored.
@@ -79,7 +79,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     // properties
     private final String connectionString;
     private final String containerName;
-    private final String blobIdentifier;
+//    private final String blobIdentifier;
     private final String topicDir;
     private final String partitionStrategy;
     private final String fieldName;
@@ -98,7 +98,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         super(configDef, parsedConfig);
         this.connectionString = this.getString(CONN_STRING_CONF);
         this.containerName = this.getString(CONTAINER_NAME_CONF);
-        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
+//        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
         this.topicDir = this.getString(TOPIC_DIR);
         this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF);
         this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_CONF);
@@ -135,13 +135,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         ConfigDef.Importance.HIGH,
                         CONTAINER_NAME_DOC
                 )
-                .define(
-                        BLOB_IDENTIFIER_KEY,
-                        ConfigDef.Type.STRING,
-                        null,
-                        ConfigDef.Importance.LOW,
-                        BLOB_IDENTIFIER_KEY_DOC
-                )
+//                .define(
+//                        BLOB_IDENTIFIER_KEY,
+//                        ConfigDef.Type.STRING,
+//                        null,
+//                        ConfigDef.Importance.LOW,
+//                        BLOB_IDENTIFIER_KEY_DOC
+//                )
                 .define( // MANDATORY, Name of directory to store the records
                         TOPIC_DIR,
                         ConfigDef.Type.STRING,
@@ -209,9 +209,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return this.containerName;
     }
 
-    public String getBlobIdentifier() {
-        return this.blobIdentifier;
-    }
+//    public String getBlobIdentifier() {
+//        return this.blobIdentifier;
+//    }
 
     public String getTopicDir() {
         return this.topicDir;
