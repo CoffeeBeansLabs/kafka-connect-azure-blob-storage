@@ -57,7 +57,7 @@ public class AzureBlobSinkTaskTest {
         Map<String, String> configProps = new HashMap<>();
         configProps.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING);
         configProps.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
-        configProps.put(AzureBlobSinkConfig.BLOB_IDENTIFIER_KEY, BLOB_IDENTIFIER_KEY);
+//        configProps.put(AzureBlobSinkConfig.BLOB_IDENTIFIER_KEY, BLOB_IDENTIFIER_KEY);
         configProps.put(AzureBlobSinkConfig.TOPIC_DIR, TOPIC_DIR);
         configProps.put(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF, PARTITION_STRATEGY);
 
