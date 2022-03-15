@@ -24,7 +24,7 @@ public class AzureBlobSinkTask extends SinkTask {
     private long startingOffset;
     private String containerName;
     private Partitioner partitioner;
-    private String blobIdentifierKey;
+//    private String blobIdentifierKey;
     private ObjectMapper objectMapper;
     private AzureBlobStorageManager storageManager;
 
@@ -39,14 +39,14 @@ public class AzureBlobSinkTask extends SinkTask {
         AzureBlobSinkConfig config = new AzureBlobSinkConfig(configProps);
 
         containerName = config.getContainerName();
-        blobIdentifierKey = config.getBlobIdentifier();
+//        blobIdentifierKey = config.getBlobIdentifier();
         objectMapper = new ObjectMapper();
         storageManager = new AzureBlobStorageManager(config.getConnectionString());
 
         storageManager.configure(configProps);
         setPartitioner(configProps);
 
-        logger.debug("Blob identifier key: {}", this.blobIdentifierKey);
+//        logger.debug("Blob identifier key: {}", this.blobIdentifierKey);
         logger.debug("Container name: {}", this.containerName);
         logger.debug("Connection url: {}", config.getConnectionString());
     }
