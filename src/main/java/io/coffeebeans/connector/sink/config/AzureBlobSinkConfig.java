@@ -13,7 +13,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      * Azure Blob Connection related configurations
      */
     // Connection String related configurations
-    public static final String CONN_STRING_CONF = "connection.string";
+    public static final String CONN_STRING_CONF = "connection.url";
     public static final Validator CONN_STRING_VALIDATOR = new ConnectionStringValidator();
     public static final String CONN_STRING_DOC = "Connection string of the azure blob storage";
 
