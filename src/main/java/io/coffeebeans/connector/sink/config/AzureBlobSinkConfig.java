@@ -35,12 +35,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     /**
      * Parent directory where blobs will be stored.
      */
+    // TODO: Configure a default parent directory
     public static final String TOPIC_DIR = "topic.dir";
     public static final String TOPIC_DIR_DOC = "Parent directory where data from this topic will be stored";
 
     /**
      * Partition strategy configuration.
      */
+    // TODO: Have an option for NONE partitioning
     public static final String PARTITION_STRATEGY_CONF = "partition.strategy";
     public static final String PARTITION_STRATEGY_DEFAULT = "DEFAULT";
     public static final String PARTITION_STRATEGY_DOC = "Partition strategy to be used";
@@ -64,6 +66,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String PARTITION_STRATEGY_TIME_EXTRACTOR_CONF = "timestamp.extractor";
     public static final String PARTITION_STRATEGY_TIME_EXTRACTOR_DOC = "Time extractor for time based partitioner";
 
+    /**
+     * Rollover file policy related configurations
+     */
+    public static final String ROLLOVER_POLICY_SIZE_CONF = "rollover.policy.size";
+    public static final String ROLLOVER_POLICY_SIZE_DOC = "Maximum size of the blob for rollover to happen";
+
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
@@ -79,6 +87,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String timeBucket;
     private final String timezone;
     private final String timeExtractor;
+    private final String maxBlobSize;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -97,6 +106,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.timeBucket = this.getString(PARTITION_STRATEGY_TIME_BUCKET_MS_CONF);
         this.timezone = this.getString(PARTITION_STRATEGY_TIME_TIMEZONE_CONF);
         this.timeExtractor = this.getString(PARTITION_STRATEGY_TIME_EXTRACTOR_CONF);
+        this.maxBlobSize = this.getString(ROLLOVER_POLICY_SIZE_CONF);
     }
 
 
@@ -128,6 +138,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 .define(
                         BLOB_IDENTIFIER_KEY,
                         ConfigDef.Type.STRING,
+                        null,
                         ConfigDef.Importance.LOW,
                         BLOB_IDENTIFIER_KEY_DOC
                 )
@@ -156,30 +167,37 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 .define(
                         PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        null,
                         ConfigDef.Importance.LOW,
                         PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_TIMEZONE_CONF,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        null,
                         ConfigDef.Importance.LOW,
                         PARTITION_STRATEGY_TIME_TIMEZONE_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_EXTRACTOR_CONF,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        null,
                         ConfigDef.Importance.LOW,
                         PARTITION_STRATEGY_TIME_EXTRACTOR_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_BUCKET_MS_CONF,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        null,
                         ConfigDef.Importance.LOW,
                         PARTITION_STRATEGY_TIME_BUCKET_MS_DOC
+                )
+                .define(
+                        ROLLOVER_POLICY_SIZE_CONF,
+                        ConfigDef.Type.STRING,
+                        "195000000000", // 195 GB, Max. supported by append blob
+                        ConfigDef.Importance.LOW,
+                        ROLLOVER_POLICY_SIZE_DOC
                 );
     }
 
