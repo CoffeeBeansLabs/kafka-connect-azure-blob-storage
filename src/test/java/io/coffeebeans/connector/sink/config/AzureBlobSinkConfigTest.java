@@ -14,7 +14,8 @@ public class AzureBlobSinkConfigTest {
             "ocol=http;BlobEndpoint=http://host.docker.internal:10000/dev" +
             "storeaccount1;";
     private static final String CONN_STR_INVALID = "http://localhost:1234/";
-    private static final String CONTAINER_NAME = "test-container";
+    private static final String CONTAINER_NAME = "test";
+    private static final String TOPIC_DIR = "test";
 
 
     /**
