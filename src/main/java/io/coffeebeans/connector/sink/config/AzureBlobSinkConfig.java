@@ -1,11 +1,14 @@
 package io.coffeebeans.connector.sink.config;
 
+import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyRecommender;
 import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
 import io.coffeebeans.connector.sink.config.validators.ContainerNameValidator;
 import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigDef.Validator;
+
 
 public class AzureBlobSinkConfig extends AbstractConfig {
 
@@ -45,6 +48,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     // TODO: Have an option for NONE partitioning
     public static final String PARTITION_STRATEGY_CONF = "partition.strategy";
     public static final String PARTITION_STRATEGY_DEFAULT = "DEFAULT";
+    public static final Recommender PARTITION_STRATEGY_RECOMMENDER = new PartitionStrategyRecommender();
     public static final String PARTITION_STRATEGY_DOC = "Partition strategy to be used";
 
     // Field for partitioning configurations
@@ -132,7 +136,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         ConfigDef.Type.STRING,
                         CONTAINER_NAME_DEFAULT,
                         CONTAINER_NAME_VALIDATOR,
-                        ConfigDef.Importance.HIGH,
+                        ConfigDef.Importance.LOW,
                         CONTAINER_NAME_DOC
                 )
 //                .define(
@@ -154,8 +158,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         PARTITION_STRATEGY_CONF,
                         ConfigDef.Type.STRING,
                         PARTITION_STRATEGY_DEFAULT,
+                        NON_EMPTY_STRING_VALIDATOR,
                         ConfigDef.Importance.MEDIUM,
-                        PARTITION_STRATEGY_DOC
+                        PARTITION_STRATEGY_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARTITION_STRATEGY_CONF,
+                        PARTITION_STRATEGY_RECOMMENDER
                 )
                 .define( // Field-based partition strategy configuration
                         PARTITION_STRATEGY_FIELD_CONF,
