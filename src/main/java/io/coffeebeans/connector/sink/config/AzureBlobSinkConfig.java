@@ -16,10 +16,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     /**
      * Azure Blob Connection related configurations
      */
-    // Connection String related configurations
-    public static final String CONN_STRING_CONF = "connection.url";
-    public static final Validator CONN_STRING_VALIDATOR = new ConnectionStringValidator();
-    public static final String CONN_STRING_DOC = "Connection string of the azure blob storage";
+    public static final String CONN_URL_CONF = "connection.url";
+    public static final Validator CONN_URL_VALIDATOR = new ConnectionStringValidator();
+    public static final String CONN_URL_DOC = "Connection url of the azure blob storage";
 
     /**
      * Container configurations where blobs will be stored.
@@ -66,6 +65,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     /**
      * Applicable only for time-based partitioning
      */
+
     public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF = "path.format";
     public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC = "Output file path time partition format";
 
@@ -109,7 +109,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
-        this.connectionString = this.getString(CONN_STRING_CONF);
+        this.connectionString = this.getString(CONN_URL_CONF);
         this.containerName = this.getString(CONTAINER_NAME_CONF);
 //        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
         this.topicDir = this.getString(TOPIC_DIR);
@@ -133,12 +133,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static void defineConfig(ConfigDef configDef) {
         configDef
                 .define( // MANDATORY
-                        CONN_STRING_CONF,
+                        CONN_URL_CONF,
                         ConfigDef.Type.STRING,
                         ConfigDef.NO_DEFAULT_VALUE,
-                        CONN_STRING_VALIDATOR,
+                        CONN_URL_VALIDATOR,
                         ConfigDef.Importance.HIGH,
-                        CONN_STRING_DOC
+                        CONN_URL_DOC
                 )
                 .define( // OPTIONAL BUT IMPORTANT
                         CONTAINER_NAME_CONF,
