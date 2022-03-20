@@ -2,12 +2,14 @@ package io.coffeebeans.connector.sink.config.recommenders;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
-import org.apache.kafka.common.config.ConfigDef;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.common.config.ConfigDef;
 
+/**
+ * Main purpose of this class is to check should field name configuration be visible or not / is it applicable or not.
+ */
 public class PartitionStrategyFieldNameRecommender implements ConfigDef.Recommender {
 
     @Override
@@ -16,8 +18,9 @@ public class PartitionStrategyFieldNameRecommender implements ConfigDef.Recommen
     }
 
     /**
-     * Configuration only applicable for Field based partitioning
-     * @param fieldNameConfig Configuration parameter
+     * Configuration only applicable for Field based partitioning.
+     *
+     * @param fieldNameConfig Configuration parameter key
      * @param parsedConfig Map of parsed config
      * @return Boolean value based on applicability of the configuration
      */
