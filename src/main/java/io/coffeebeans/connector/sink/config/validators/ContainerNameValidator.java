@@ -3,10 +3,14 @@ package io.coffeebeans.connector.sink.config.validators;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+/**
+ * This class will validate container name provided by the user as configuration parameter.
+ */
 public class ContainerNameValidator implements ConfigDef.Validator {
 
     /**
-     * Ensure the provided container name is not null, empty and blank
+     * Ensure the provided container name is not null, empty and blank.
+     *
      * @param containerNameConfig Container name config
      * @param containerNameValue Container name
      */
