@@ -2,15 +2,18 @@ package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.PartitionerUtil;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * This timestamp extractor will extract the timestamp from the value of the field specified by the user and will
+ * generate the encoded partition string based on that.
+ */
 public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
     private static final Logger logger = LoggerFactory.getLogger(RecordFieldTimestampExtractor.class);
 
@@ -23,7 +26,8 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
     }
 
     /**
-     * Extract the timestamp from the field value and format it the pathFormat
+     * Extract the timestamp from the field value and format it the pathFormat.
+     *
      * @param sinkRecord The sink record
      * @return Formatted date & time
      */
