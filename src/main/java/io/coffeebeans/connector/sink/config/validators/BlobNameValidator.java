@@ -3,10 +3,14 @@ package io.coffeebeans.connector.sink.config.validators;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
+/**
+ * This class has a method ensureValid which will validate the blob name.
+ */
 public class BlobNameValidator implements ConfigDef.Validator {
 
     /**
-     * Ensure the provided blob name is not null, empty and blank
+     * Ensure the provided blob name is not null, empty and blank.
+     *
      * @param blobNameConfig Blob name config
      * @param blobNameValue Blob name
      */
