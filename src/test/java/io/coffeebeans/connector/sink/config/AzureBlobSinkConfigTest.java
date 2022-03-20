@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AzureBlobSinkConfigTest {
-    private static final String CONN_STR = "AccountName=devstoreaccount1;" +
+    public static final String CONN_STR = "AccountName=devstoreaccount1;" +
             "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuF" +
             "q2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProt" +
             "ocol=http;BlobEndpoint=http://host.docker.internal:10000/dev" +
@@ -27,7 +27,7 @@ public class AzureBlobSinkConfigTest {
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(new HashMap<>()),
                 "Missing required configuration \"" +
-                        AzureBlobSinkConfig.CONN_STRING_CONF + "\" which has no default value."
+                        AzureBlobSinkConfig.CONN_URL_CONF_KEY + "\" which has no default value."
                 );
 
     }
@@ -38,8 +38,8 @@ public class AzureBlobSinkConfigTest {
     @Test
     public void test_validateInvalidConnectionString() {
         Map<String, String> parsedConfig = new HashMap<>();
-        parsedConfig.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONN_STR_INVALID);
-        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
+        parsedConfig.put(AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONN_STR_INVALID);
+        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME);
 
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(parsedConfig),

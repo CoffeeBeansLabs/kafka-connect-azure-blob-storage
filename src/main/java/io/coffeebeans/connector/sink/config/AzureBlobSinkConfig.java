@@ -10,30 +10,35 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigDef.Validator;
 
+import static org.apache.kafka.common.config.ConfigDef.Importance;
+import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
+import static org.apache.kafka.common.config.ConfigDef.Type;
+
 
 public class AzureBlobSinkConfig extends AbstractConfig {
+
+    private static final Type TYPE_STRING = Type.STRING;
+    private static final Importance IMPORTANCE_LOW = Importance.LOW;
+    private static final Importance IMPORTANCE_MEDIUM = Importance.MEDIUM;
+    private static final Importance IMPORTANCE_HIGH = Importance.HIGH;
+
 
     /**
      * Azure Blob Connection related configurations
      */
-    public static final String CONN_URL_CONF = "connection.url";
+    public static final String CONN_URL_CONF_KEY = "connection.url";
     public static final Validator CONN_URL_VALIDATOR = new ConnectionStringValidator();
-    public static final String CONN_URL_DOC = "Connection url of the azure blob storage";
+    public static final String CONN_URL_CONF_DOC = "Connection url of the azure blob storage";
 
     /**
      * Container configurations where blobs will be stored.
      * If no value provided, a container with name 'default' will be created.
      * ContainerNameValidator checks if the provided value is not null, empty and blank.
      */
-    public static final String CONTAINER_NAME_CONF = "container.name";
-    public static final String CONTAINER_NAME_DEFAULT = "default";
+    public static final String CONTAINER_NAME_CONF_KEY = "container.name";
+    public static final String CONTAINER_NAME_DEFAULT_VALUE = "default";
     public static final Validator CONTAINER_NAME_VALIDATOR = new ContainerNameValidator();
-    public static final String CONTAINER_NAME_DOC = "Name of the container where blobs will be stored";
-
-    // Blob related configurations
-//    public static final String BLOB_IDENTIFIER_KEY = "blob.identifier.key";
-//    public static final String BLOB_IDENTIFIER_KEY_DEFAULT = "blob";
-//    public static final String BLOB_IDENTIFIER_KEY_DOC = "Key to identify blob";
+    public static final String CONTAINER_NAME_CONF_DOC = "Name of the container where blobs will be stored";
 
     /**
      * Parent directory where blobs will be stored.
@@ -109,8 +114,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
-        this.connectionString = this.getString(CONN_URL_CONF);
-        this.containerName = this.getString(CONTAINER_NAME_CONF);
+        this.connectionString = this.getString(CONN_URL_CONF_KEY);
+        this.containerName = this.getString(CONTAINER_NAME_CONF_KEY);
 //        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
         this.topicDir = this.getString(TOPIC_DIR);
         this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF);
@@ -133,29 +138,22 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static void defineConfig(ConfigDef configDef) {
         configDef
                 .define( // MANDATORY
-                        CONN_URL_CONF,
-                        ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        CONN_URL_CONF_KEY,
+                        TYPE_STRING,
+                        NO_DEFAULT_VALUE,
                         CONN_URL_VALIDATOR,
-                        ConfigDef.Importance.HIGH,
-                        CONN_URL_DOC
+                        IMPORTANCE_HIGH,
+                        CONN_URL_CONF_DOC
                 )
-                .define( // OPTIONAL BUT IMPORTANT
-                        CONTAINER_NAME_CONF,
-                        ConfigDef.Type.STRING,
-                        CONTAINER_NAME_DEFAULT,
+                .define(
+                        CONTAINER_NAME_CONF_KEY,
+                        TYPE_STRING,
+                        CONTAINER_NAME_DEFAULT_VALUE,
                         CONTAINER_NAME_VALIDATOR,
-                        ConfigDef.Importance.LOW,
-                        CONTAINER_NAME_DOC
+                        IMPORTANCE_LOW,
+                        CONTAINER_NAME_CONF_DOC
                 )
-//                .define(
-//                        BLOB_IDENTIFIER_KEY,
-//                        ConfigDef.Type.STRING,
-//                        null,
-//                        ConfigDef.Importance.LOW,
-//                        BLOB_IDENTIFIER_KEY_DOC
-//                )
-                .define( // MANDATORY, Name of directory to store the records
+                .define(
                         TOPIC_DIR,
                         ConfigDef.Type.STRING,
                         ConfigDef.NO_DEFAULT_VALUE,

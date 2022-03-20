@@ -127,7 +127,7 @@ curl http://localhost:8083/connectors
 
 1. Run the following command (for json with schema producer)
 
-```
+```bash
 python3 quickstart/producers/json-producer/producer.py --topic connect-demo --bootstrap-servers localhost:9093
 ```
 
