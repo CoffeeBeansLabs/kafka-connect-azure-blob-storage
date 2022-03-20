@@ -1,10 +1,12 @@
 package io.coffeebeans.connector.sink.util;
 
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
-
+/**
+ * This class will return the current version of the connector.
+ */
 public class Version {
     private static final Logger log = LoggerFactory.getLogger(Version.class);
     private static final String VERSION;
