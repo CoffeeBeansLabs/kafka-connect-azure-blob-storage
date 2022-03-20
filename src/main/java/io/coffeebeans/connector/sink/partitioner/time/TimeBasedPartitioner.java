@@ -9,7 +9,9 @@ import io.coffeebeans.connector.sink.partitioner.time.extractor.TimestampExtract
 import java.util.Map;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-
+/**
+ * A partitioner which will partition the incoming data based on the extracted timestamp.
+ */
 public class TimeBasedPartitioner extends DefaultPartitioner {
     private TimestampExtractor timestampExtractor;
 
@@ -24,37 +26,46 @@ public class TimeBasedPartitioner extends DefaultPartitioner {
     }
 
     /**
+     * I need the SinkRecord and starting offset as parameters. I will extract the timestamp based on the timestamp
+     * extractor strategy configured and will generate the encoded partition string based on that.
+     *
      * @param sinkRecord The record to be stored
-     * @return <prefix>/<kafkaTopic>/<formattedTimestamp>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+     * @return Encoded partition string
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
         String kafkaTopic = sinkRecord.topic();
         long kafkaPartition = sinkRecord.kafkaPartition();
 
-        return prefix + FOLDER_DELIMITER + // <prefix>/
+        /*
+          Output format:
+          <prefix>/<kafkaTopic>/<formattedTimestamp>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+         */
+
+        return prefix + FOLDER_DELIMITER // <prefix>/
 
                 // <topic>/
-                kafkaTopic + FOLDER_DELIMITER +
+                + kafkaTopic + FOLDER_DELIMITER
 
                 // <formattedTimestamp>/
-                timestampExtractor.getFormattedTimestamp(sinkRecord) + FOLDER_DELIMITER +
+                + timestampExtractor.getFormattedTimestamp(sinkRecord) + FOLDER_DELIMITER
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset>
-                kafkaTopic + FILE_DELIMITER + kafkaPartition + FILE_DELIMITER + startingOffset;
+                + kafkaTopic + FILE_DELIMITER + kafkaPartition + FILE_DELIMITER + startingOffset;
     }
 
     /**
-     * It returns the TimestampExtractor based on the provided configuration
+     * It returns the TimestampExtractor based on the provided configuration.
+     *
      * @param timestampExtractor type of timestamp extractor
      * @return TimestampExtractor
      */
     private TimestampExtractor getTimestampExtractor(String timestampExtractor) {
 
         switch (timestampExtractor) {
-            case "Record": return new RecordTimestampExtractor();
-            case "RecordField": return new RecordFieldTimestampExtractor();
-            default: return new DefaultTimestampExtractor();
+          case "Record": return new RecordTimestampExtractor();
+          case "RecordField": return new RecordFieldTimestampExtractor();
+          default: return new DefaultTimestampExtractor();
         }
     }
 }
