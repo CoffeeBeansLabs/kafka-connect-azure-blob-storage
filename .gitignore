@@ -7,3 +7,6 @@
 
 # Build files
 target
+
+# installed modules
+node_modules
