@@ -32,8 +32,10 @@ public class DefaultPartitioner implements Partitioner {
         String kafkaTopic = sinkRecord.topic();
         long kafkaPartition = sinkRecord.kafkaPartition();
 
-        // Output format:
-        // <prefix>/<kafkaTopic>/partition=<kafkaPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+        /*
+          Output format:
+          <prefix>/<kafkaTopic>/partition=<kafkaPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+         */
 
         return prefix + FOLDER_DELIMITER // <prefix>/
 

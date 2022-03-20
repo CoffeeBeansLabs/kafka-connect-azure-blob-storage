@@ -25,8 +25,10 @@ public class DailyPartitioner implements Partitioner {
     @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
 
-        // Output format
-        // <prefix>/<topic>/year='YYYY'/month='MM'/day='dd'/<topic>+<kafkaPartition>+<startOffset>.<format>
+        /*
+          Output format
+          <prefix>/<topic>/year='YYYY'/month='MM'/day='dd'/<topic>+<kafkaPartition>+<startOffset>.<format>
+         */
         return null;
     }
 }
