@@ -1,5 +1,9 @@
 package io.coffeebeans.connector.sink.config;
 
+import static org.apache.kafka.common.config.ConfigDef.Importance;
+import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
+import static org.apache.kafka.common.config.ConfigDef.Type;
+
 import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyFieldNameRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyRecommender;
 import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
@@ -10,11 +14,10 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Recommender;
 import org.apache.kafka.common.config.ConfigDef.Validator;
 
-import static org.apache.kafka.common.config.ConfigDef.Importance;
-import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
-import static org.apache.kafka.common.config.ConfigDef.Type;
 
-
+/**
+ * Class for defining connector configuration properties.
+ */
 public class AzureBlobSinkConfig extends AbstractConfig {
 
     private static final Type TYPE_STRING = Type.STRING;
@@ -24,7 +27,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
 
     /**
-     * Azure Blob Connection related configurations
+     * Azure Blob Connection related configurations.
      */
     public static final String CONN_URL_CONF_KEY = "connection.url";
     public static final Validator CONN_URL_VALIDATOR = new ConnectionStringValidator();
@@ -57,18 +60,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String PARTITION_STRATEGY_DOC = "Partition strategy to be used";
 
     /**
-     * Applicable only for field-based partitioning
+     * Applicable only for field-based partitioning.
      */
     // TODO: Add support for List of fields
     public static final String PARTITION_STRATEGY_FIELD_NAME_CONF = "partition.strategy.field.name";
-    public static final String PARTITION_STRATEGY_FIELD_NAME_DOC = "Name of the field from which values should be " +
-            "extracted";
+    public static final String PARTITION_STRATEGY_FIELD_NAME_DOC = "Name of the field from which values should be "
+            + "extracted";
     public static final Recommender PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER =
             new PartitionStrategyFieldNameRecommender();
 
-    // Time based partitioning configurations
     /**
-     * Applicable only for time-based partitioning
+     * Applicable only for time-based partitioning.
      */
 
     public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF = "path.format";
@@ -85,19 +87,19 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String PARTITION_STRATEGY_TIME_EXTRACTOR_DOC = "Time extractor for time based partitioner";
 
     /**
-     * Rollover file policy related configurations
+     * Rollover file policy related configurations.
      */
     public static final String ROLLOVER_POLICY_SIZE_CONF = "rollover.policy.size";
     public static final String ROLLOVER_POLICY_SIZE_DOC = "Maximum size of the blob for rollover to happen";
+
+    public static final String MAXIMUM_BLOB_SIZE_SUPPORTED = "195000000000";
 
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
 
-    // properties
     private final String connectionString;
     private final String containerName;
-//    private final String blobIdentifier;
     private final String topicDir;
     private final String partitionStrategy;
     private final String fieldName;
@@ -112,11 +114,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this(getConfig(), parsedConfig);
     }
 
+    /**
+     * I will take ConfigDef and Map of parsed configs. I will pass these parameters to super and will initialize the
+     * fields.
+     *
+     * @param configDef ConfigDef
+     * @param parsedConfig Map of parsed configs
+     */
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
         this.connectionString = this.getString(CONN_URL_CONF_KEY);
         this.containerName = this.getString(CONTAINER_NAME_CONF_KEY);
-//        this.blobIdentifier = this.getString(BLOB_IDENTIFIER_KEY);
         this.topicDir = this.getString(TOPIC_DIR);
         this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF);
         this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_NAME_CONF);
@@ -128,6 +136,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     }
 
 
+    /**
+     * I initialize a new ConfigDef and define it.
+     *
+     * @return ConfigDef
+     */
     public static ConfigDef getConfig() {
         ConfigDef configDef = new ConfigDef();
         defineConfig(configDef);
@@ -135,9 +148,15 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return configDef;
     }
 
+    /**
+     * I need a ConfigDef as parameter. I define the configuration properties in the ConfigDef like configuration key,
+     * type of configuration value, default value, validator, importance, doc, recommender etc.
+     *
+     * @param configDef defined ConfigDef
+     */
     public static void defineConfig(ConfigDef configDef) {
         configDef
-                .define( // MANDATORY
+                .define(
                         CONN_URL_CONF_KEY,
                         TYPE_STRING,
                         NO_DEFAULT_VALUE,
@@ -155,18 +174,18 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 )
                 .define(
                         TOPIC_DIR,
-                        ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        TYPE_STRING,
+                        NO_DEFAULT_VALUE,
                         NON_EMPTY_STRING_VALIDATOR,
-                        ConfigDef.Importance.HIGH,
+                        IMPORTANCE_HIGH,
                         TOPIC_DIR_DOC
                 )
-                .define( // Partition strategy configuration
+                .define(
                         PARTITION_STRATEGY_CONF,
-                        ConfigDef.Type.STRING,
+                        TYPE_STRING,
                         PARTITION_STRATEGY_DEFAULT,
                         NON_EMPTY_STRING_VALIDATOR,
-                        ConfigDef.Importance.MEDIUM,
+                        IMPORTANCE_MEDIUM,
                         PARTITION_STRATEGY_DOC,
                         null,
                         -1,
@@ -174,12 +193,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         PARTITION_STRATEGY_CONF,
                         PARTITION_STRATEGY_RECOMMENDER
                 )
-                .define( // Field-based partition strategy configuration
+                .define(
                         PARTITION_STRATEGY_FIELD_NAME_CONF,
-                        ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
+                        TYPE_STRING,
+                        NO_DEFAULT_VALUE,
                         NON_EMPTY_STRING_VALIDATOR,
-                        ConfigDef.Importance.MEDIUM,
+                        IMPORTANCE_MEDIUM,
                         PARTITION_STRATEGY_FIELD_NAME_DOC,
                         null,
                         -1,
@@ -189,39 +208,38 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF,
-                        ConfigDef.Type.STRING,
+                        TYPE_STRING,
                         null,
-                        ConfigDef.Importance.LOW,
+                        IMPORTANCE_LOW,
                         PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_TIMEZONE_CONF,
-                        ConfigDef.Type.STRING,
+                        TYPE_STRING,
                         null,
-                        ConfigDef.Importance.LOW,
+                        IMPORTANCE_LOW,
                         PARTITION_STRATEGY_TIME_TIMEZONE_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_EXTRACTOR_CONF,
-                        ConfigDef.Type.STRING,
+                        TYPE_STRING,
                         null,
-                        ConfigDef.Importance.LOW,
+                        IMPORTANCE_LOW,
                         PARTITION_STRATEGY_TIME_EXTRACTOR_DOC
                 )
                 .define(
                         PARTITION_STRATEGY_TIME_BUCKET_MS_CONF,
-                        ConfigDef.Type.STRING,
+                        TYPE_STRING,
                         null,
-                        ConfigDef.Importance.LOW,
+                        IMPORTANCE_LOW,
                         PARTITION_STRATEGY_TIME_BUCKET_MS_DOC
                 )
                 .define(
                         ROLLOVER_POLICY_SIZE_CONF,
-                        ConfigDef.Type.STRING,
-                        "195000000000", // 195 GB, Max. supported by append blob
-                        ConfigDef.Importance.LOW,
-                        ROLLOVER_POLICY_SIZE_DOC
-                );
+                        TYPE_STRING,
+                        MAXIMUM_BLOB_SIZE_SUPPORTED, // 195 GB, Max. supported by append blob
+                        IMPORTANCE_LOW,
+                        ROLLOVER_POLICY_SIZE_DOC);
     }
 
     public String getConnectionString() {
@@ -231,10 +249,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public String getContainerName() {
         return this.containerName;
     }
-
-//    public String getBlobIdentifier() {
-//        return this.blobIdentifier;
-//    }
 
     public String getTopicDir() {
         return this.topicDir;
