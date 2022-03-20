@@ -1,18 +1,22 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
+/**
+ * This class will extract the time at which the kafka record was produced and will generate the encoded partition
+ * string.
+ */
 public class RecordTimestampExtractor extends DefaultTimestampExtractor {
     private static final Logger logger = LoggerFactory.getLogger(RecordTimestampExtractor.class);
 
     /**
-     * Return the formatted timestamp when the kafka record was produced
+     * Return the formatted timestamp when the kafka record was produced.
+     *
      * @param sinkRecord The sink record
      * @return Formatted timestamp
      */
