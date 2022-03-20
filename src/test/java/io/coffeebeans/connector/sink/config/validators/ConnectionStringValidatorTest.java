@@ -19,7 +19,7 @@ public class ConnectionStringValidatorTest {
     public void test_nullConnectionString() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ConnectionStringValidator().ensureValid(
-                    AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING_NULL
+                    AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_STRING_NULL
             );
         }, "Invalid connection string: ");
     }
@@ -28,7 +28,7 @@ public class ConnectionStringValidatorTest {
     public void test_emptyConnectionString() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ConnectionStringValidator().ensureValid(
-                    AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING_EMPTY
+                    AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_STRING_EMPTY
             );
         }, "Invalid connection string: ");
     }
@@ -37,7 +37,7 @@ public class ConnectionStringValidatorTest {
     public void test_blankConnectionString() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ConnectionStringValidator().ensureValid(
-                    AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING_BLANK
+                    AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_STRING_BLANK
             );
         }, "Invalid connection string: ");
     }
@@ -46,7 +46,7 @@ public class ConnectionStringValidatorTest {
     public void test_validConnectionString() {
         Assertions.assertDoesNotThrow(() -> {
             new ConnectionStringValidator().ensureValid(
-                    AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING_VALID
+                    AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_STRING_VALID
             );
         });
     }

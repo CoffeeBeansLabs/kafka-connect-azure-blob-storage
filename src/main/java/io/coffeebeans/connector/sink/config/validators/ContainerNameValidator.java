@@ -15,6 +15,7 @@ public class ContainerNameValidator implements ConfigDef.Validator {
         String containerName = (String) containerNameValue;
 
         if (containerName == null || containerName.isEmpty() || containerName.isBlank()) {
+            // TODO: Check if blob storage support special characters and if not then that check should be done here.
             throw new ConfigException("Invalid container name: ", containerName);
         }
     }

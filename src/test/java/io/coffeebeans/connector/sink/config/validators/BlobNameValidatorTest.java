@@ -15,7 +15,7 @@ public class BlobNameValidatorTest {
     public void test_nullContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
-                    AzureBlobSinkConfig.CONTAINER_NAME_CONF, BLOB_NAME_NULL
+                    AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, BLOB_NAME_NULL
             );
         }, "Invalid container name: ");
     }
@@ -24,7 +24,7 @@ public class BlobNameValidatorTest {
     public void test_emptyContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
-                    AzureBlobSinkConfig.CONTAINER_NAME_CONF, BLOB_NAME_EMPTY
+                    AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, BLOB_NAME_EMPTY
             );
         }, "Invalid container name: ");
     }
@@ -33,7 +33,7 @@ public class BlobNameValidatorTest {
     public void test_blankContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
-                    AzureBlobSinkConfig.CONTAINER_NAME_CONF, BLOB_NAME_BLANK
+                    AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, BLOB_NAME_BLANK
             );
         }, "Invalid container name: ");
     }
@@ -42,7 +42,7 @@ public class BlobNameValidatorTest {
     public void test_validContainerName() {
         Assertions.assertDoesNotThrow(() -> {
             new ContainerNameValidator().ensureValid(
-                    AzureBlobSinkConfig.CONTAINER_NAME_CONF, BLOB_NAME_VALID
+                    AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, BLOB_NAME_VALID
             );
         });
     }

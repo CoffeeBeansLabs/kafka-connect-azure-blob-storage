@@ -1,21 +1,14 @@
 package io.coffeebeans.connector.sink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
 import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.kafka.connect.data.ConnectSchema;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class AzureBlobSinkTaskTest {
@@ -55,8 +48,8 @@ public class AzureBlobSinkTaskTest {
         mockStorageManager = Mockito.mock(AzureBlobStorageManager.class);
 
         Map<String, String> configProps = new HashMap<>();
-        configProps.put(AzureBlobSinkConfig.CONN_STRING_CONF, CONNECTION_STRING);
-        configProps.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF, CONTAINER_NAME);
+        configProps.put(AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_STRING);
+        configProps.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME);
 //        configProps.put(AzureBlobSinkConfig.BLOB_IDENTIFIER_KEY, BLOB_IDENTIFIER_KEY);
         configProps.put(AzureBlobSinkConfig.TOPIC_DIR, TOPIC_DIR);
         configProps.put(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF, PARTITION_STRATEGY);

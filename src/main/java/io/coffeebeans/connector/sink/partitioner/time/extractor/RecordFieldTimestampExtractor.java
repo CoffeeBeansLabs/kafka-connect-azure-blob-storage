@@ -19,7 +19,7 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
     @Override
     public void configure(Map<String, String> configProps) {
         super.configure(configProps);
-        this.field = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_CONF);
+        this.field = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_NAME_CONF);
     }
 
     /**
