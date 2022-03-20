@@ -1,15 +1,17 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * This class will format the date and time based on the provided path format and system timestamp.
+ */
 public class DefaultTimestampExtractor implements TimestampExtractor {
     private static final Logger logger = LoggerFactory.getLogger(DefaultTimestampExtractor.class);
 
@@ -27,7 +29,8 @@ public class DefaultTimestampExtractor implements TimestampExtractor {
     }
 
     /**
-     * Get the system date & time and format into the pathFormat and return
+     * Get the system date & time and format based on the path format provided.
+     *
      * @param sinkRecord The sink record
      * @return Formatted date & time
      */
