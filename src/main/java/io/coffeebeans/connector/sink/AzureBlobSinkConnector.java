@@ -2,16 +2,18 @@ package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.util.Version;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+/**
+ * This class will be the first to run when the connector is configured.
+ */
 public class AzureBlobSinkConnector extends SinkConnector {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkConnector.class);
     private Map<String, String> configProps;
