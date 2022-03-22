@@ -34,24 +34,11 @@ public class TimeBasedPartitioner extends DefaultPartitioner {
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
-        String kafkaTopic = sinkRecord.topic();
-        long kafkaPartition = sinkRecord.kafkaPartition();
-
         /*
           Output format:
-          <prefix>/<kafkaTopic>/<formattedTimestamp>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+          <formattedTimestamp>
          */
-
-        return prefix + FOLDER_DELIMITER // <prefix>/
-
-                // <topic>/
-                + kafkaTopic + FOLDER_DELIMITER
-
-                // <formattedTimestamp>/
-                + timestampExtractor.getFormattedTimestamp(sinkRecord) + FOLDER_DELIMITER
-
-                // <kafkaTopic> + <kafkaPartition> + <startOffset>
-                + kafkaTopic + FILE_DELIMITER + kafkaPartition + FILE_DELIMITER + startingOffset;
+        return timestampExtractor.getFormattedTimestamp(sinkRecord);
     }
 
     /**

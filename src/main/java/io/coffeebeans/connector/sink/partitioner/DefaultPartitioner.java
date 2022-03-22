@@ -8,12 +8,12 @@ import org.apache.kafka.connect.sink.SinkRecord;
  * The DefaultPartitioner partitions the incoming data based on the prefix, kafka topic, and kafka partition.
  */
 public class DefaultPartitioner implements Partitioner {
+    private static final String KAFKA_PARTITION_PROPERTY = "partition";
     public static final String FOLDER_DELIMITER = "/";
     public static final String FILE_DELIMITER = "+";
 
     protected String prefix;
 
-    private static final String kafkaPartitionProperty = "partition";
 
     @Override
     public void configure(Map<String, String> configProps) {
@@ -29,23 +29,53 @@ public class DefaultPartitioner implements Partitioner {
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
-        String kafkaTopic = sinkRecord.topic();
-        long kafkaPartition = sinkRecord.kafkaPartition();
+        /*
+          Output format:
+          partition=<kafkaPartition>
+         */
+
+        return KAFKA_PARTITION_PROPERTY + "=" + sinkRecord.kafkaPartition(); // partition=<kafkaPartition>/
+    }
+
+    /**
+     * Generate full blob file path including folder path with encodedPartition.
+     *
+     * @param sinkRecord SinkRecord
+     * @param startingOffset starting offset
+     * @return Full file path
+     */
+    @Override
+    public String generateFullPath(SinkRecord sinkRecord, long startingOffset, String encodedPartition) {
 
         /*
           Output format:
-          <prefix>/<kafkaTopic>/partition=<kafkaPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>.<format>
+          <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>
          */
+        return generateFolderPath(sinkRecord, encodedPartition) + FOLDER_DELIMITER
 
+                // <kafkaTopic> + <kafkaPartition> + <startOffset>
+                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+    }
+
+    /**
+     * I generate the folder path using the encoded partition string.
+     *
+     * @param sinkRecord       SinkRecord
+     * @param encodedPartition Encoded partition string
+     * @return Folder path
+     */
+    @Override
+    public String generateFolderPath(SinkRecord sinkRecord, String encodedPartition) {
+        /*
+          Output format:
+          <prefix>/<kafkaTopic>/<encodedPartition>
+         */
         return prefix + FOLDER_DELIMITER // <prefix>/
 
                 // <kafkaTopic>/
-                + kafkaTopic + FOLDER_DELIMITER
+                + sinkRecord.topic() + FOLDER_DELIMITER
 
-                // partition=<kafkaPartition>/
-                + kafkaPartitionProperty + "=" + kafkaPartition + FOLDER_DELIMITER
-
-                // <kafkaTopic> + <kafkaPartition> + <startOffset>
-                + kafkaTopic + FILE_DELIMITER + kafkaPartition + FILE_DELIMITER + startingOffset;
+                // <encodedPartition>
+                + encodedPartition;
     }
 }
