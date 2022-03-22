@@ -22,4 +22,23 @@ public interface Partitioner {
      * @return The path where it will be stored
      */
     String encodePartition(SinkRecord sinkRecord, long startingOffset);
+
+    /**
+     * Generate full blob file path including folder path with encodedPartition.
+     *
+     * @param sinkRecord SinkRecord
+     * @param startingOffset starting offset
+     * @param encodedPartition Encoded partition string
+     * @return Full file path
+     */
+    String generateFullPath(SinkRecord sinkRecord, long startingOffset, String encodedPartition);
+
+    /**
+     * I generate the folder path using the encoded partition string.
+     *
+     * @param sinkRecord SinkRecord
+     * @param encodedPartition Encoded partition string
+     * @return Folder path
+     */
+    String generateFolderPath(SinkRecord sinkRecord, String encodedPartition);
 }

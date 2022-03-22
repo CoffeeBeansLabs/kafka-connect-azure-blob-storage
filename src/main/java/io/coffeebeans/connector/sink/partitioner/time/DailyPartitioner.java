@@ -7,10 +7,9 @@ import org.apache.kafka.connect.sink.SinkRecord;
 /**
  * Partitioner to partition incoming records based on day.
  */
-public class DailyPartitioner implements Partitioner {
+public class DailyPartitioner {
     private static final String PATH_FORMAT = "year={0}/month={1}/day={2}";
 
-    @Override
     public void configure(Map<String, String> configProps) {
 
     }
@@ -22,7 +21,6 @@ public class DailyPartitioner implements Partitioner {
      * @param startingOffset kafka offset of the first record of the batch
      * @return encoded partition string
      */
-    @Override
     public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
 
         /*
