@@ -13,8 +13,12 @@ import com.azure.storage.blob.options.AppendBlobCreateOptions;
 import com.azure.storage.blob.specialized.AppendBlobClient;
 import com.azure.storage.blob.specialized.BlobLeaseClient;
 import com.azure.storage.blob.specialized.BlobLeaseClientBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.model.Metadata;
+import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +29,7 @@ import org.slf4j.LoggerFactory;
 public class AzureBlobStorageManager {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobStorageManager.class);
     private final BlobServiceClient serviceClient;
+    private final Map<String, Integer> currentActiveIndex;
 
     private Long maxBlobSize;
 
@@ -38,6 +43,8 @@ public class AzureBlobStorageManager {
         this.serviceClient = new BlobServiceClientBuilder()
                 .connectionString(connectionUrl)
                 .buildClient();
+
+        this.currentActiveIndex = new HashMap<>();
     }
 
     public void configure(Map<String, String> configProps) {
@@ -52,27 +59,67 @@ public class AzureBlobStorageManager {
      * @param blobName Blob name
      * @param data Data as byte stream
      */
-    public void upload(String containerName, String blobName, byte[] data) {
+    public void upload(String containerName, String path, String blobName, byte[] data) {
+
+        // Get the container client
         BlobContainerClient containerClient = this.serviceClient
                 .getBlobContainerClient(containerName);
 
-        AppendBlobClient appendBlobClient = containerClient.getBlobClient(blobName + "." + 0).getAppendBlobClient();
+        if (!currentActiveIndex.containsKey(path)) {
+
+            // Create a metadata object
+            int firstActiveIndex = 0;
+            Metadata metadata = new Metadata(path, firstActiveIndex);
+
+            // Create and append first metadata record
+            MetadataManager.appendMetadata(containerClient, path, metadata);
+
+            // Update local current index
+            currentActiveIndex.put(path, firstActiveIndex);
+        }
+
+        int currentActiveIndex = this.currentActiveIndex.get(path);
+
+        // Create full blob path
+        String blobFullPath = path + DefaultPartitioner.FOLDER_DELIMITER + blobName + DefaultPartitioner.FILE_DELIMITER
+                + currentActiveIndex;
+
+        // Get the AppendBlobClient
+        AppendBlobClient appendBlobClient = containerClient.getBlobClient(blobFullPath).getAppendBlobClient();
         createAppendBlobIfNotExist(appendBlobClient);
 
+
         try {
-            // appendBlobClient.appendBlock(new ByteArrayInputStream(data), data.length);
-            Response<AppendBlobItem> response = appendBlobClient.appendBlockWithResponse(
+            appendBlobClient.appendBlockWithResponse(
                     new ByteArrayInputStream(data), data.length, null,
-                    new AppendBlobRequestConditions().setMaxSize(maxBlobSize),
-                    null, Context.NONE);
+                    new AppendBlobRequestConditions().setMaxSize(maxBlobSize), null, Context.NONE);
 
-            logger.info("Returned status code for appending block: {}", response.getStatusCode());
         } catch (BlobStorageException e) {
-            logger.info("File size met, Rollover initiated");
-            rollover(containerClient, blobName, 0);
 
-            // Retry
-            upload(containerName, blobName, data);
+            if ((appendBlobClient.getProperties().getBlobSize() + data.length) > maxBlobSize) {
+                logger.info("File size met, Rollover initiated");
+
+                try {
+                    // Retrieve metadata from blob storage service
+                    Metadata metadata = MetadataManager.retrieveMetadata(containerClient, path);
+
+                    int newActiveIndex = metadata.getIndex() + 1;
+
+                    // Append new metadata
+                    MetadataManager.appendMetadata(containerClient, path, new Metadata(path, newActiveIndex));
+
+                    // Update local index
+                    this.currentActiveIndex.put(path, newActiveIndex);
+
+                    // Retry appending data
+                    upload(containerName, path, blobName, data);
+
+                } catch (Exception exception) {
+                    logger.error(exception.getMessage());
+                    throw new RuntimeException();
+
+                }
+            }
         }
     }
 
