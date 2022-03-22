@@ -93,14 +93,20 @@ public class AzureBlobSinkTask extends SinkTask {
 
             // Get the blob name using the identifier key
             // String blobName = (String) valueMap.get(blobIdentifierKey);
-            String blobName = partitioner.encodePartition(record, startingOffset);
+            String encodedPartition = partitioner.encodePartition(record, startingOffset);
+            String folderPath = partitioner.generateFolderPath(record, encodedPartition);
+
+            String blobName = record.topic() + DefaultPartitioner.FILE_DELIMITER + record.kafkaPartition()
+                    + DefaultPartitioner.FILE_DELIMITER + startingOffset;
+
+            //            String blobName = partitioner.encodePartition(record, startingOffset);
             logger.debug("blob name: " + blobName);
 
             byte[] data;
             try {
                 // Get bytes array of the value map and persist it in the blob storage
                 data = getValueAsBytes(valueMap);
-                this.storageManager.upload(containerName, blobName, data);
+                this.storageManager.upload(containerName, folderPath, blobName, data);
 
             } catch (Exception e) {
                 logger.error("Unable to process record");
