@@ -39,7 +39,7 @@ def produce_records(args):
     start_timestamp = 1646109000000
     end_timestamp = 1646368200000
 
-    for e in range(499):
+    for e in range(498):
         random_num = randrange(0, 3, 1)
         word = random_words[e]
         timestamp = randrange(start_timestamp, end_timestamp)
@@ -58,8 +58,8 @@ def produce_records(args):
     serializing_producer.flush()
 
 
-def load_json_schema_from_file(filePath):
-    f = open(filePath)
+def load_json_schema_from_file(file_path):
+    f = open(file_path)
     data = json.load(f)
     return json.dumps(data)
 
