@@ -2,7 +2,7 @@
   "name": "blob-sink",
   "config": {
     "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
-    "tasks.max": "1",
+    "tasks.max": "2",
     "topics": "connect-demo",
     "value.converter": "io.confluent.connect.json.JsonSchemaConverter",
     "value.converter.schema.registry.url": "http://schema-registry:8081",
