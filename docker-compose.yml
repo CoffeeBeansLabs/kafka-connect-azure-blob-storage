@@ -1,4 +1,4 @@
-version: '1'
+version: '2.2'
 
 networks:
   kafka-network:
@@ -11,7 +11,7 @@ services:
     networks:
       - kafka-network
     environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
 
   kafka:
     image: 'bitnami/kafka:3.1.0'
@@ -21,11 +21,11 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - 9092:9092
-      - 9093:9093
+      - "9092:9092"
+      - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
-      ALLOW_PLAINTEXT_LISTENER: yes
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
       KAFKA_CFG_NUM_NETWORK_THREADS: 3
       KAFKA_CFG_NUM_IO_THREADS: 8
       KAFKA_CFG_SOCKET_SEND_BUFFER_BYTES: 102400
@@ -52,7 +52,7 @@ services:
     depends_on:
       - kafka
     ports:
-      - 8081:8081
+      - "8081:8081"
     environment:
       CUB_CLASSPATH: '/usr/share/java/confluent-security/schema-registry/*:/usr/share/java/schema-registry/*:/usr/share/java/cp-base-new/*'
       SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
@@ -60,7 +60,7 @@ services:
       SCHEMA_REGISTRY_LISTNERS: http://0.0.0.0:8081
       SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
-      SCHEMA_REGISTRY_DEBUG: true
+      SCHEMA_REGISTRY_DEBUG: 'true'
       # https://docs.confluent.io/platform/current/schema-registry/installation/config.html
       # All configuration parameters
 
@@ -72,14 +72,14 @@ services:
     depends_on:
       - schema-registry
     ports:
-      - 8083:8083
-      - 8888:8888
+      - "8083:8083"
+      - "8888:8888"
     volumes:
       - ./target:/usr/share/java/kafka-connect-sample
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'kafka:9092'
       CONNECT_REST_PORT: 8083
-      KAFKA_DEBUG: true
+      KAFKA_DEBUG: 'true'
       JAVA_DEBUG_PORT: '*:8888'
       CONNECT_REST_ADVERTISED_HOST_NAME: 'connect'
       CONNECT_GROUP_ID: kafka-connect-group
