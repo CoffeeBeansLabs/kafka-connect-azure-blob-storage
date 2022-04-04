@@ -3,6 +3,7 @@ package io.coffeebeans.connector.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.metadata.MetadataConsumer;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
 import io.coffeebeans.connector.sink.partitioner.field.FieldPartitioner;
@@ -32,6 +33,7 @@ public class AzureBlobSinkTask extends SinkTask {
     private Partitioner partitioner;
     private ObjectMapper objectMapper;
     private AzureBlobStorageManager storageManager;
+    private MetadataConsumer metadataConsumer;
 
     @Override
     public String version() {
@@ -46,6 +48,9 @@ public class AzureBlobSinkTask extends SinkTask {
         containerName = config.getContainerName();
         objectMapper = new ObjectMapper();
         storageManager = new AzureBlobStorageManager(config.getConnectionString());
+
+        metadataConsumer = new MetadataConsumer(storageManager.getCurrentActiveIndex());
+        metadataConsumer.pollMetadata();
 
         storageManager.configure(configProps);
         setPartitioner(configProps);
