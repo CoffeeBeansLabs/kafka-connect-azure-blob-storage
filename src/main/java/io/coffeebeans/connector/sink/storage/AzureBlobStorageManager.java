@@ -13,13 +13,16 @@ import com.azure.storage.blob.options.AppendBlobCreateOptions;
 import com.azure.storage.blob.specialized.AppendBlobClient;
 import com.azure.storage.blob.specialized.BlobLeaseClient;
 import com.azure.storage.blob.specialized.BlobLeaseClientBuilder;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.metadata.MetadataProducer;
 import io.coffeebeans.connector.sink.model.Metadata;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +32,10 @@ import org.slf4j.LoggerFactory;
 public class AzureBlobStorageManager {
     private static final Logger logger = LoggerFactory.getLogger(AzureBlobStorageManager.class);
     private final BlobServiceClient serviceClient;
-    private final Map<String, Integer> currentActiveIndex;
+    private final ConcurrentMap<String, Integer> currentActiveIndex;
 
     private Long maxBlobSize;
+    private MetadataProducer metadataProducer;
 
     /**
      * Constructor to be used for initializing the storage manager.
@@ -44,7 +48,8 @@ public class AzureBlobStorageManager {
                 .connectionString(connectionUrl)
                 .buildClient();
 
-        this.currentActiveIndex = new HashMap<>();
+        this.currentActiveIndex = new ConcurrentHashMap<>();
+        this.metadataProducer = new MetadataProducer();
     }
 
     public void configure(Map<String, String> configProps) {
@@ -59,7 +64,8 @@ public class AzureBlobStorageManager {
      * @param blobName Blob name
      * @param data Data as byte stream
      */
-    public void upload(String containerName, String path, String blobName, byte[] data) {
+    public void upload(String containerName, String path, String blobName, byte[] data) throws JsonProcessingException,
+            InterruptedException {
 
         // Get the container client
         BlobContainerClient containerClient = this.serviceClient
@@ -72,10 +78,13 @@ public class AzureBlobStorageManager {
             Metadata metadata = new Metadata(path, firstActiveIndex);
 
             // Create and append first metadata record
-            MetadataManager.appendMetadata(containerClient, path, metadata);
+//            MetadataManager.appendMetadata(containerClient, path, metadata);
+            metadataProducer.produceMetadata(metadata);
 
             // Update local current index
-            currentActiveIndex.put(path, firstActiveIndex);
+//            currentActiveIndex.put(path, firstActiveIndex);
+            Thread.sleep(100);
+            logger.info("metadata pushed: {}: {}", path, currentActiveIndex);
         }
 
         int currentActiveIndex = this.currentActiveIndex.get(path);
@@ -99,70 +108,79 @@ public class AzureBlobStorageManager {
             if ((appendBlobClient.getProperties().getBlobSize() + data.length) > maxBlobSize) {
                 logger.info("File size met, Rollover initiated");
 
-                try {
-                    // Retrieve metadata from blob storage service
-                    Metadata metadata = MetadataManager.retrieveMetadata(containerClient, path);
-
-                    int newActiveIndex = metadata.getIndex() + 1;
-
-                    // Append new metadata
-                    MetadataManager.appendMetadata(containerClient, path, new Metadata(path, newActiveIndex));
-
-                    // Update local index
-                    this.currentActiveIndex.put(path, newActiveIndex);
-
-                    // Retry appending data
-                    upload(containerName, path, blobName, data);
-
-                } catch (Exception exception) {
-                    logger.error(exception.getMessage());
-                    throw new RuntimeException();
-
+                if (currentActiveIndex == this.currentActiveIndex.get(path)) {
+                    currentActiveIndex++;
+                    this.metadataProducer.produceMetadata(new Metadata(path, currentActiveIndex));
+                    Thread.sleep(100);
+                    logger.info("metadata pushed: {}: {}", path, currentActiveIndex);
                 }
+
+                upload(containerName, path, blobName, data);
+//
+//                try {
+//                    // Retrieve metadata from blob storage service
+//                    Metadata metadata = MetadataManager.retrieveMetadata(containerClient, path);
+//
+//                    int newActiveIndex = metadata.getIndex() + 1;
+//
+//                    // Append new metadata
+//                    MetadataManager.appendMetadata(containerClient, path, new Metadata(path, newActiveIndex));
+//
+//                    // Update local index
+//                    this.currentActiveIndex.put(path, newActiveIndex);
+//
+//                    // Retry appending data
+//                    upload(containerName, path, blobName, data);
+//
+//                } catch (Exception exception) {
+//                    logger.error(exception.getMessage());
+//                    throw new RuntimeException();
+//
+//                }
             }
         }
     }
 
-    private void rollover(BlobContainerClient blobContainerClient, String blobName, int sourceFileNumber) {
-        AppendBlobClient destAppendBlobClient = blobContainerClient
-                .getBlobClient(blobName + "." + (sourceFileNumber + 1)).getAppendBlobClient();
+//    private void rollover(BlobContainerClient blobContainerClient, String blobName, int sourceFileNumber) {
+//        AppendBlobClient destAppendBlobClient = blobContainerClient
+//                .getBlobClient(blobName + "." + (sourceFileNumber + 1)).getAppendBlobClient();
+//
+//        if (destAppendBlobClient.exists()) {
+//            rollover(blobContainerClient, blobName, sourceFileNumber + 1);
+//        }
+//
+//        moveToNewBlob(blobContainerClient, blobName, sourceFileNumber, sourceFileNumber + 1);
+//    }
 
-        if (destAppendBlobClient.exists()) {
-            rollover(blobContainerClient, blobName, sourceFileNumber + 1);
-        }
-
-        moveToNewBlob(blobContainerClient, blobName, sourceFileNumber, sourceFileNumber + 1);
-    }
-
-    private void moveToNewBlob(BlobContainerClient blobContainerClient, String blobName, int sourceFileNumber,
-                               int destFileNumber) {
-
-        AppendBlobClient sourceAppendBlobClient = blobContainerClient
-                .getBlobClient(blobName + "." + sourceFileNumber).getAppendBlobClient();
-
-        AppendBlobClient destAppendBlobClient = blobContainerClient
-                .getBlobClient(blobName + "." + destFileNumber).getAppendBlobClient();
-
-        // Create dest blob
-        createAppendBlob(destAppendBlobClient);
-
-        // Initiate lease client for source blob
-        BlobLeaseClient sourceBlobLeaseClient = new BlobLeaseClientBuilder()
-                .blobClient(sourceAppendBlobClient)
-                .buildClient();
-
-        // Acquire lease
-        sourceBlobLeaseClient.acquireLease(60);
-
-        // Copy from source blob
-        destAppendBlobClient.copyFromUrl(sourceAppendBlobClient.getBlobUrl());
-
-        // Release the lease
-        sourceBlobLeaseClient.releaseLease();
-
-        // Delete source blob
-        sourceAppendBlobClient.delete();
-    }
+//    private void moveToNewBlob(BlobContainerClient blobContainerClient, String blobName, int sourceFileNumber,
+//                               int destFileNumber) {
+//
+//        AppendBlobClient sourceAppendBlobClient = blobContainerClient
+//                .getBlobClient(blobName + "." + sourceFileNumber).getAppendBlobClient();
+//
+//        AppendBlobClient destAppendBlobClient = blobContainerClient
+//                .getBlobClient(blobName + "." + destFileNumber).getAppendBlobClient();
+//
+//        // Create dest blob
+//        createAppendBlob(destAppendBlobClient);
+//
+//        // Initiate lease client for source blob
+//        BlobLeaseClient sourceBlobLeaseClient = new BlobLeaseClientBuilder()
+//                .blobClient(sourceAppendBlobClient)
+//                .buildClient();
+//
+//        // Acquire lease
+//        sourceBlobLeaseClient.acquireLease(60);
+//
+//        // Copy from source blob
+//        destAppendBlobClient.copyFromUrl(sourceAppendBlobClient.getBlobUrl());
+//
+//        // Release the lease
+//        sourceBlobLeaseClient.releaseLease();
+//
+//        // Delete source blob
+//        sourceAppendBlobClient.delete();
+//    }
 
 
     private void createAppendBlobIfNotExist(AppendBlobClient appendBlobClient) {
@@ -174,8 +192,8 @@ public class AzureBlobStorageManager {
     private void createAppendBlob(AppendBlobClient appendBlobClient) {
 
         // Set the http headers
-        BlobHttpHeaders blobHttpHeaders = new BlobHttpHeaders()
-                .setContentType("text/plain");
+//        BlobHttpHeaders blobHttpHeaders = new BlobHttpHeaders()
+//                .setContentType("text/plain");
 
         // Set the request conditions like maximum blob size
         AppendBlobRequestConditions requestConditions = new AppendBlobRequestConditions()
@@ -183,7 +201,7 @@ public class AzureBlobStorageManager {
 
         // Wrap all the parameters
         AppendBlobCreateOptions appendBlobCreateOptions = new AppendBlobCreateOptions()
-                .setHeaders(blobHttpHeaders)
+//                .setHeaders(blobHttpHeaders)
                 .setRequestConditions(requestConditions);
 
         // Create the response
@@ -192,5 +210,9 @@ public class AzureBlobStorageManager {
         );
 
         logger.info("Returned status code for creating blob: {}", response.getStatusCode());
+    }
+
+    public ConcurrentMap<String, Integer> getCurrentActiveIndex() {
+        return currentActiveIndex;
     }
 }
