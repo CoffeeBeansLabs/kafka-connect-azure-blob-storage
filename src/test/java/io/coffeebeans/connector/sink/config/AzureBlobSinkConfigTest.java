@@ -1,49 +1,52 @@
 package io.coffeebeans.connector.sink.config;
 
+import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
 import org.apache.kafka.common.config.ConfigException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AzureBlobSinkConfigTest {
-    public static final String CONN_STR = "AccountName=devstoreaccount1;" +
+    private final String CONN_STR_VALUE = "AccountName=devstoreaccount1;" +
             "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuF" +
             "q2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProt" +
             "ocol=http;BlobEndpoint=http://host.docker.internal:10000/dev" +
             "storeaccount1;";
-    private static final String CONN_STR_INVALID = "http://localhost:1234/";
-    private static final String CONTAINER_NAME = "test";
-    private static final String TOPIC_DIR = "test";
 
+    private Map<String, String> configProps;
 
-    /**
-     * Should throw a ConfigException for not providing required configuration i.e. connection string
-     */
-    @Test
-    public void test_getConnectionString_withNoConfig() {
-
-        Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new AzureBlobSinkConfig(new HashMap<>()),
-                "Missing required configuration \"" +
-                        AzureBlobSinkConfig.CONN_URL_CONF_KEY + "\" which has no default value."
-                );
-
+    @BeforeAll
+    public void init() {
+       configProps = new HashMap<>();
     }
 
-    /**
-     * Should throw a ConfigException for providing invalid connection string
-     */
     @Test
-    public void test_validateInvalidConnectionString() {
-        Map<String, String> parsedConfig = new HashMap<>();
-        parsedConfig.put(AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONN_STR_INVALID);
-        parsedConfig.put(AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME);
+    @Order(1)
+    @DisplayName("Should fail if connection url is not configured")
+    public void shouldFailIfConnectionUrlNotPassed() {
 
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new AzureBlobSinkConfig(parsedConfig),
-                "Invalid connection string: " + CONN_STR_INVALID
-                );
+                () -> new AzureBlobSinkConfig(this.configProps),
+                "Missing required configuration \"" +
+                        AzureBlobSinkConfig.CONN_URL_CONF_KEY + "\" which has no default value."
+        );
+
+        // Add connection string for next unit test.
+        this.configProps.put(AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONN_STR_VALUE);
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("Should fail if field name is not configured for FIELD based partition strategy")
+    public void shouldFailIfFieldNameNotProvidedInFieldPartitionStrategy() {
+        this.configProps.put(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF_KEY, PartitionStrategy.FIELD.toString());
+
+        Assertions.assertThrowsExactly(ConfigException.class,
+                () -> new AzureBlobSinkConfig(this.configProps),
+                "Missing required configuration \"" +
+                        AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_NAME_CONF_KEY + "\" which has no default value."
+        );
     }
 }

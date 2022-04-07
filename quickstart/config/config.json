@@ -2,7 +2,7 @@
   "name": "blob-sink",
   "config": {
     "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
-    "tasks.max": "2",
+    "tasks.max": "1",
     "topics": "connect-demo",
     "value.converter": "io.confluent.connect.json.JsonSchemaConverter",
     "value.converter.schema.registry.url": "http://schema-registry:8081",
@@ -10,14 +10,16 @@
     "errors.tolerance": "all",
     "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "test-container",
-    "topic.dir": "field",
-    "partition.strategy": "FIELD",
-    "partition.strategy.field.name": "name",
-    "timestamp.extractor": "RecordField",
-    "partition.strategy.time.field": "timestamp",
-    "partition.duration.ms": 1,
+    "topics.dir": "parquet-time-6",
+    "partition.strategy": "TIME",
     "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH/'zone'=z",
     "timezone": "Asia/Kolkata",
-    "rollover.policy.size": "1024"
+    "timestamp.extractor": "RECORD_FIELD",
+    "partition.strategy.field.name": "timestamp",
+    "file.format": "PARQUET",
+    "buffer.length": 50,
+    "buffer.timeout": 30,
+    "buffer.timeout.pool": 1,
+    "metadata.bootstrap.servers": "kafka:9092"
   }
 }

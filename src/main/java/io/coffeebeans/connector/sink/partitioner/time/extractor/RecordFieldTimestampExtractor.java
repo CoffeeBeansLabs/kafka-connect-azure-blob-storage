@@ -5,24 +5,27 @@ import io.coffeebeans.connector.sink.partitioner.PartitionerUtil;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Map;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * This timestamp extractor will extract the timestamp from the value of the field specified by the user and will
  * generate the encoded partition string based on that.
  */
 public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
-    private static final Logger logger = LoggerFactory.getLogger(RecordFieldTimestampExtractor.class);
+    private final String fieldName;
 
-    private String field;
+    /**
+     * Constructor.
+     *
+     * @param config AzureBlobSinkConfig
+     */
+    public RecordFieldTimestampExtractor(AzureBlobSinkConfig config) {
+        super(config);
 
-    @Override
-    public void configure(Map<String, String> configProps) {
-        super.configure(configProps);
-        this.field = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_NAME_CONF);
+        // TODO: create separate field name config for record-field timestamp extractor
+        this.fieldName = config.getFieldName();
+        logger.info("Field name configured to extract timestamp: {}", fieldName);
     }
 
     /**
@@ -35,9 +38,8 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
     public String getFormattedTimestamp(SinkRecord sinkRecord) {
 
         // Extract timestamp from the field value
-        long timestamp = ((Number) PartitionerUtil.getFieldValue(sinkRecord, field)).longValue();
+        long timestamp = ((Number) PartitionerUtil.getFieldValue(sinkRecord, fieldName)).longValue();
 
-        // Get the zoned date & time
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of(timezone));
 
         // Format the zoned date & time
