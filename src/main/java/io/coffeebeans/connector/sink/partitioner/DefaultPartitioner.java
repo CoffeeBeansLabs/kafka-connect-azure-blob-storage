@@ -1,23 +1,25 @@
 package io.coffeebeans.connector.sink.partitioner;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import java.util.Map;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The DefaultPartitioner partitions the incoming data based on the prefix, kafka topic, and kafka partition.
  */
 public class DefaultPartitioner implements Partitioner {
+    protected static final Logger logger = LoggerFactory.getLogger(Partitioner.class);
+
     private static final String KAFKA_PARTITION_PROPERTY = "partition";
     public static final String FOLDER_DELIMITER = "/";
     public static final String FILE_DELIMITER = "+";
 
+    protected long startingOffset = -1;
     protected String prefix;
 
-
-    @Override
-    public void configure(Map<String, String> configProps) {
-        this.prefix = configProps.get(AzureBlobSinkConfig.TOPIC_DIR);
+    public DefaultPartitioner(AzureBlobSinkConfig config) {
+        this.prefix = config.getTopicsDir();
     }
 
     /**
@@ -25,10 +27,10 @@ public class DefaultPartitioner implements Partitioner {
      * kafka partition and starting offset.
      *
      * @param sinkRecord The record to be stored
-     * @return encoded partition string
+     * @return encoded partition string partition=&lt;kafkaPartition&gt;
      */
     @Override
-    public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
+    public String encodePartition(SinkRecord sinkRecord) {
         /*
           Output format:
           partition=<kafkaPartition>
@@ -41,17 +43,18 @@ public class DefaultPartitioner implements Partitioner {
      * Generate full blob file path including folder path with encodedPartition.
      *
      * @param sinkRecord SinkRecord
-     * @param startingOffset starting offset
-     * @return Full file path
+     * @return Full file path; &lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;/
+     *      &lt;kafkaTopic&gt;+&lt;kafkaPartition&gt;+&lt;startOffset&gt;
      */
     @Override
-    public String generateFullPath(SinkRecord sinkRecord, long startingOffset, String encodedPartition) {
+    public String generateFullPath(SinkRecord sinkRecord) {
+        setStartingOffset(sinkRecord.kafkaOffset());
 
         /*
           Output format:
           <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>
          */
-        return generateFolderPath(sinkRecord, encodedPartition) + FOLDER_DELIMITER
+        return generateFolderPath(sinkRecord) + FOLDER_DELIMITER
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset>
                 + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
@@ -61,11 +64,10 @@ public class DefaultPartitioner implements Partitioner {
      * I generate the folder path using the encoded partition string.
      *
      * @param sinkRecord       SinkRecord
-     * @param encodedPartition Encoded partition string
      * @return Folder path
      */
     @Override
-    public String generateFolderPath(SinkRecord sinkRecord, String encodedPartition) {
+    public String generateFolderPath(SinkRecord sinkRecord) {
         /*
           Output format:
           <prefix>/<kafkaTopic>/<encodedPartition>
@@ -76,6 +78,14 @@ public class DefaultPartitioner implements Partitioner {
                 + sinkRecord.topic() + FOLDER_DELIMITER
 
                 // <encodedPartition>
-                + encodedPartition;
+                + encodePartition(sinkRecord);
+    }
+
+    private void setStartingOffset(long offset) {
+        if (startingOffset < 0) {
+            startingOffset = offset;
+
+            logger.debug("Starting offset set to {}", startingOffset);
+        }
     }
 }

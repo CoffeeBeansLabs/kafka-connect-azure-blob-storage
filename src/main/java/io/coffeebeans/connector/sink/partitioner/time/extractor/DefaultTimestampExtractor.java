@@ -4,7 +4,6 @@ import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,19 +12,24 @@ import org.slf4j.LoggerFactory;
  * This class will format the date and time based on the provided path format and system timestamp.
  */
 public class DefaultTimestampExtractor implements TimestampExtractor {
-    private static final Logger logger = LoggerFactory.getLogger(DefaultTimestampExtractor.class);
+    protected static final Logger logger = LoggerFactory.getLogger(TimestampExtractor.class);
 
     protected String timezone;
     protected String pathFormat;
     protected DateTimeFormatter formatter;
 
-    @Override
-    public void configure(Map<String, String> configProps) {
-        this.timezone = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_TIMEZONE_CONF);
-        this.pathFormat = configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF);
+    /**
+     * Constructor which takes the Config class.
+     *
+     * @param config AzureBlobSinkConfig class object containing all the configuratino parameters
+     */
+    public DefaultTimestampExtractor(AzureBlobSinkConfig config) {
+        this.timezone = config.getTimezone();
+        this.pathFormat = config.getPathFormat();
 
         // Initialize the formatter
         this.formatter = DateTimeFormatter.ofPattern(pathFormat);
+        logger.info("Time partitioner path format configured: {}", pathFormat);
     }
 
     /**
@@ -36,15 +40,12 @@ public class DefaultTimestampExtractor implements TimestampExtractor {
      */
     @Override
     public String getFormattedTimestamp(SinkRecord sinkRecord) {
-
-        // Get zoned date and time
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(timezone));
 
         // Format the zoned date & time
         String formattedTimestamp = formatter.format(zonedDateTime);
         logger.debug("Formatted date & time: {}", formattedTimestamp);
 
-        // Return the formatted date and time string
         return formattedTimestamp;
     }
 }

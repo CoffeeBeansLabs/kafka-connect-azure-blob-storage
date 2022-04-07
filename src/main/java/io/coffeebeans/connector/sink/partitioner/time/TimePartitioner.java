@@ -6,23 +6,24 @@ import io.coffeebeans.connector.sink.partitioner.time.extractor.DefaultTimestamp
 import io.coffeebeans.connector.sink.partitioner.time.extractor.RecordFieldTimestampExtractor;
 import io.coffeebeans.connector.sink.partitioner.time.extractor.RecordTimestampExtractor;
 import io.coffeebeans.connector.sink.partitioner.time.extractor.TimestampExtractor;
-import java.util.Map;
+import io.coffeebeans.connector.sink.partitioner.time.extractor.TimestampExtractorStrategy;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
  * A partitioner which will partition the incoming data based on the extracted timestamp.
  */
-public class TimeBasedPartitioner extends DefaultPartitioner {
-    private TimestampExtractor timestampExtractor;
+public class TimePartitioner extends DefaultPartitioner {
+    private final TimestampExtractor timestampExtractor;
 
-    @Override
-    public void configure(Map<String, String> configProps) {
-        super.configure(configProps);
+    /**
+     * Constructor.
+     *
+     * @param config AzureBlobSinkConfig
+     */
+    public TimePartitioner(AzureBlobSinkConfig config) {
+        super(config);
 
-        // Configure timestamp extractor
-        this.timestampExtractor
-                = getTimestampExtractor(configProps.get(AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_EXTRACTOR_CONF));
-        this.timestampExtractor.configure(configProps);
+        this.timestampExtractor = getTimestampExtractor(config.getTimeExtractor(), config);
     }
 
     /**
@@ -33,7 +34,7 @@ public class TimeBasedPartitioner extends DefaultPartitioner {
      * @return Encoded partition string
      */
     @Override
-    public String encodePartition(SinkRecord sinkRecord, long startingOffset) {
+    public String encodePartition(SinkRecord sinkRecord) {
         /*
           Output format:
           <formattedTimestamp>
@@ -47,12 +48,14 @@ public class TimeBasedPartitioner extends DefaultPartitioner {
      * @param timestampExtractor type of timestamp extractor
      * @return TimestampExtractor
      */
-    private TimestampExtractor getTimestampExtractor(String timestampExtractor) {
+    private TimestampExtractor getTimestampExtractor(String timestampExtractor, AzureBlobSinkConfig config) {
+        TimestampExtractorStrategy strategy = TimestampExtractorStrategy.valueOf(timestampExtractor);
+        logger.info("Timestamp extractor strategy configured: {}", strategy);
 
-        switch (timestampExtractor) {
-          case "Record": return new RecordTimestampExtractor();
-          case "RecordField": return new RecordFieldTimestampExtractor();
-          default: return new DefaultTimestampExtractor();
+        switch (strategy) {
+          case  RECORD: return new RecordTimestampExtractor(config);
+          case RECORD_FIELD: return new RecordFieldTimestampExtractor(config);
+          default: return new DefaultTimestampExtractor(config);
         }
     }
 }

@@ -1,7 +1,6 @@
-package io.coffeebeans.connector.sink.config.recommenders;
+package io.coffeebeans.connector.sink.config.recommenders.partitioner.field;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,7 @@ import org.apache.kafka.common.config.ConfigDef;
 /**
  * Main purpose of this class is to check should field name configuration be visible or not / is it applicable or not.
  */
-public class PartitionStrategyFieldNameRecommender implements ConfigDef.Recommender {
+public class FieldNameRecommender implements ConfigDef.Recommender {
 
     @Override
     public List<Object> validValues(String fieldNameConfig, Map<String, Object> parsedConfig) {
@@ -26,8 +25,10 @@ public class PartitionStrategyFieldNameRecommender implements ConfigDef.Recommen
      */
     @Override
     public boolean visible(String fieldNameConfig, Map<String, Object> parsedConfig) {
-        String partitionStrategy = (String) parsedConfig.get(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF);
+        String partitionStrategy = (String) parsedConfig.get(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF_KEY);
 
-        return partitionStrategy != null && partitionStrategy.equals(PartitionStrategy.FIELD.toString());
+        //        return PartitionStrategy.FIELD.toString().equals(partitionStrategy);
+        // TODO: Temporary. Make a separate config for timestamp.
+        return true;
     }
 }

@@ -3,29 +3,29 @@ package io.coffeebeans.connector.sink.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Model to store the folder path and the current index of the file in which is data is being written.
+ * Model to store the blob full path and the current index of the file in which is data is to be written.
  */
 public class Metadata {
 
-    @JsonProperty("folderPath")
-    private String folderPath;
+    @JsonProperty("fullPath")
+    private String fullPath;
 
     @JsonProperty("index")
     private int index;
 
     public Metadata() {}
 
-    public Metadata(String folderPath, int currentIndex) {
-        this.folderPath = folderPath;
+    public Metadata(String fullPath, int currentIndex) {
+        this.fullPath = fullPath;
         this.index = currentIndex;
     }
 
-    public String getFolderPath() {
-        return folderPath;
+    public String getFullPath() {
+        return fullPath;
     }
 
-    public void setFolderPath(String folderPath) {
-        this.folderPath = folderPath;
+    public void setFullPath(String fullPath) {
+        this.fullPath = fullPath;
     }
 
     public int getIndex() {

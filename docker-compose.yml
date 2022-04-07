@@ -82,7 +82,7 @@ services:
       KAFKA_DEBUG: 'true'
       JAVA_DEBUG_PORT: '*:8888'
       CONNECT_REST_ADVERTISED_HOST_NAME: 'connect'
-      CONNECT_GROUP_ID: kafka-connect-group
+      CONNECT_GROUP_ID: 'kafka-connect-group'
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: _connect-offset
       CONNECT_STATUS_STORAGE_TOPIC: _connect-status
