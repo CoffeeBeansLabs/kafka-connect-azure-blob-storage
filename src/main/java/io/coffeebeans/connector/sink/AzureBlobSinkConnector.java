@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * This class will be the first to run when the connector is configured.
  */
 public class AzureBlobSinkConnector extends SinkConnector {
-    private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkConnector.class);
+    private static final Logger logger = LoggerFactory.getLogger(SinkConnector.class);
     private Map<String, String> configProps;
 
     @Override

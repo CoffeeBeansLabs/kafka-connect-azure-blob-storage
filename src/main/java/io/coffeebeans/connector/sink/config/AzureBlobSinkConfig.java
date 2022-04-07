@@ -4,10 +4,22 @@ import static org.apache.kafka.common.config.ConfigDef.Importance;
 import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 import static org.apache.kafka.common.config.ConfigDef.Type;
 
-import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyFieldNameRecommender;
-import io.coffeebeans.connector.sink.config.recommenders.PartitionStrategyRecommender;
-import io.coffeebeans.connector.sink.config.validators.ConnectionStringValidator;
+import io.coffeebeans.connector.sink.config.recommenders.BufferLengthRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.BufferTimeoutRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.FileFormatRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.RolloverFileSizeRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.partitioner.StrategyRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.partitioner.field.FieldNameRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.PathFormatRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.TimestampExtractorRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.TimezoneRecommender;
+import io.coffeebeans.connector.sink.config.validators.ConnectionUrlValidator;
 import io.coffeebeans.connector.sink.config.validators.ContainerNameValidator;
+import io.coffeebeans.connector.sink.config.validators.TopicsDirValueValidator;
+import io.coffeebeans.connector.sink.config.validators.partitioner.time.PathFormatValidator;
+import io.coffeebeans.connector.sink.config.validators.partitioner.time.TimezoneValidator;
+import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.partitioner.time.extractor.TimestampExtractorStrategy;
 import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -20,17 +32,23 @@ import org.apache.kafka.common.config.ConfigDef.Validator;
  */
 public class AzureBlobSinkConfig extends AbstractConfig {
 
+    // Configuration types
     private static final Type TYPE_STRING = Type.STRING;
+    private static final Type TYPE_LONG = Type.LONG;
+    private static final Type TYPE_INT = Type.INT;
+
+    // Configuration importance
     private static final Importance IMPORTANCE_LOW = Importance.LOW;
     private static final Importance IMPORTANCE_MEDIUM = Importance.MEDIUM;
     private static final Importance IMPORTANCE_HIGH = Importance.HIGH;
 
 
     /**
-     * Azure Blob Connection related configurations.
+     * Azure Blob Connection URL related configurations.
+     * No default value, order 1
      */
     public static final String CONN_URL_CONF_KEY = "connection.url";
-    public static final Validator CONN_URL_VALIDATOR = new ConnectionStringValidator();
+    public static final Validator CONN_URL_VALIDATOR = new ConnectionUrlValidator();
     public static final String CONN_URL_CONF_DOC = "Connection url of the azure blob storage";
 
     /**
@@ -46,53 +64,117 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     /**
      * Parent directory where blobs will be stored.
      */
-    // TODO: Configure a default parent directory
-    public static final String TOPIC_DIR = "topic.dir";
-    public static final String TOPIC_DIR_DOC = "Parent directory where data from this topic will be stored";
+    public static final String TOPICS_DIR_CONF_KEY = "topics.dir";
+    public static final String TOPICS_DIR_DEFAULT_VALUE = "default";
+    public static final Validator TOPICS_DIR_VALIDATOR = new TopicsDirValueValidator();
+    public static final String TOPICS_DIR_CONF_DOC = "Parent directory where data ingested from kafka will be stored";
 
     /**
      * Partition strategy configuration.
      */
-    // TODO: Have an option for NONE partitioning
-    public static final String PARTITION_STRATEGY_CONF = "partition.strategy";
-    public static final String PARTITION_STRATEGY_DEFAULT = "DEFAULT";
-    public static final Recommender PARTITION_STRATEGY_RECOMMENDER = new PartitionStrategyRecommender();
-    public static final String PARTITION_STRATEGY_DOC = "Partition strategy to be used";
+    public static final String PARTITION_STRATEGY_CONF_KEY = "partition.strategy";
+    public static final String PARTITION_STRATEGY_DEFAULT_VALUE = "DEFAULT";
+    public static final Recommender PARTITION_STRATEGY_RECOMMENDER = new StrategyRecommender();
+    public static final String PARTITION_STRATEGY_CONF_DOC = "Partition strategy to be used";
 
     /**
-     * Applicable only for field-based partitioning.
+     * Field name of the record from which the value will be extracted.
+     * Visible only for field-based partitioning.
+     * No default value, order 2
      */
     // TODO: Add support for List of fields
-    public static final String PARTITION_STRATEGY_FIELD_NAME_CONF = "partition.strategy.field.name";
-    public static final String PARTITION_STRATEGY_FIELD_NAME_DOC = "Name of the field from which values should be "
-            + "extracted";
-    public static final Recommender PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER =
-            new PartitionStrategyFieldNameRecommender();
+    public static final String PARTITION_STRATEGY_FIELD_NAME_CONF_KEY = "partition.strategy.field.name";
+    public static final String PARTITION_STRATEGY_FIELD_NAME_CONF_DOC = "Name of the field from which value should be"
+            + " extracted";
+    public static final Recommender PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER = new FieldNameRecommender();
 
     /**
-     * Applicable only for time-based partitioning.
+     * Path format for generating partition.
+     * Visible only for time-based partitioning.
      */
+    public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY = "path.format";
+    public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_DEFAULT_VALUE = "'year'=YYYY/'month'=MM/'day'=dd/"
+            + "'hour'=HH/'zone'=z";
+    public static final Validator PARTITION_STRATEGY_TIME_PATH_FORMAT_VALIDATOR = new PathFormatValidator();
+    public static final Recommender PARTITION_STRATEGY_TIME_PATH_FORMAT_RECOMMENDER = new PathFormatRecommender();
+    public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_DOC = "Output file path time partition format";
 
-    public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF = "path.format";
-    public static final String PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC = "Output file path time partition format";
 
-    public static final String PARTITION_STRATEGY_TIME_BUCKET_MS_CONF = "partition.duration.ms";
-    public static final String PARTITION_STRATEGY_TIME_BUCKET_MS_DOC = "Time partition granularity";
-
+    /**
+     * Timezone for time partitioner.
+     * Visible only if partition strategy is time based.
+     */
     // TODO: Default should be UTC
-    public static final String PARTITION_STRATEGY_TIME_TIMEZONE_CONF = "timezone";
-    public static final String PARTITION_STRATEGY_TIME_TIMEZONE_DOC = "Timezone for the time partitioner";
+    public static final String PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY = "timezone";
+    public static final String PARTITION_STRATEGY_TIME_TIMEZONE_DEFAULT_VALUE = "UTC";
+    public static final Validator PARTITION_STRATEGY_TIME_TIMEZONE_VALIDATOR = new TimezoneValidator();
+    public static final Recommender PARTITION_STRATEGY_TIME_TIMEZONE_RECOMMENDER = new TimezoneRecommender();
+    public static final String PARTITION_STRATEGY_TIME_TIMEZONE_CONF_DOC = "Timezone for the time partitioner";
 
-    public static final String PARTITION_STRATEGY_TIME_EXTRACTOR_CONF = "timestamp.extractor";
-    public static final String PARTITION_STRATEGY_TIME_EXTRACTOR_DOC = "Time extractor for time based partitioner";
+
+    /**
+     * Timestamp extractor configuration.
+     * Visible only if partition strategy is time based.
+     */
+    public static final String PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_KEY = "timestamp.extractor";
+    public static final String PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_DEFAULT_VALUE =
+            TimestampExtractorStrategy.DEFAULT.toString();
+    public static final Recommender PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_RECOMMENDER =
+            new TimestampExtractorRecommender();
+    public static final String PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_DOC = "Time extractor for time based "
+            + "partitioner";
+
+    /**
+     * File format related configuration.
+     */
+    public static final String FILE_FORMAT_CONF_KEY = "file.format";
+    public static final String FILE_FORMAT_DEFAULT_VALUE = FileFormat.NONE.toString();
+    public static final Recommender FILE_FORMAT_RECOMMENDER = new FileFormatRecommender();
+    public static final String FILE_FORMAT_CONF_DOC = "Type of file format";
 
     /**
      * Rollover file policy related configurations.
+     * Visible only if file format is NONE
      */
-    public static final String ROLLOVER_POLICY_SIZE_CONF = "rollover.policy.size";
-    public static final String ROLLOVER_POLICY_SIZE_DOC = "Maximum size of the blob for rollover to happen";
+    public static final String ROLLOVER_POLICY_SIZE_CONF_KEY = "rollover.policy.size";
+    public static final long ROLLOVER_POLICY_SIZE_DEFAULT_VALUE = 194000000000L;
+    public static final Recommender ROLLOVER_POLICY_SIZE_RECOMMENDER = new RolloverFileSizeRecommender();
+    public static final String ROLLOVER_POLICY_SIZE_CONF_DOC = "Maximum size of the blob for rollover to happen";
 
-    public static final String MAXIMUM_BLOB_SIZE_SUPPORTED = "195000000000";
+    /**
+     * Buffer length related configuration.
+     * Visible only if file format is PARQUET
+     */
+    public static final String BUFFER_LENGTH_CONF_KEY = "buffer.length";
+    public static final int BUFFER_LENGTH_DEFAULT_VALUE = 1000;
+    public static final Recommender BUFFER_LENGTH_RECOMMENDER = new BufferLengthRecommender();
+    public static final String BUFFER_LENGTH_CONF_DOC = "Length of the buffer to store after which it is written";
+
+    /**
+     * Buffer timeout related configuration.
+     * Visible only if file format is PARQUET
+     */
+    public static final String BUFFER_TIMEOUT_CONF_KEY = "buffer.timeout";
+    public static final int BUFFER_TIMEOUT_DEFAULT_VALUE = 300; // in seconds, i.e 5 minutes
+    public static final Recommender BUFFER_TIMEOUT_RECOMMENDER = new BufferTimeoutRecommender();
+    public static final String BUFFER_TIMEOUT_CONF_DOC = "Time up to which the connector will wait for the buffer to"
+            + " get full, if not then it is written to blob storage after the timeout completes";
+
+    /**
+     * Buffer timeout task executor thread pool size configuration.
+     */
+    public static final String BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY = "buffer.timeout.pool.size";
+    public static final int BUFFER_TIMEOUT_TASK_POOL_SIZE_DEFAULT_VALUE = 1;
+    public static final String BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_DOC = "Pool size of threads which will execute the "
+            + "scheduled timeout tasks";
+
+    /**
+     * Metadata bootstrap server config.
+     */
+    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY = "metadata.bootstrap.servers";
+    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_DEFAULT_VALUE = "localhost:9092";
+    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC = "Bootstrap server address where "
+            + "metadata will be sent";
 
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
@@ -100,14 +182,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     private final String connectionString;
     private final String containerName;
-    private final String topicDir;
+    private final String topicsDir;
     private final String partitionStrategy;
     private final String fieldName;
     private final String pathFormat;
-    private final String timeBucket;
     private final String timezone;
     private final String timeExtractor;
-    private final String maxBlobSize;
+    private final long rolloverFileSize;
+    private final long bufferLength;
+    private final int bufferTimeout;
+    private final int bufferTimeoutTaskPoolSize;
+    private final String metadataBootstrapServers;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -125,14 +210,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         super(configDef, parsedConfig);
         this.connectionString = this.getString(CONN_URL_CONF_KEY);
         this.containerName = this.getString(CONTAINER_NAME_CONF_KEY);
-        this.topicDir = this.getString(TOPIC_DIR);
-        this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF);
-        this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_NAME_CONF);
-        this.pathFormat = this.getString(PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF);
-        this.timeBucket = this.getString(PARTITION_STRATEGY_TIME_BUCKET_MS_CONF);
-        this.timezone = this.getString(PARTITION_STRATEGY_TIME_TIMEZONE_CONF);
-        this.timeExtractor = this.getString(PARTITION_STRATEGY_TIME_EXTRACTOR_CONF);
-        this.maxBlobSize = this.getString(ROLLOVER_POLICY_SIZE_CONF);
+        this.topicsDir = this.getString(TOPICS_DIR_CONF_KEY);
+        this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF_KEY);
+        this.fieldName = this.getString(PARTITION_STRATEGY_FIELD_NAME_CONF_KEY);
+        this.pathFormat = this.getString(PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY);
+        this.timezone = this.getString(PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY);
+        this.timeExtractor = this.getString(PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_KEY);
+        this.rolloverFileSize = this.getLong(ROLLOVER_POLICY_SIZE_CONF_KEY);
+        this.bufferLength = this.getLong(BUFFER_LENGTH_CONF_KEY);
+        this.bufferTimeout = this.getInt(BUFFER_TIMEOUT_CONF_KEY);
+        this.bufferTimeoutTaskPoolSize = this.getInt(BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY);
+        this.metadataBootstrapServers = this.getString(METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY);
     }
 
 
@@ -173,73 +261,134 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         CONTAINER_NAME_CONF_DOC
                 )
                 .define(
-                        TOPIC_DIR,
+                        TOPICS_DIR_CONF_KEY,
                         TYPE_STRING,
-                        NO_DEFAULT_VALUE,
-                        NON_EMPTY_STRING_VALIDATOR,
-                        IMPORTANCE_HIGH,
-                        TOPIC_DIR_DOC
+                        TOPICS_DIR_DEFAULT_VALUE,
+                        TOPICS_DIR_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        TOPICS_DIR_CONF_DOC
                 )
                 .define(
-                        PARTITION_STRATEGY_CONF,
+                        PARTITION_STRATEGY_CONF_KEY,
                         TYPE_STRING,
-                        PARTITION_STRATEGY_DEFAULT,
+                        PARTITION_STRATEGY_DEFAULT_VALUE,
                         NON_EMPTY_STRING_VALIDATOR,
                         IMPORTANCE_MEDIUM,
-                        PARTITION_STRATEGY_DOC,
+                        PARTITION_STRATEGY_CONF_DOC,
                         null,
                         -1,
                         ConfigDef.Width.NONE,
-                        PARTITION_STRATEGY_CONF,
+                        PARTITION_STRATEGY_CONF_KEY,
                         PARTITION_STRATEGY_RECOMMENDER
                 )
                 .define(
-                        PARTITION_STRATEGY_FIELD_NAME_CONF,
+                        PARTITION_STRATEGY_FIELD_NAME_CONF_KEY,
                         TYPE_STRING,
                         NO_DEFAULT_VALUE,
                         NON_EMPTY_STRING_VALIDATOR,
                         IMPORTANCE_MEDIUM,
-                        PARTITION_STRATEGY_FIELD_NAME_DOC,
+                        PARTITION_STRATEGY_FIELD_NAME_CONF_DOC,
                         null,
                         -1,
                         ConfigDef.Width.NONE,
-                        PARTITION_STRATEGY_FIELD_NAME_CONF,
+                        PARTITION_STRATEGY_FIELD_NAME_CONF_KEY,
                         PARTITION_STRATEGY_FIELD_NAME_RECOMMENDER
                 )
                 .define(
-                        PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF,
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY,
                         TYPE_STRING,
-                        null,
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_DEFAULT_VALUE,
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_VALIDATOR,
                         IMPORTANCE_LOW,
-                        PARTITION_STRATEGY_TIME_PATH_FORMAT_DOC
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY,
+                        PARTITION_STRATEGY_TIME_PATH_FORMAT_RECOMMENDER
                 )
                 .define(
-                        PARTITION_STRATEGY_TIME_TIMEZONE_CONF,
+                        PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY,
                         TYPE_STRING,
-                        null,
+                        PARTITION_STRATEGY_TIME_TIMEZONE_DEFAULT_VALUE,
+                        PARTITION_STRATEGY_TIME_TIMEZONE_VALIDATOR,
                         IMPORTANCE_LOW,
-                        PARTITION_STRATEGY_TIME_TIMEZONE_DOC
+                        PARTITION_STRATEGY_TIME_TIMEZONE_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY,
+                        PARTITION_STRATEGY_TIME_TIMEZONE_RECOMMENDER
                 )
                 .define(
-                        PARTITION_STRATEGY_TIME_EXTRACTOR_CONF,
+                        PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_KEY,
                         TYPE_STRING,
-                        null,
+                        PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_DEFAULT_VALUE,
                         IMPORTANCE_LOW,
-                        PARTITION_STRATEGY_TIME_EXTRACTOR_DOC
+                        PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_KEY,
+                        PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_RECOMMENDER
                 )
                 .define(
-                        PARTITION_STRATEGY_TIME_BUCKET_MS_CONF,
+                        FILE_FORMAT_CONF_KEY,
                         TYPE_STRING,
+                        FILE_FORMAT_DEFAULT_VALUE,
+                        IMPORTANCE_MEDIUM,
+                        FILE_FORMAT_CONF_DOC,
                         null,
-                        IMPORTANCE_LOW,
-                        PARTITION_STRATEGY_TIME_BUCKET_MS_DOC
+                        -1,
+                        ConfigDef.Width.NONE,
+                        FILE_FORMAT_CONF_KEY,
+                        FILE_FORMAT_RECOMMENDER
                 )
                 .define(
-                        ROLLOVER_POLICY_SIZE_CONF,
-                        TYPE_STRING,
-                        MAXIMUM_BLOB_SIZE_SUPPORTED, // 195 GB, Max. supported by append blob
+                        ROLLOVER_POLICY_SIZE_CONF_KEY,
+                        TYPE_LONG,
+                        ROLLOVER_POLICY_SIZE_DEFAULT_VALUE,
                         IMPORTANCE_LOW,
-                        ROLLOVER_POLICY_SIZE_DOC);
+                        ROLLOVER_POLICY_SIZE_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        ROLLOVER_POLICY_SIZE_CONF_KEY,
+                        ROLLOVER_POLICY_SIZE_RECOMMENDER
+                ).define(
+                        BUFFER_LENGTH_CONF_KEY,
+                        TYPE_LONG,
+                        BUFFER_LENGTH_DEFAULT_VALUE,
+                        IMPORTANCE_LOW,
+                        BUFFER_LENGTH_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        BUFFER_LENGTH_CONF_KEY,
+                        BUFFER_LENGTH_RECOMMENDER
+                ).define(
+                        BUFFER_TIMEOUT_CONF_KEY,
+                        TYPE_INT,
+                        BUFFER_TIMEOUT_DEFAULT_VALUE,
+                        IMPORTANCE_LOW,
+                        BUFFER_TIMEOUT_CONF_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        BUFFER_TIMEOUT_CONF_KEY,
+                        BUFFER_TIMEOUT_RECOMMENDER
+                ).define(
+                        BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY,
+                        TYPE_INT,
+                        BUFFER_TIMEOUT_TASK_POOL_SIZE_DEFAULT_VALUE,
+                        IMPORTANCE_LOW,
+                        BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_DOC
+                ).define(
+                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY,
+                        TYPE_STRING,
+                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_DEFAULT_VALUE,
+                        IMPORTANCE_MEDIUM,
+                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC);
     }
 
     public String getConnectionString() {
@@ -250,8 +399,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return this.containerName;
     }
 
-    public String getTopicDir() {
-        return this.topicDir;
+    public String getTopicsDir() {
+        return this.topicsDir;
     }
 
     public String getPartitionStrategy() {
@@ -260,5 +409,37 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getFieldName() {
         return this.fieldName;
+    }
+
+    public String getPathFormat() {
+        return pathFormat;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public String getTimeExtractor() {
+        return timeExtractor;
+    }
+
+    public long getRolloverFileSize() {
+        return rolloverFileSize;
+    }
+
+    public long getBufferLength() {
+        return bufferLength;
+    }
+
+    public int getBufferTimeout() {
+        return bufferTimeout;
+    }
+
+    public int getBufferTimeoutTaskPoolSize() {
+        return bufferTimeoutTaskPoolSize;
+    }
+
+    public String getMetadataBootstrapServers() {
+        return metadataBootstrapServers;
     }
 }

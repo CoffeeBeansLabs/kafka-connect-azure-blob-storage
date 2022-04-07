@@ -1,5 +1,10 @@
 package io.coffeebeans.connector.sink.metadata;
 
+import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.ConcurrentMap;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -7,33 +12,36 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.ConcurrentMap;
-
+/**
+ * I consume the metadata produced by the other kafka topics and update the local metadata.
+ */
 public class MetadataConsumer {
     private static final Logger logger = LoggerFactory.getLogger(MetadataConsumer.class);
-    private final String topicName = "metadata";
-    private final String bootstrapServers = "kafka:9092";
+    private final String bootstrapServers;
+    private final ConcurrentMap<String, Integer> currentActiveIndexMap;
 
-    private ConcurrentMap<String, Integer> currentActiveIndexMap;
-
-    public MetadataConsumer(ConcurrentMap<String, Integer> currentActiveIndexMap) {
+    public MetadataConsumer(AzureBlobSinkConfig config, ConcurrentMap<String, Integer> currentActiveIndexMap) {
         this.currentActiveIndexMap = currentActiveIndexMap;
+        this.bootstrapServers = config.getMetadataBootstrapServers();
     }
 
-    public void pollMetadata() {
+    /**
+     * Start polling metadata from kafka topic.
+     */
+    public void startPolling() {
         KafkaConsumer<Object, Object> kafkaConsumer = createKafkaConsumer();
+        String topicName = "metadata";
         kafkaConsumer.subscribe(List.of(topicName));
         MetadataConsumerTask task = new MetadataConsumerTask(kafkaConsumer, currentActiveIndexMap);
 
         Thread metadataConsumerThread = new Thread(task);
         try {
+            logger.info("Starting metadata polling");
             metadataConsumerThread.start();
         } catch (Exception e) {
-            pollMetadata();
+            logger.error("Consumer interrupted with exception: {}", e.getMessage());
+            logger.error("Trying to restart polling ....");
+            startPolling();
         }
     }
 
