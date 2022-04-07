@@ -7,7 +7,7 @@ import org.apache.kafka.common.config.ConfigException;
 /**
  * This class will validate Connection URL String provided by the user as configuration parameter.
  */
-public class ConnectionStringValidator implements ConfigDef.Validator {
+public class ConnectionUrlValidator implements ConfigDef.Validator {
 
     /**
      * Ensure the provided connection string is not null, empty, blank and malformed.

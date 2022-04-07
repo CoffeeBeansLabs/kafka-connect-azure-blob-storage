@@ -12,7 +12,7 @@ public class ContainerNameValidatorTest {
     private static final String CONTAINER_NAME_VALID = "test";
 
     @Test
-    public void test_nullContainerName() {
+    public void shouldThrowExceptionWithNullContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
                     AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME_NULL
@@ -21,7 +21,7 @@ public class ContainerNameValidatorTest {
     }
 
     @Test
-    public void test_emptyContainerName() {
+    public void shouldThrowExceptionWithEmptyContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
                     AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME_EMPTY
@@ -30,7 +30,7 @@ public class ContainerNameValidatorTest {
     }
 
     @Test
-    public void test_blankContainerName() {
+    public void shouldThrowExceptionWithBlankContainerName() {
         Assertions.assertThrowsExactly(ConfigException.class, () -> {
             new ContainerNameValidator().ensureValid(
                     AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME_BLANK
@@ -39,7 +39,7 @@ public class ContainerNameValidatorTest {
     }
 
     @Test
-    public void test_validContainerName() {
+    public void shouldNotThrowExceptionWithValidContainerName() {
         Assertions.assertDoesNotThrow(() -> {
             new ContainerNameValidator().ensureValid(
                     AzureBlobSinkConfig.CONTAINER_NAME_CONF_KEY, CONTAINER_NAME_VALID

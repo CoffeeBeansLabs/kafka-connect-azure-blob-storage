@@ -1,18 +1,25 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
+import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class will extract the time at which the kafka record was produced and will generate the encoded partition
  * string.
  */
 public class RecordTimestampExtractor extends DefaultTimestampExtractor {
-    private static final Logger logger = LoggerFactory.getLogger(RecordTimestampExtractor.class);
+
+    /**
+     * Constructor.
+     *
+     * @param config AzureBlobSinkConfig
+     */
+    public RecordTimestampExtractor(AzureBlobSinkConfig config) {
+        super(config);
+    }
 
     /**
      * Return the formatted timestamp when the kafka record was produced.
@@ -26,7 +33,6 @@ public class RecordTimestampExtractor extends DefaultTimestampExtractor {
         // Get the timestamp when the kafka record was produced
         Long timestamp = sinkRecord.timestamp();
 
-        // Get the zoned date & time
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of(timezone));
 
         // Format the zoned date & time
