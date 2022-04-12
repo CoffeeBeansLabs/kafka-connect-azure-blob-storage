@@ -1,0 +1,22 @@
+{
+  "name": "blob-sink",
+  "config": {
+    "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
+    "tasks.max": "3",
+    "topics": "connect-demo",
+    "value.converter": "io.confluent.connect.json.JsonSchemaConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "schema.ignore": "true",
+    "errors.tolerance": "all",
+    "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
+    "container.name": "kafka-connect",
+    "topics.dir": "parquet-time",
+    "partition.strategy": "FIELD",
+    "partition.strategy.field.name": "name",
+    "file.format": "PARQUET",
+    "buffer.length": 50,
+    "buffer.timeout": 10,
+    "buffer.timeout.pool": 1,
+    "metadata.bootstrap.servers": "kafka:9092"
+  }
+}
