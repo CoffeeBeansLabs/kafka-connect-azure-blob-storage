@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner;
 
+import io.coffeebeans.connector.sink.AzureBlobSinkTask;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -52,12 +53,13 @@ public class DefaultPartitioner implements Partitioner {
 
         /*
           Output format:
-          <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>
+          <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>+<uniqueTaskIdentifier>
          */
         return generateFolderPath(sinkRecord) + FOLDER_DELIMITER
 
-                // <kafkaTopic> + <kafkaPartition> + <startOffset>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+                // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
+                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset
+                + FILE_DELIMITER + AzureBlobSinkTask.UNIQUE_TASK_IDENTIFIER;
     }
 
     /**

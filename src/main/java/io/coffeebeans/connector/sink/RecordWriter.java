@@ -3,7 +3,6 @@ package io.coffeebeans.connector.sink;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.FormatManager;
 import io.coffeebeans.connector.sink.format.parquet.ParquetFormatManager;
-import io.coffeebeans.connector.sink.metadata.MetadataConsumer;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
@@ -27,7 +26,6 @@ public class RecordWriter {
 
     private final Partitioner partitioner;
     private final FormatManager formatManager;
-    private final MetadataConsumer metadataConsumer;
 
     /**
      * Constructor.
@@ -39,7 +37,6 @@ public class RecordWriter {
 
         StorageManager storageManager = new BlobStorageManager(config.getConnectionString());
         this.formatManager = new ParquetFormatManager(config, storageManager);
-        this.metadataConsumer = new MetadataConsumer(config, this.formatManager.getActiveFileIndexMap());
     }
 
     /**
@@ -98,10 +95,6 @@ public class RecordWriter {
         }
 
         return castedValueMap;
-    }
-
-    public void startMetadataConsumer() {
-        this.metadataConsumer.startPolling();
     }
 
     public FormatManager getFormatManager() {
