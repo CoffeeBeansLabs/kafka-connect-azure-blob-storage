@@ -50,6 +50,11 @@
             <artifactId>hadoop-mapreduce-client-core</artifactId>
             <version>${hadoop-mapreduce-client-core.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${apache-commons-lang.version}</version>
+        </dependency>
 
         <!-- Testing -->
         <dependency>
@@ -74,12 +79,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${apache-commons-lang.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
