@@ -7,8 +7,6 @@ import io.coffeebeans.connector.sink.format.FormatManager;
 import io.coffeebeans.connector.sink.format.FormatWriter;
 import io.coffeebeans.connector.sink.format.FormatWriterProvider;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaBuilder;
-import io.coffeebeans.connector.sink.metadata.MetadataProducer;
-import io.coffeebeans.connector.sink.model.Metadata;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
@@ -35,7 +33,6 @@ public class ParquetFormatManager implements FormatManager {
     private final String containerName;
     private final ObjectMapper objectMapper;
     private final StorageManager storageManager;
-    private final MetadataProducer metadataProducer;
     private final AvroSchemaBuilder avroSchemaBuilder;
     private final FormatWriterProvider formatWriterProvider;
     private final ConcurrentMap<String, Integer> activeFileIndexMap; // Key -> full path, value -> file index
@@ -54,7 +51,6 @@ public class ParquetFormatManager implements FormatManager {
         this.containerName = config.getContainerName();
         this.objectMapper = new ObjectMapper();
         this.storageManager = storageManager;
-        this.metadataProducer = new MetadataProducer(config);
         this.avroSchemaBuilder = new AvroSchemaBuilder(objectMapper);
         this.formatWriterProvider = new ParquetFormatWriterProvider();
         this.activeFileIndexMap = new ConcurrentHashMap<>();
@@ -155,11 +151,7 @@ public class ParquetFormatManager implements FormatManager {
 
             if (!activeFileIndexMap.containsKey(fullPath)) {
                 int index = 0;
-                Metadata metadata = new Metadata(fullPath, index);
-                metadataProducer.produceMetadata(metadata);
-                logger.info("metadata pushed: {}: {}", fullPath, index);
-
-                Thread.sleep(100);
+                activeFileIndexMap.put(fullPath, index);
             }
 
             int activeIndex = activeFileIndexMap.get(fullPath);
@@ -167,11 +159,7 @@ public class ParquetFormatManager implements FormatManager {
             this.storageManager.append(this.containerName, blobName, bytes);
 
             // Now update the file index as the parquet file is already written and no data should be appended to that
-            Metadata metadata = new Metadata(fullPath, activeIndex + 1);
-
-            metadataProducer.produceMetadata(metadata);
-            logger.info("metadata pushed: {}: {}", fullPath, activeIndex);
-            Thread.sleep(100);
+            activeFileIndexMap.put(fullPath, activeIndex + 1);
 
             if (invokedByTimeoutTask) {
                 return;
@@ -180,10 +168,6 @@ public class ParquetFormatManager implements FormatManager {
             // Since it is not invoked by timeout task, the scheduled timeout task should be cancelled.
             timeoutTasks.get(fullPath).cancel(true);
 
-        } catch (InterruptedException e) {
-            logger.error("Error while waiting for the producer to send metadata to kafka with exception: {}",
-                    e.getMessage());
-            throw e;
         } catch (Exception e) {
             logger.error("Failed to write parquet file with exception: {}", e.toString());
             throw e;
