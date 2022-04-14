@@ -33,6 +33,7 @@ public class AzureBlobSinkTask extends SinkTask {
     public void start(Map<String, String> configProps) {
         logger.info("Starting Sink Task ....................");
         UNIQUE_TASK_IDENTIFIER = generateRandomAlphanumericString(4);
+        logger.info("Unique string: " + UNIQUE_TASK_IDENTIFIER);
 
         AzureBlobSinkConfig config = new AzureBlobSinkConfig(configProps);
         this.recordWriter = new RecordWriter(config);
@@ -42,13 +43,14 @@ public class AzureBlobSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> collection) {
-        if (collection.isEmpty()) {
+;        if (collection.isEmpty()) {
             return;
         }
 
         List<SinkRecord> records = new ArrayList<>(collection);
         logger.info("Received {} records", records.size());
 
+        long startTime = System.currentTimeMillis();
         // Loop through each record and store it in the blob storage.
         for (SinkRecord record : records) {
 
@@ -57,8 +59,10 @@ public class AzureBlobSinkTask extends SinkTask {
 
             } catch (Exception e) {
                 logger.error("Failed to process record with offset: {}", record.kafkaOffset());
+                logger.error(e.getMessage());
             }
         }
+        logger.info("Processed {} records in {} milli seconds", records.size(), System.currentTimeMillis() - startTime);
     }
 
     @Override

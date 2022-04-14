@@ -1,6 +1,8 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
 import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
@@ -14,5 +16,5 @@ public interface TimestampExtractor {
      * @param sinkRecord SinkRecord
      * @return Formatted date & time string
      */
-    String getFormattedTimestamp(SinkRecord sinkRecord);
+    String getFormattedTimestamp(SinkRecord sinkRecord) throws JsonProcessingException;
 }

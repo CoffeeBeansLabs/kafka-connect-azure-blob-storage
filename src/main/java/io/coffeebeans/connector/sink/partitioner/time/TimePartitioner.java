@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner.time;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.time.extractor.DefaultTimestampExtractor;
@@ -34,7 +35,7 @@ public class TimePartitioner extends DefaultPartitioner {
      * @return Encoded partition string
      */
     @Override
-    public String encodePartition(SinkRecord sinkRecord) {
+    public String encodePartition(SinkRecord sinkRecord) throws JsonProcessingException {
         /*
           Output format:
           <formattedTimestamp>

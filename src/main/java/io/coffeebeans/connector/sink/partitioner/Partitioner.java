@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
@@ -13,7 +14,7 @@ public interface Partitioner {
      * @param sinkRecord The record to be stored
      * @return The path where it will be stored
      */
-    String encodePartition(SinkRecord sinkRecord);
+    String encodePartition(SinkRecord sinkRecord) throws JsonProcessingException;
 
     /**
      * Generate full blob file path including folder path with encodedPartition.
@@ -21,7 +22,7 @@ public interface Partitioner {
      * @param sinkRecord SinkRecord
      * @return Full file path
      */
-    String generateFullPath(SinkRecord sinkRecord);
+    String generateFullPath(SinkRecord sinkRecord) throws JsonProcessingException;
 
     /**
      * I generate the folder path using the encoded partition string.
@@ -29,5 +30,5 @@ public interface Partitioner {
      * @param sinkRecord SinkRecord
      * @return Folder path
      */
-    String generateFolderPath(SinkRecord sinkRecord);
+    String generateFolderPath(SinkRecord sinkRecord) throws JsonProcessingException;
 }

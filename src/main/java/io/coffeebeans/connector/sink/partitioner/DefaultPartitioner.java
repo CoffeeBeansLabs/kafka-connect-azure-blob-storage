@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.AzureBlobSinkTask;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -31,7 +32,7 @@ public class DefaultPartitioner implements Partitioner {
      * @return encoded partition string partition=&lt;kafkaPartition&gt;
      */
     @Override
-    public String encodePartition(SinkRecord sinkRecord) {
+    public String encodePartition(SinkRecord sinkRecord) throws JsonProcessingException {
         /*
           Output format:
           partition=<kafkaPartition>
@@ -48,7 +49,7 @@ public class DefaultPartitioner implements Partitioner {
      *      &lt;kafkaTopic&gt;+&lt;kafkaPartition&gt;+&lt;startOffset&gt;
      */
     @Override
-    public String generateFullPath(SinkRecord sinkRecord) {
+    public String generateFullPath(SinkRecord sinkRecord) throws JsonProcessingException {
         setStartingOffset(sinkRecord.kafkaOffset());
 
         /*
@@ -69,7 +70,7 @@ public class DefaultPartitioner implements Partitioner {
      * @return Folder path
      */
     @Override
-    public String generateFolderPath(SinkRecord sinkRecord) {
+    public String generateFolderPath(SinkRecord sinkRecord) throws JsonProcessingException {
         /*
           Output format:
           <prefix>/<kafkaTopic>/<encodedPartition>
