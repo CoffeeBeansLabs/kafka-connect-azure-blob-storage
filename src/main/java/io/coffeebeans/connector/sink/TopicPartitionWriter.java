@@ -18,7 +18,7 @@ public class TopicPartitionWriter {
     private static final Logger logger = LoggerFactory.getLogger(TopicPartitionWriter.class);
 
     private final int flushSize;
-    private final int rotateIntervalMs;
+    private final long rotationIntervalMs;
     private final Partitioner partitioner;
     private final Queue<SinkRecord> buffer;
     private final AzureBlobSinkConfig config;
@@ -46,7 +46,7 @@ public class TopicPartitionWriter {
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
         this.flushSize = config.getFlushSize();
-        this.rotateIntervalMs = 60 * 1000;
+        this.rotationIntervalMs = config.getRotationIntervalMs();
         this.startOffsets = new HashMap<>();
         this.recordsCount = new HashMap<>();
         this.recordWriterProvider = recordWriterProvider;
@@ -159,9 +159,14 @@ public class TopicPartitionWriter {
         if (isFlushSizeConditionMet(encodedPartition)) {
             return true;
         }
+
         // If difference of current and start time equals or exceed rotate interval ms then return true
+        if (rotationIntervalMs < 0) {
+            // Condition to check if rotation based on time is enabled or not.
+            return false;
+        }
         return startTimes.get(encodedPartition) != null
-                && currentTime - startTimes.get(encodedPartition) >= rotateIntervalMs;
+                && currentTime - startTimes.get(encodedPartition) >= rotationIntervalMs;
     }
 
     public void close() throws IOException {
