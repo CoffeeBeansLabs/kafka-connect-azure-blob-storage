@@ -200,6 +200,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
             + "writer and this will also be the size of part upload to the blob storage";
 
 
+    public static final String AVRO_SCHEMA_CONF = "avro.schema";
+    public static final String AVRO_SCHEMA_DEFAULT = "{\"namespace\":\"topics.avro\",\"type\":\"record\","
+            + "\"name\":\"avrò\",\"fields\":[]}";
+    public static final String AVRO_SCHEMA_DOC = "Avro schema for scenarios when the payload is a Json string or "
+            + "Json without embedded schema or schema registry. This schema will be used to process the record for "
+            + "various file formats like parquet etc.";
+
+
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
@@ -220,6 +228,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int flushSize;
     private final long rotationIntervalMs;
     private final int partSize;
+    private final String avroSchema;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -251,6 +260,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
         this.partSize = this.getInt(PART_SIZE_CONF);
+        this.avroSchema = this.getString(AVRO_SCHEMA_CONF);
     }
 
 
@@ -437,6 +447,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         PART_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
                         PART_SIZE_DOC
+                ).define(
+                        AVRO_SCHEMA_CONF,
+                        TYPE_STRING,
+                        AVRO_SCHEMA_DEFAULT,
+                        IMPORTANCE_LOW,
+                        AVRO_SCHEMA_DOC
                 );
     }
 
@@ -502,5 +518,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public int getPartSize() {
         return this.partSize;
+    }
+
+    public String getAvroSchema() {
+        return this.avroSchema;
     }
 }

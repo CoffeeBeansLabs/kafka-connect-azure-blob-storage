@@ -90,7 +90,7 @@ public class ParquetRecordWriter implements RecordWriter {
             if (avroSchema == null) {
                 logger.info("Loading schema ..................................");
                 JsonStringSchema.avroSchema = new org.apache.avro.Schema.Parser()
-                        .parse(new File(SCHEMA_FILE_PATH));
+                        .parse(config.getAvroSchema());
                 avroSchema = JsonStringSchema.getSchema();
             }
 
