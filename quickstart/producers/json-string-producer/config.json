@@ -9,11 +9,11 @@
     "errors.tolerance": "all",
     "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "kafka-connect",
-    "topics.dir": "parquet-time",
-    "partition.strategy.field.name": "junk",
+    "topics.dir": "parquet-time-0",
+    "partition.strategy": "TIME",
+    "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
+    "partition.strategy.field.name": "na",
     "file.format": "PARQUET",
-    "buffer.length": 5,
-    "buffer.timeout": 10,
-    "buffer.timeout.pool": 1
+    "flush.size": 200
   }
 }
