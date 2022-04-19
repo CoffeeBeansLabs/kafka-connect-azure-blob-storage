@@ -194,6 +194,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
             + "invoked. The base time is set after first record is processed";
 
 
+    public static final String PART_SIZE_CONF = "azblob.part.size";
+    public static final long PART_SIZE_DEFAULT = 2000000; // 2MB
+    public static final String PART_SIZE_DOC = "The size of the buffer to store the data of processed records by the"
+            + "writer and this will also be the size of part upload to the blob storage";
+
+
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
@@ -213,9 +219,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String metadataBootstrapServers;
     private final int flushSize;
     private final long rotationIntervalMs;
-
-    // To be implemented
-    private int partSize;
+    private final int partSize;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -246,6 +250,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.metadataBootstrapServers = this.getString(METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY);
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
+        this.partSize = this.getInt(PART_SIZE_CONF);
     }
 
 
@@ -426,6 +431,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         ROTATION_INTERVAL_MS_DEFAULT,
                         IMPORTANCE_LOW,
                         ROTATION_INTERVAL_MS_DOC
+                ).define(
+                        PART_SIZE_CONF,
+                        TYPE_INT,
+                        PART_SIZE_DEFAULT,
+                        IMPORTANCE_LOW,
+                        PART_SIZE_DOC
                 );
     }
 
@@ -481,15 +492,15 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return metadataBootstrapServers;
     }
 
-    public int getPartSize() {
-        return this.partSize;
-    }
-
     public int getFlushSize() {
         return this.flushSize;
     }
 
     public long getRotationIntervalMs() {
         return this.rotationIntervalMs;
+    }
+
+    public int getPartSize() {
+        return this.partSize;
     }
 }
