@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger logger = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
-    private static final String SCHEMA_FILE_PATH = "~/schema/connector-schema.avsc";
+    private static final String SCHEMA_FILE_PATH = "/kafka/connector-schema.avsc";
     // private static final String SCHEMA_FILE_PATH = "/usr/share/java/kafka-connect-sample/schema.avsc";
 
     private Schema schema = null;
@@ -83,14 +83,21 @@ public class ParquetRecordWriter implements RecordWriter {
     }
 
     private void writeJsonString(Object value) throws IOException {
-        if (writer == null) {
+        if (confluentAvroSchema == null || writer == null) {
             logger.info("Opening parquet record writer for blob: {}", blobName);
 
             org.apache.avro.Schema avroSchema = JsonStringSchema.getSchema();
             if (avroSchema == null) {
+                logger.info("Loading schema ..................................");
                 JsonStringSchema.avroSchema = new org.apache.avro.Schema.Parser()
                         .parse(new File(SCHEMA_FILE_PATH));
                 avroSchema = JsonStringSchema.getSchema();
+            }
+
+            try {
+                logger.info("New schema: {}", avroSchema);
+            } catch (Exception e1) {
+                logger.error("Error in new schema");
             }
             confluentAvroSchema = new AvroSchema(avroSchema);
             outputFile = new ParquetOutputFile(config, blobName);
