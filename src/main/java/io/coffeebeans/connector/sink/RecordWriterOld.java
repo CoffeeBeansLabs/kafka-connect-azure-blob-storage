@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.FormatManager;
-import io.coffeebeans.connector.sink.format.parquet.ParquetFormatManager;
+import io.coffeebeans.connector.sink.format.parquet.ParquetFormatManagerOld;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 /**
  * This class will select the appropriate Partitioner, Storage manager and Format manager.
  */
-public class RecordWriter {
-    private static final Logger logger = LoggerFactory.getLogger(RecordWriter.class);
+public class RecordWriterOld {
+    private static final Logger logger = LoggerFactory.getLogger(RecordWriterOld.class);
 
     private final Partitioner partitioner;
     private final FormatManager formatManager;
@@ -35,11 +35,11 @@ public class RecordWriter {
      *
      * @param config - AzureBlobSinkConfig
      */
-    public RecordWriter(AzureBlobSinkConfig config) {
+    public RecordWriterOld(AzureBlobSinkConfig config) {
         this.partitioner = getPartitioner(config);
 
-        StorageManager storageManager = new BlobStorageManager(config.getConnectionString());
-        this.formatManager = new ParquetFormatManager(config, storageManager);
+        StorageManager storageManager = new BlobStorageManager(config.getConnectionString(), "");
+        this.formatManager = new ParquetFormatManagerOld(config, storageManager);
     }
 
     /**
@@ -50,7 +50,7 @@ public class RecordWriter {
      * @throws InterruptedException - Thrown if exception occur during updating metadata
      */
     public void bufferRecord(SinkRecord sinkRecord) throws IOException, InterruptedException {
-        String fullPath = this.partitioner.generateFullPath(sinkRecord);
+        String fullPath = this.partitioner.generateFullPath(sinkRecord, 0);
 
         Map<String, Object> valueMap = toValueMap(sinkRecord);
         if (valueMap == null || valueMap.isEmpty()) {

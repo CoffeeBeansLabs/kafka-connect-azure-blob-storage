@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class store the full path, and it's respective ParquetFormatWriter.
  */
-public class ParquetFormatWriterProvider implements FormatWriterProvider {
+public class ParquetFormatWriterProviderOld implements FormatWriterProvider {
     private static final Logger logger = LoggerFactory.getLogger(FormatWriterProvider.class);
 
     private final Map<String, FormatWriter> parquetFormatWriters;
@@ -19,7 +19,7 @@ public class ParquetFormatWriterProvider implements FormatWriterProvider {
     /**
      * Constructor.
      */
-    public ParquetFormatWriterProvider() {
+    public ParquetFormatWriterProviderOld() {
         this.parquetFormatWriters = new HashMap<>();
     }
 

@@ -56,7 +56,7 @@ def produce_records(args):
             'word': word
         }
         # produce to kafka
-        serializing_producer.produce(topic=args.topic, key='nokey', value=json.dumps(data), partition=partition)
+        serializing_producer.produce(topic=args.topic, key='nokey', value=json.dumps(data), partition=0)
         print(json.dumps(data))
 
     serializing_producer.flush()

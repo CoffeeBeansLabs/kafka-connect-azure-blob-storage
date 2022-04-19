@@ -1,71 +1,32 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
+import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import java.io.IOException;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 
-/**
- * This class will be used by FormatWriter. And it's object will be passed to ParquetWriter which will internally call
- * it to create and write data to the output stream.
- */
+
 public class ParquetOutputFile implements OutputFile {
-    private final BufferedOutputStream bufferedOutputStream;
-    private final ByteArrayOutputStream byteArrayOutputStream;
+    private static final int DEFAULT_BLOCK_SIZE = 0;
 
-    /**
-     * Constructor.
-     *
-     * @param byteArrayOutputStream ByteArrayOutputStream
-     */
-    public ParquetOutputFile(ByteArrayOutputStream byteArrayOutputStream) {
-        this.byteArrayOutputStream = byteArrayOutputStream;
-        this.bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+    private final String blobName;
+    private final AzureBlobSinkConfig config;
+    private ParquetOutputStream outputStream;
+
+    public ParquetOutputFile(AzureBlobSinkConfig config, String blobName) {
+        this.config = config;
+        this.blobName = blobName;
     }
 
     @Override
-    public PositionOutputStream create(long l) throws IOException {
-        return createPositionOutputStream();
-    }
-
-    private PositionOutputStream createPositionOutputStream() {
-        return new PositionOutputStream() {
-
-            int pos = 0;
-
-            @Override
-            public long getPos() {
-                return pos;
-            }
-
-            @Override
-            public void flush() throws IOException {
-                bufferedOutputStream.flush();
-            }
-
-            @Override
-            public void close() throws IOException {
-                bufferedOutputStream.close();
-            }
-
-            @Override
-            public void write(int b) throws IOException {
-                bufferedOutputStream.write(b);
-                pos++;
-            }
-
-            @Override
-            public void write(byte[] b, int off, int len) throws IOException {
-                bufferedOutputStream.write(b, off, len);
-                pos += len;
-            }
-        };
+    public PositionOutputStream create(long blockSizeHint) throws IOException {
+        outputStream = new ParquetOutputStream(config, blobName);
+        return outputStream;
     }
 
     @Override
-    public PositionOutputStream createOrOverwrite(long l) throws IOException {
-        return createPositionOutputStream();
+    public PositionOutputStream createOrOverwrite(long blockSizeHint) throws IOException {
+        return create(blockSizeHint);
     }
 
     @Override
@@ -75,10 +36,10 @@ public class ParquetOutputFile implements OutputFile {
 
     @Override
     public long defaultBlockSize() {
-        return 0;
+        return DEFAULT_BLOCK_SIZE;
     }
 
-    public byte[] toByteArray() {
-        return this.byteArrayOutputStream.toByteArray();
+    public ParquetOutputStream getOutputStream() {
+        return this.outputStream;
     }
 }

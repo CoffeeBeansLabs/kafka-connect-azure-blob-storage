@@ -30,4 +30,6 @@ public interface FormatWriter {
      * @return Number of records written
      */
     int recordsWritten();
+
+    void close() throws IOException;
 }

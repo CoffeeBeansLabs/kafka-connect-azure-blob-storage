@@ -22,7 +22,9 @@ public interface Partitioner {
      * @param sinkRecord SinkRecord
      * @return Full file path
      */
-    String generateFullPath(SinkRecord sinkRecord) throws JsonProcessingException;
+    String generateFullPath(SinkRecord sinkRecord, long startingOffset) throws JsonProcessingException;
+
+    String generateFullPath(SinkRecord sinkRecord, String encodedPartition, long startingOffset);
 
     /**
      * I generate the folder path using the encoded partition string.
@@ -31,4 +33,6 @@ public interface Partitioner {
      * @return Folder path
      */
     String generateFolderPath(SinkRecord sinkRecord) throws JsonProcessingException;
+
+    String generateFolderPath(SinkRecord sinkRecord, String encodedPartition);
 }

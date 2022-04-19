@@ -39,7 +39,7 @@ def produce_records(args):
     start_timestamp = 1646109000000
     end_timestamp = 1646368200000
 
-    for e in range(498):
+    for e in range(479):
         random_num = randrange(0, 3, 1)
         partition = randrange(0, 3, 1)
         word = random_words[e]
@@ -53,8 +53,7 @@ def produce_records(args):
             'word': word
         }
         # produce to kafka
-        serializing_producer.produce(topic=args.topic, key='nokey', value=data, partition=partition)
-        print(partition)
+        serializing_producer.produce(topic=args.topic, key='nokey', value=data, partition=0)
         print(data)
 
     serializing_producer.flush()

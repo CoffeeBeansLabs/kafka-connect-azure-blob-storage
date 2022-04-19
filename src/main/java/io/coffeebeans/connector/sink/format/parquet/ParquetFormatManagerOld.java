@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.FormatManager;
 import io.coffeebeans.connector.sink.format.FormatWriter;
-import io.coffeebeans.connector.sink.format.FormatWriterProvider;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaBuilder;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.storage.StorageManager;
@@ -24,7 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class will buffer and write data in parquet file format.
  */
-public class ParquetFormatManager implements FormatManager {
+public class ParquetFormatManagerOld implements FormatManager {
     private static final Logger logger = LoggerFactory.getLogger(FormatManager.class);
     private static final String FILE_FORMAT_EXTENSION = ".parquet";
 
@@ -34,8 +33,8 @@ public class ParquetFormatManager implements FormatManager {
     private final ObjectMapper objectMapper;
     private final StorageManager storageManager;
     private final AvroSchemaBuilder avroSchemaBuilder;
-    private final FormatWriterProvider formatWriterProvider;
-    private final ConcurrentMap<String, Integer> activeFileIndexMap; // Key -> full path, value -> file index
+    private final ParquetFormatWriterProviderOld formatWriterProvider;
+    public static ConcurrentMap<String, Integer> activeFileIndexMap; // Key -> full path, value -> file index
     private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private final ConcurrentMap<String, ScheduledFuture<?>> timeoutTasks; // Key -> full path, value -> scheduled future
 
@@ -45,14 +44,14 @@ public class ParquetFormatManager implements FormatManager {
      * @param config AzureBlobSinkConfig
      * @param storageManager StorageManager
      */
-    public ParquetFormatManager(AzureBlobSinkConfig config, StorageManager storageManager) {
+    public ParquetFormatManagerOld(AzureBlobSinkConfig config, StorageManager storageManager) {
         this.bufferLength = config.getBufferLength();
         this.bufferTimeout = config.getBufferTimeout();
         this.containerName = config.getContainerName();
         this.objectMapper = new ObjectMapper();
         this.storageManager = storageManager;
         this.avroSchemaBuilder = new AvroSchemaBuilder(objectMapper);
-        this.formatWriterProvider = new ParquetFormatWriterProvider();
+        this.formatWriterProvider = new ParquetFormatWriterProviderOld();
         this.activeFileIndexMap = new ConcurrentHashMap<>();
         this.timeoutTasks = new ConcurrentHashMap<>();
 
@@ -72,12 +71,13 @@ public class ParquetFormatManager implements FormatManager {
      * @throws InterruptedException - Thrown if exception occur during updating metadata
      */
     public void buffer(String fullPath, Map<String, Object> data) throws IOException, InterruptedException {
-        FormatWriter writer = formatWriterProvider.get(fullPath);
+        ParquetFormatWriterOld writer = (ParquetFormatWriterOld) formatWriterProvider.get(fullPath);
 
         try {
             if (writer == null) {
                 writer = instantiateNewFormatWriter(data);
                 formatWriterProvider.put(fullPath, writer);
+                writer.instantiateNewParquetWriter(fullPath);
             }
 
             writer.write(data);
@@ -86,7 +86,7 @@ public class ParquetFormatManager implements FormatManager {
             if (writer.recordsWritten() == 1) {
 
                 ScheduledFuture<?> future = scheduledThreadPoolExecutor.schedule(
-                        new ParquetBufferTimeoutTask(fullPath, this),
+                        new ParquetBufferTimeoutTaskOld(fullPath, this),
                         this.bufferTimeout, TimeUnit.SECONDS
                 );
 
@@ -106,7 +106,7 @@ public class ParquetFormatManager implements FormatManager {
         }
     }
 
-    private FormatWriter instantiateNewFormatWriter(Map<String, Object> data) throws IOException {
+    private ParquetFormatWriterOld instantiateNewFormatWriter(Map<String, Object> data) throws IOException {
         // Build the avro schema
         Schema avroSchema;
 
@@ -114,7 +114,7 @@ public class ParquetFormatManager implements FormatManager {
             JsonNode jsonNode = objectMapper.valueToTree(data);
 
             avroSchema = avroSchemaBuilder.buildAvroSchema(jsonNode);
-            return new ParquetFormatWriter(avroSchema);
+            return new ParquetFormatWriterOld(avroSchema);
 
         } catch (IllegalArgumentException e) {
             logger.error("Failed to instantiating new format writer");
@@ -144,10 +144,19 @@ public class ParquetFormatManager implements FormatManager {
         }
 
         try {
-            byte[] bytes = writer.toByteArray();
+            byte[] bytes;
+            boolean shouldUpdateIndex = false;
 
-            // Delete the ParquetWriter as it has already been closed
-            formatWriterProvider.remove(fullPath);
+            if (writer.recordsWritten() > 14 || invokedByTimeoutTask) {
+                writer.close();
+                bytes = writer.toByteArray();
+
+                // Delete the ParquetWriter as it has already been closed
+                formatWriterProvider.remove(fullPath);
+                shouldUpdateIndex = true;
+            } else {
+                bytes = writer.toByteArray();
+            }
 
             if (!activeFileIndexMap.containsKey(fullPath)) {
                 int index = 0;
@@ -156,17 +165,22 @@ public class ParquetFormatManager implements FormatManager {
 
             int activeIndex = activeFileIndexMap.get(fullPath);
             String blobName = fullPath + DefaultPartitioner.FILE_DELIMITER + activeIndex + FILE_FORMAT_EXTENSION;
-            this.storageManager.append(this.containerName, blobName, bytes);
+            this.storageManager.append(blobName, bytes);
 
-            // Now update the file index as the parquet file is already written and no data should be appended to that
-            activeFileIndexMap.put(fullPath, activeIndex + 1);
+            if (shouldUpdateIndex) {
+
+                // Now update the file index as the parquet file is already written and no data should be appended to that
+                activeFileIndexMap.put(fullPath, activeIndex + 1);
+            }
 
             if (invokedByTimeoutTask) {
                 return;
             }
 
             // Since it is not invoked by timeout task, the scheduled timeout task should be cancelled.
-            timeoutTasks.get(fullPath).cancel(true);
+            if (shouldUpdateIndex) {
+                timeoutTasks.get(fullPath).cancel(true);
+            }
 
         } catch (Exception e) {
             logger.error("Failed to write parquet file with exception: {}", e.toString());

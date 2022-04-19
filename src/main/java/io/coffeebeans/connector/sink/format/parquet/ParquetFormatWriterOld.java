@@ -1,12 +1,12 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.format.FormatWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.parquet.avro.AvroParquetWriter;
+import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory;
 /**
  * I will write the records in parquet file format.
  */
-public class ParquetFormatWriter implements FormatWriter {
+public class ParquetFormatWriterOld implements FormatWriter {
     private static final Logger logger = LoggerFactory.getLogger(FormatWriter.class);
 
     private int recordsWritten;
     private final Schema avroSchema;
-    private ParquetOutputFile parquetOutputFile;
+    private ParquetOutputFileOld parquetOutputFileOld;
     private ParquetWriter<GenericData.Record> parquetWriter;
 
     /**
@@ -28,9 +28,8 @@ public class ParquetFormatWriter implements FormatWriter {
      * @param avroSchema Avro schema of the records that will be written
      * @throws IOException - Thrown if exception occur during writing records by the parquet writer
      */
-    public ParquetFormatWriter(Schema avroSchema) throws IOException {
+    public ParquetFormatWriterOld(Schema avroSchema) throws IOException {
         this.avroSchema = avroSchema;
-        instantiateNewParquetWriter(avroSchema);
     }
 
     /**
@@ -61,15 +60,9 @@ public class ParquetFormatWriter implements FormatWriter {
      * @throws IOException - Thrown if exception occur during processing written data
      */
     public byte[] toByteArray() throws IOException {
-        try {
-            parquetWriter.close();
-        } catch (Exception e) {
-            logger.error("Error while closing parquet writer with exception: {}", e.getMessage());
-            throw e;
-        }
 
         try {
-            return parquetOutputFile.toByteArray();
+            return parquetOutputFileOld.toByteArray();
         } catch (Exception e) {
             logger.error("Error getting the byte array from parquet output file with exception: {}", e.getMessage());
             throw e;
@@ -77,15 +70,16 @@ public class ParquetFormatWriter implements FormatWriter {
     }
 
 
-    private void instantiateNewParquetWriter(Schema avroSchema) throws IOException {
+    public void instantiateNewParquetWriter(String fullPath) throws IOException {
         logger.info("Instantiating new parquet writer. Setting records written to zero");
 
         try {
             recordsWritten = 0;
-            parquetOutputFile = new ParquetOutputFile(new ByteArrayOutputStream());
+            parquetOutputFileOld = new ParquetOutputFileOld();
 
-            parquetWriter = AvroParquetWriter.<GenericData.Record>builder(parquetOutputFile)
+            parquetWriter = AvroParquetWriter.<GenericData.Record>builder(parquetOutputFileOld)
                     .withSchema(avroSchema)
+                    .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
                     .build();
 
         } catch (Exception e) {
@@ -101,5 +95,14 @@ public class ParquetFormatWriter implements FormatWriter {
      */
     public int recordsWritten() {
         return recordsWritten;
+    }
+
+    public void close() throws IOException {
+        try {
+            parquetWriter.close();
+        } catch (Exception e) {
+            logger.error("Error while closing parquet writer with exception: {}", e.getMessage());
+            throw e;
+        }
     }
 }

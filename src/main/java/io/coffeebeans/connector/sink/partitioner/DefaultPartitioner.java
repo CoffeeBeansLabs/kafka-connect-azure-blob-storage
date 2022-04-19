@@ -1,7 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.coffeebeans.connector.sink.AzureBlobSinkTask;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ public class DefaultPartitioner implements Partitioner {
     public static final String FOLDER_DELIMITER = "/";
     public static final String FILE_DELIMITER = "+";
 
-    protected long startingOffset = -1;
     protected String prefix;
 
     public DefaultPartitioner(AzureBlobSinkConfig config) {
@@ -49,9 +47,7 @@ public class DefaultPartitioner implements Partitioner {
      *      &lt;kafkaTopic&gt;+&lt;kafkaPartition&gt;+&lt;startOffset&gt;
      */
     @Override
-    public String generateFullPath(SinkRecord sinkRecord) throws JsonProcessingException {
-        setStartingOffset(sinkRecord.kafkaOffset());
-
+    public String generateFullPath(SinkRecord sinkRecord, long startingOffset) throws JsonProcessingException {
         /*
           Output format:
           <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>+<uniqueTaskIdentifier>
@@ -59,8 +55,19 @@ public class DefaultPartitioner implements Partitioner {
         return generateFolderPath(sinkRecord) + FOLDER_DELIMITER
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset
-                + FILE_DELIMITER + AzureBlobSinkTask.UNIQUE_TASK_IDENTIFIER;
+                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+    }
+
+    @Override
+    public String generateFullPath(SinkRecord sinkRecord, String encodedPartition, long startingOffset) {
+        /*
+          Output format:
+          <prefix>/<kafkaTopic>/<encodedPartition>/<kafkaTopic>+<kafkaPartition>+<startOffset>+<uniqueTaskIdentifier>
+         */
+        return generateFolderPath(sinkRecord, encodedPartition) + FOLDER_DELIMITER
+
+                // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
+                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
     }
 
     /**
@@ -84,11 +91,19 @@ public class DefaultPartitioner implements Partitioner {
                 + encodePartition(sinkRecord);
     }
 
-    private void setStartingOffset(long offset) {
-        if (startingOffset < 0) {
-            startingOffset = offset;
+    @Override
+    public String generateFolderPath(SinkRecord sinkRecord, String encodedPartition) {
+        /*
+          Output format:
+          <prefix>/<kafkaTopic>/<encodedPartition>
+         */
+        return prefix + FOLDER_DELIMITER // <prefix>/
 
-            logger.debug("Starting offset set to {}", startingOffset);
-        }
+                // <kafkaTopic>/
+                + sinkRecord.topic() + FOLDER_DELIMITER
+
+                // <encodedPartition>
+                + encodedPartition;
     }
+
 }
