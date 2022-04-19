@@ -165,4 +165,12 @@ public class ParquetRecordWriter implements RecordWriter {
                 return false;
         }
     }
+
+    @Override
+    public long getDataSize() {
+        if (writer == null) {
+            return 0L;
+        }
+        return this.writer.getDataSize();
+    }
 }

@@ -208,6 +208,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
             + "various file formats like parquet etc.";
 
 
+    public static final String FILE_SIZE_CONF = "azblob.file.size";
+    public static final long FILE_SIZE_DEFAULT = 190000000000L; // 190 GB
+    public static final String FILE_SIZE_DOC = "Maximum size of the blob after which tbe file will be committed";
+
+
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
@@ -229,6 +234,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final long rotationIntervalMs;
     private final int partSize;
     private final String avroSchema;
+    private final long fileSize;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -261,6 +267,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
         this.partSize = this.getInt(PART_SIZE_CONF);
         this.avroSchema = this.getString(AVRO_SCHEMA_CONF);
+        this.fileSize = this.getLong(FILE_SIZE_CONF);
     }
 
 
@@ -453,6 +460,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         AVRO_SCHEMA_DEFAULT,
                         IMPORTANCE_LOW,
                         AVRO_SCHEMA_DOC
+                ).define(
+                        FILE_SIZE_CONF,
+                        TYPE_LONG,
+                        FILE_SIZE_DEFAULT,
+                        IMPORTANCE_LOW,
+                        FILE_SIZE_DOC
                 );
     }
 
@@ -522,5 +535,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getAvroSchema() {
         return this.avroSchema;
+    }
+
+    public long getFileSize() {
+        return this.fileSize;
     }
 }

@@ -11,4 +11,6 @@ public interface RecordWriter {
     void close() throws IOException;
 
     void commit() throws IOException;
+
+    long getDataSize();
 }

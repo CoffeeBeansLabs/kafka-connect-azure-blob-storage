@@ -18,6 +18,7 @@ public class TopicPartitionWriter {
     private static final Logger logger = LoggerFactory.getLogger(TopicPartitionWriter.class);
 
     private final int flushSize;
+    private final long dataSize;
     private final long rotationIntervalMs;
     private final Partitioner partitioner;
     private final Queue<SinkRecord> buffer;
@@ -45,6 +46,7 @@ public class TopicPartitionWriter {
 
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
+        this.dataSize = config.getFileSize();
         this.flushSize = config.getFlushSize();
         this.rotationIntervalMs = config.getRotationIntervalMs();
         this.startOffsets = new HashMap<>();
@@ -64,6 +66,7 @@ public class TopicPartitionWriter {
             SinkRecord record = buffer.poll();
             String encodedPartition = partitioner.encodePartition(record);
             rotateIfFlushSizeConditionMet(encodedPartition);
+            rotateIfDataSizeConditionMet(encodedPartition);
 
             RecordWriter writer = writers.get(encodedPartition);
 
@@ -128,6 +131,13 @@ public class TopicPartitionWriter {
         commit(encodedPartition);
     }
 
+    private void rotateIfDataSizeConditionMet(String encodedPartition) {
+        if (!isDataSizeConditionMet(encodedPartition)) {
+            return;
+        }
+        commit(encodedPartition);
+    }
+
     private void commit(String encodedPartition) {
         RecordWriter writer = writers.get(encodedPartition);
         if (writer == null) {
@@ -146,6 +156,10 @@ public class TopicPartitionWriter {
         recordsCount.remove(encodedPartition);
     }
 
+    private boolean isDataSizeConditionMet(String encodedPartition) {
+        return writers.get(encodedPartition) != null && writers.get(encodedPartition).getDataSize() >= dataSize;
+    }
+
     private boolean isFlushSizeConditionMet(String encodedPartition) {
         if (flushSize < 0) {
             return false;
@@ -156,7 +170,7 @@ public class TopicPartitionWriter {
     }
 
     private boolean shouldRotate(String encodedPartition, long currentTime) {
-        if (isFlushSizeConditionMet(encodedPartition)) {
+        if (isFlushSizeConditionMet(encodedPartition) || isDataSizeConditionMet(encodedPartition)) {
             return true;
         }
 
