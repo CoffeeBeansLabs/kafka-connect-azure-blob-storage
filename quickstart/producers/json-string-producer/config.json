@@ -14,6 +14,7 @@
     "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
     "partition.strategy.field.name": "na",
     "file.format": "PARQUET",
-    "flush.size": 200
+    "flush.size": 200,
+    "avro.schema": "{\"name\":\"MyClass\",\"type\":\"record\",\"namespace\":\"com.acme.avro\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"num\",\"type\":\"int\"},{\"name\":\"word\",\"type\":\"string\"}]}"
   }
 }
