@@ -1,5 +1,7 @@
 package io.coffeebeans.connector.sink;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.FormatManager;
 import io.coffeebeans.connector.sink.format.parquet.ParquetFormatManagerOld;
@@ -26,6 +28,7 @@ public class RecordWriterOld {
 
     private final Partitioner partitioner;
     private final FormatManager formatManager;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Constructor.
@@ -73,7 +76,7 @@ public class RecordWriterOld {
         }
     }
 
-    private Map<String, Object> toValueMap(SinkRecord sinkRecord) {
+    private Map<String, Object> toValueMap(SinkRecord sinkRecord) throws JsonProcessingException {
         Map<?, ?> valueMap = null;
 
         // Only Map or Struct type objects are supported currently
@@ -84,6 +87,16 @@ public class RecordWriterOld {
         } else if (sinkRecord.value() instanceof Struct) {
             // Convert Struct to Map
             valueMap = StructToMap.toMap((Struct) sinkRecord.value());
+
+        } else if (sinkRecord.value() instanceof String) {
+
+            try {
+                valueMap = this.objectMapper.readValue((String) sinkRecord.value(), Map.class);
+
+            } catch (JsonProcessingException e) {
+                logger.error("Error converting string value to map with exception {}", e.getMessage());
+                throw e;
+            }
         }
 
         Map<String, Object> castedValueMap;

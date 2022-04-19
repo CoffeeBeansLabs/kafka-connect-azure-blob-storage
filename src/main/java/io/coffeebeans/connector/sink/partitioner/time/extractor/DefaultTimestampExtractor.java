@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -39,7 +40,7 @@ public class DefaultTimestampExtractor implements TimestampExtractor {
      * @return Formatted date & time
      */
     @Override
-    public String getFormattedTimestamp(SinkRecord sinkRecord) {
+    public String getFormattedTimestamp(SinkRecord sinkRecord) throws JsonProcessingException {
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(timezone));
 
         // Format the zoned date & time

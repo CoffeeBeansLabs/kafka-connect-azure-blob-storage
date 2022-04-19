@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
 import io.coffeebeans.connector.sink.storage.RecordWriter;
@@ -55,7 +56,7 @@ public class TopicPartitionWriter {
         buffer.add(sinkRecord);
     }
 
-    public void write() {
+    public void write() throws JsonProcessingException {
         long now = System.currentTimeMillis();
 
         while (!buffer.isEmpty()) {

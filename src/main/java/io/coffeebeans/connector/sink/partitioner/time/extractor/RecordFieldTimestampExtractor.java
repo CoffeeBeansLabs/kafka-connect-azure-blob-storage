@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.PartitionerUtil;
 import java.time.Instant;
@@ -35,7 +36,7 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
      * @return Formatted date & time
      */
     @Override
-    public String getFormattedTimestamp(SinkRecord sinkRecord) {
+    public String getFormattedTimestamp(SinkRecord sinkRecord) throws JsonProcessingException {
 
         // Extract timestamp from the field value
         long timestamp = ((Number) PartitionerUtil.getFieldValue(sinkRecord, fieldName)).longValue();

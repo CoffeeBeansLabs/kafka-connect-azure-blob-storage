@@ -7,7 +7,7 @@
     "key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
     "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
     "errors.tolerance": "all",
-    "connection.url": "DefaultEndpointsProtocol=https;AccountName=presto;AccountKey=rs5Ix/Jc5f3VnVDhaPwvaKxk/UlHN35j+OxYuC3lm3lPwQKnNvIrKzk+vmM+N7jlqSYB+HY3FXkdiGyXm/I+Rw==;EndpointSuffix=core.windows.net",
+    "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "kafka-connect",
     "topics.dir": "parquet-time",
     "partition.strategy.field.name": "junk",
