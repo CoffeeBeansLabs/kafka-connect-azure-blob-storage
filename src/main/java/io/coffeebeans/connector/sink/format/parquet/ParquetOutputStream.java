@@ -27,7 +27,7 @@ public class ParquetOutputStream extends PositionOutputStream {
         this.closed = false;
         this.commit = false;
         this.blobName = blobName;
-        this.partSize = 100000;
+        this.partSize = config.getPartSize();
         this.buffer = ByteBuffer.allocate(this.partSize);
         this.storageManager = StorageFactory.getStorageManager();
 
