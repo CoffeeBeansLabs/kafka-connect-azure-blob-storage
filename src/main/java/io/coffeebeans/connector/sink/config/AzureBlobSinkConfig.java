@@ -188,6 +188,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final int FLUSH_SIZE_DEFAULT = -1;
     public static final String FLUSH_SIZE_DOC = "Number of records written to store before committing the file";
 
+    public static final String ROTATION_INTERVAL_MS_CONF = "rotation.interval.ms";
+    public static final long ROTATION_INTERVAL_MS_DEFAULT = -1L;
+    public static final String ROTATION_INTERVAL_MS_DOC = "The time interval in ms after which file commit will be"
+            + "invoked. The base time is set after first record is processed";
+
 
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
@@ -207,6 +212,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int bufferTimeoutTaskPoolSize;
     private final String metadataBootstrapServers;
     private final int flushSize;
+    private final long rotationIntervalMs;
 
     // To be implemented
     private int partSize;
@@ -239,6 +245,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.bufferTimeoutTaskPoolSize = this.getInt(BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY);
         this.metadataBootstrapServers = this.getString(METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY);
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
+        this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
     }
 
 
@@ -412,7 +419,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_INT,
                         FLUSH_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
-                        FLUSH_SIZE_DOC);
+                        FLUSH_SIZE_DOC
+                ).define(
+                        ROTATION_INTERVAL_MS_CONF,
+                        TYPE_LONG,
+                        ROTATION_INTERVAL_MS_DEFAULT,
+                        IMPORTANCE_LOW,
+                        ROTATION_INTERVAL_MS_DOC
+                );
     }
 
     public String getConnectionString() {
@@ -473,5 +487,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public int getFlushSize() {
         return this.flushSize;
+    }
+
+    public long getRotationIntervalMs() {
+        return this.rotationIntervalMs;
     }
 }
