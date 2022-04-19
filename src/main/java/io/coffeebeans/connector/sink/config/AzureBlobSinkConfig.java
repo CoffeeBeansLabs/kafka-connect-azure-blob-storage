@@ -195,7 +195,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
 
     public static final String PART_SIZE_CONF = "azblob.part.size";
-    public static final long PART_SIZE_DEFAULT = 2000000; // 2MB
+    public static final int PART_SIZE_DEFAULT = 2000000; // 2MB
     public static final String PART_SIZE_DOC = "The size of the buffer to store the data of processed records by the"
             + "writer and this will also be the size of part upload to the blob storage";
 
