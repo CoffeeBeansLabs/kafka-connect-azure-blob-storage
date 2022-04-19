@@ -42,10 +42,11 @@ def produce_records(args):
     start_timestamp = 1646109000000
     end_timestamp = 1646368200000
 
-    for e in range(498):
+    for e in range(1000):
         random_num = randrange(0, 2, 1)
         partition = randrange(0, 2, 1)
-        word = random_words[e]
+        random_num_2 = randrange(0, 497, 1)
+        word = random_words[random_num_2]
         timestamp = randrange(start_timestamp, end_timestamp)
 
         # data to be produced in kafka
