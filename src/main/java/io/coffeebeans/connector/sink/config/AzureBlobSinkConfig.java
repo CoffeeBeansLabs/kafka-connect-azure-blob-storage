@@ -43,6 +43,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private static final Importance IMPORTANCE_HIGH = Importance.HIGH;
 
 
+    // ###################################### Azure blob configurations ######################################
     /**
      * Azure Blob Connection URL related configurations.
      * No default value, order 1
@@ -69,6 +70,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Validator TOPICS_DIR_VALIDATOR = new TopicsDirValueValidator();
     public static final String TOPICS_DIR_CONF_DOC = "Parent directory where data ingested from kafka will be stored";
 
+
+    // ###################################### Partition configurations ######################################
     /**
      * Partition strategy configuration.
      */
@@ -124,6 +127,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_DOC = "Time extractor for time based "
             + "partitioner";
 
+
+    // ###################################### File format configurations ######################################
     /**
      * File format related configuration.
      */
@@ -132,6 +137,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Recommender FILE_FORMAT_RECOMMENDER = new FileFormatRecommender();
     public static final String FILE_FORMAT_CONF_DOC = "Type of file format";
 
+
+    // ###################################### Rolling file configurations ######################################
     /**
      * Rollover file policy related configurations.
      * Visible only if file format is NONE
@@ -176,6 +183,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC = "Bootstrap server address where "
             + "metadata will be sent";
 
+
+    public static final String FLUSH_SIZE_CONF = "flush.size";
+    public static final int FLUSH_SIZE_DEFAULT = -1;
+    public static final String FLUSH_SIZE_DOC = "Number of records written to store before committing the file";
+
+
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
@@ -193,6 +206,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int bufferTimeout;
     private final int bufferTimeoutTaskPoolSize;
     private final String metadataBootstrapServers;
+    private final int flushSize;
 
     // To be implemented
     private int partSize;
@@ -224,6 +238,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.bufferTimeout = this.getInt(BUFFER_TIMEOUT_CONF_KEY);
         this.bufferTimeoutTaskPoolSize = this.getInt(BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY);
         this.metadataBootstrapServers = this.getString(METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY);
+        this.flushSize = this.getInt(FLUSH_SIZE_CONF);
     }
 
 
@@ -391,7 +406,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_STRING,
                         METADATA_BOOTSTRAP_SERVERS_ADDRESS_DEFAULT_VALUE,
                         IMPORTANCE_MEDIUM,
-                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC);
+                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC
+                ).define(
+                        FLUSH_SIZE_CONF,
+                        TYPE_INT,
+                        FLUSH_SIZE_DEFAULT,
+                        IMPORTANCE_LOW,
+                        FLUSH_SIZE_DOC);
     }
 
     public String getConnectionString() {
@@ -448,5 +469,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public int getPartSize() {
         return this.partSize;
+    }
+
+    public int getFlushSize() {
+        return this.flushSize;
     }
 }

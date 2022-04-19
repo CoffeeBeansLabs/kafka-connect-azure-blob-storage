@@ -45,7 +45,7 @@ public class TopicPartitionWriter {
 
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
-        this.flushSize = 2000;
+        this.flushSize = config.getFlushSize();
         this.rotateIntervalMs = 60 * 1000;
         this.startOffsets = new HashMap<>();
         this.recordsCount = new HashMap<>();
@@ -147,13 +147,16 @@ public class TopicPartitionWriter {
     }
 
     private boolean isFlushSizeConditionMet(String encodedPartition) {
+        if (flushSize < 0) {
+            return false;
+        }
+
         // If no. of records written equals or exceed the flush size then return true
         return recordsCount.get(encodedPartition) != null && recordsCount.get(encodedPartition) >= flushSize;
     }
 
     private boolean shouldRotate(String encodedPartition, long currentTime) {
-        // If no. of records written equals or exceed the flush size then return true
-        if (recordsCount.get(encodedPartition) != null && recordsCount.get(encodedPartition) >= flushSize) {
+        if (isFlushSizeConditionMet(encodedPartition)) {
             return true;
         }
         // If difference of current and start time equals or exceed rotate interval ms then return true
