@@ -194,6 +194,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int bufferTimeoutTaskPoolSize;
     private final String metadataBootstrapServers;
 
+    // To be implemented
+    private int partSize;
+
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -441,5 +444,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getMetadataBootstrapServers() {
         return metadataBootstrapServers;
+    }
+
+    public int getPartSize() {
+        return this.partSize;
     }
 }

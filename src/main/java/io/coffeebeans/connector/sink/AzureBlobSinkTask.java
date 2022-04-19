@@ -1,12 +1,23 @@
 package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
+import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
+import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
+import io.coffeebeans.connector.sink.partitioner.Partitioner;
+import io.coffeebeans.connector.sink.partitioner.field.FieldPartitioner;
+import io.coffeebeans.connector.sink.partitioner.time.TimePartitioner;
+import io.coffeebeans.connector.sink.storage.BlobStorageManager;
+import io.coffeebeans.connector.sink.storage.RecordWriterProvider;
+import io.coffeebeans.connector.sink.storage.StorageFactory;
 import io.coffeebeans.connector.sink.util.Version;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.RandomStringUtils;
+
+import java.io.IOException;
+import java.util.*;
+
+import io.confluent.connect.avro.AvroData;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkTaskContext;
@@ -18,11 +29,14 @@ import org.slf4j.LoggerFactory;
  * props.
  */
 public class AzureBlobSinkTask extends SinkTask {
-    private static final Logger logger = LoggerFactory.getLogger(SinkTask.class);
-    public static String UNIQUE_TASK_IDENTIFIER;
+    private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkTask.class);
 
-    private RecordWriter recordWriter;
     private SinkTaskContext context;
+    private Partitioner partitioner;
+    private AzureBlobSinkConfig config;
+    private ErrantRecordReporter reporter;
+    private RecordWriterProvider recordWriterProvider;
+    private Map<TopicPartition, TopicPartitionWriter> topicPartitionWriters;
 
     @Override
     public String version() {
@@ -32,10 +46,14 @@ public class AzureBlobSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> configProps) {
         logger.info("Starting Sink Task ....................");
-        UNIQUE_TASK_IDENTIFIER = generateRandomAlphanumericString(4);
+        config = new AzureBlobSinkConfig(configProps);
+        this.topicPartitionWriters = new HashMap<>();
+        this.partitioner = getPartitioner();
 
-        AzureBlobSinkConfig config = new AzureBlobSinkConfig(configProps);
-        this.recordWriter = new RecordWriter(config);
+        StorageFactory.storageManager = new BlobStorageManager(config.getConnectionString(), config.getContainerName());
+        this.reporter = this.context.errantRecordReporter();
+        recordWriterProvider = new ParquetRecordWriterProvider(new AvroData(20));
+        open(context.assignment());
 
         logger.info("Sink Task started successfully ....................");
     }
@@ -46,19 +64,29 @@ public class AzureBlobSinkTask extends SinkTask {
             return;
         }
 
+        long startTime = System.nanoTime();
+
         List<SinkRecord> records = new ArrayList<>(collection);
         logger.info("Received {} records", records.size());
 
         // Loop through each record and store it in the blob storage.
         for (SinkRecord record : records) {
+            TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
+            if (record.value() == null) {
+                continue;
+            }
+            topicPartitionWriters.get(topicPartition).buffer(record);
+        }
 
+        for (TopicPartitionWriter writer : topicPartitionWriters.values()) {
             try {
-                this.recordWriter.bufferRecord(record);
-
+                writer.write();
             } catch (Exception e) {
-                logger.error("Failed to process record with offset: {}", record.kafkaOffset());
+                logger.error("Failed to process record with exception: {}", e.getMessage());
             }
         }
+
+        logger.info("Processed {} records in {} ns time", collection.size(), System.nanoTime() - startTime);
     }
 
     @Override
@@ -78,13 +106,47 @@ public class AzureBlobSinkTask extends SinkTask {
         );
     }
 
+    @Override
+    public void open(Collection<TopicPartition> partitions) {
+        for (TopicPartition topicPartition : partitions) {
+            topicPartitionWriters.put(topicPartition, newTopicPartitionWriter(topicPartition));
+        }
+    }
+
+    @Override
+    public void close(Collection<TopicPartition> partitions) {
+        for (TopicPartition partition : partitions) {
+            try {
+                topicPartitionWriters.get(partition).close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private TopicPartitionWriter newTopicPartitionWriter(TopicPartition topicPartition) {
+        return new TopicPartitionWriter(
+                topicPartition, config, reporter, partitioner, recordWriterProvider
+        );
+    }
+
     /**
      * I will generate a random alphanumeric string of given length.
      *
-     * @param length Length of the required alphanumeric string
      * @return Generated random alphanumeric string
      */
-    public String generateRandomAlphanumericString(int length) {
-        return RandomStringUtils.randomAlphanumeric(length);
+    //    public String generateRandomAlphanumericString(int length) {
+    //        return RandomStringUtils.randomAlphanumeric(length);
+    //    }
+
+    private Partitioner getPartitioner() {
+        PartitionStrategy strategy = PartitionStrategy.valueOf(config.getPartitionStrategy());
+        logger.info("Partition strategy configured: {}", strategy);
+
+        switch (strategy) {
+            case TIME: return new TimePartitioner(config);
+            case FIELD: return new FieldPartitioner(config);
+            default: return new DefaultPartitioner(config);
+        }
     }
 }

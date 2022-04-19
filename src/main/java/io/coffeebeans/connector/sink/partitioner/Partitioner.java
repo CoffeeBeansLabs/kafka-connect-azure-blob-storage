@@ -21,7 +21,9 @@ public interface Partitioner {
      * @param sinkRecord SinkRecord
      * @return Full file path
      */
-    String generateFullPath(SinkRecord sinkRecord);
+    String generateFullPath(SinkRecord sinkRecord, long startingOffset);
+
+    String generateFullPath(SinkRecord sinkRecord, String encodedPartition, long startingOffset);
 
     /**
      * I generate the folder path using the encoded partition string.
@@ -30,4 +32,6 @@ public interface Partitioner {
      * @return Folder path
      */
     String generateFolderPath(SinkRecord sinkRecord);
+
+    String generateFolderPath(SinkRecord sinkRecord, String encodedPartition);
 }

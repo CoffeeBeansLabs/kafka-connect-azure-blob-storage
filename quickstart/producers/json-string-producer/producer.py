@@ -12,6 +12,7 @@ from random_word import RandomWords
 from confluent_kafka import SerializingProducer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
+from confluent_kafka.serialization import StringSerializer
 from command_line_args_parser import parse_command_line_args
 
 
@@ -25,9 +26,11 @@ def produce_records(args):
         schema_registry_client
     )
 
+    string_serializer = StringSerializer()
+
     # Initialize kafka producer with Json serializer
     serializing_producer = SerializingProducer({"bootstrap.servers": args.bootstrap_servers,
-                                                "value.serializer": json_serializer})
+                                                "value.serializer": string_serializer})
 
     # Get list of random words
     r = RandomWords()
@@ -39,9 +42,9 @@ def produce_records(args):
     start_timestamp = 1646109000000
     end_timestamp = 1646368200000
 
-    for e in range(479):
-        random_num = randrange(0, 3, 1)
-        partition = randrange(0, 3, 1)
+    for e in range(498):
+        random_num = randrange(0, 2, 1)
+        partition = randrange(0, 2, 1)
         word = random_words[e]
         timestamp = randrange(start_timestamp, end_timestamp)
 
@@ -53,8 +56,8 @@ def produce_records(args):
             'word': word
         }
         # produce to kafka
-        serializing_producer.produce(topic=args.topic, key='nokey', value=data, partition=0)
-        print(data)
+        serializing_producer.produce(topic=args.topic, key='nokey', value=json.dumps(data), partition=0)
+        print(json.dumps(data))
 
     serializing_producer.flush()
 

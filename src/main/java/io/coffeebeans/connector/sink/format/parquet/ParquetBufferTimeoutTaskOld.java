@@ -7,11 +7,11 @@ import org.slf4j.LoggerFactory;
 /**
  * This task is launched by FormatManager and will run after delay set by the format manager.
  */
-public class ParquetBufferTimeoutTask implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(ParquetBufferTimeoutTask.class);
+public class ParquetBufferTimeoutTaskOld implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(ParquetBufferTimeoutTaskOld.class);
 
     private final String fullPath;
-    private final ParquetFormatManager formatManager;
+    private final ParquetFormatManagerOld formatManager;
 
     /**
      * Constructor with blob full path and Format Manager from where it was scheduled as parameters.
@@ -19,7 +19,7 @@ public class ParquetBufferTimeoutTask implements Runnable {
      * @param fullPath Blob full path
      * @param formatManager FormatManager
      */
-    public ParquetBufferTimeoutTask(String fullPath, ParquetFormatManager formatManager) {
+    public ParquetBufferTimeoutTaskOld(String fullPath, ParquetFormatManagerOld formatManager) {
         this.fullPath = fullPath;
         this.formatManager = formatManager;
     }
