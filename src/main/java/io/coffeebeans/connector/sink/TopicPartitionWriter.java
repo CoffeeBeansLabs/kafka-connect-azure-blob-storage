@@ -80,10 +80,10 @@ public class TopicPartitionWriter {
                 writer.write(record);
                 recordsCount.put(encodedPartition, recordsCount.get(encodedPartition) + 1);
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Failed to write record with offset: {}, encodedPartition: {}, sending to DLQ",
                         record.kafkaOffset(), encodedPartition);
-                reporter.report(record, e);
+                //                reporter.report(record, e);
             }
         }
         checkForRotationAndPerform(now);

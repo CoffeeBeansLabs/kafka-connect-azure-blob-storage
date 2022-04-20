@@ -1,16 +1,17 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.storage.RecordWriter;
 import io.confluent.connect.avro.AvroData;
-
-import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import io.confluent.kafka.schemaregistry.avro.AvroSchema;
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -26,21 +27,23 @@ import org.slf4j.LoggerFactory;
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger logger = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
-    private static final String SCHEMA_FILE_PATH = "/kafka/connector-schema.avsc";
-    // private static final String SCHEMA_FILE_PATH = "/usr/share/java/kafka-connect-sample/schema.avsc";
 
-    private Schema schema = null;
+    private Schema kafkaSchema;
     private final String blobName;
     private final AvroData avroData;
-    private AvroSchema confluentAvroSchema;
+    private final ObjectMapper objectMapper;
     private ParquetOutputFile outputFile;
     private final AzureBlobSinkConfig config;
+    private org.apache.avro.Schema avroSchema;
     private ParquetWriter<GenericRecord> writer;
 
     ParquetRecordWriter(AzureBlobSinkConfig config, AvroData avroData, String blobName) {
         this.config = config;
         this.avroData = avroData;
         this.blobName = blobName;
+        this.kafkaSchema = null;
+        this.avroSchema = null;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -50,11 +53,11 @@ public class ParquetRecordWriter implements RecordWriter {
             return;
         }
 
-        if (schema == null || writer == null) {
+        if (kafkaSchema == null || writer == null) {
             logger.info("Opening parquet record writer for blob: {}", blobName);
 
-            schema = sinkRecord.valueSchema();
-            org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(schema);
+            kafkaSchema = sinkRecord.valueSchema();
+            org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(kafkaSchema);
 
             outputFile = new ParquetOutputFile(config, blobName);
             AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
@@ -63,7 +66,7 @@ public class ParquetRecordWriter implements RecordWriter {
                     .withDictionaryEncoding(true)
                     .withPageSize(PAGE_SIZE);
 
-            if (schemaHasArrayOfOptionalItems(schema, /*seenSchemas=*/null)) {
+            if (schemaHasArrayOfOptionalItems(kafkaSchema, /*seenSchemas=*/null)) {
                 // If the schema contains an array of optional items, then
                 // it is possible that the array may have null items during the
                 // writing process.  In this case, we set a flag so as not to
@@ -78,28 +81,22 @@ public class ParquetRecordWriter implements RecordWriter {
             writer = builder.build();
         }
 
-        Object value = avroData.fromConnectData(schema, sinkRecord.value());
+        Object value = avroData.fromConnectData(kafkaSchema, sinkRecord.value());
         writer.write((GenericRecord) value);
     }
 
     private void writeJsonString(Object value) throws IOException {
-        if (confluentAvroSchema == null || writer == null) {
+        if (this.avroSchema == null || writer == null) {
             logger.info("Opening parquet record writer for blob: {}", blobName);
 
-            org.apache.avro.Schema avroSchema = JsonStringSchema.getSchema();
-            if (avroSchema == null) {
+            this.avroSchema = JsonStringSchema.getSchema();
+            if (this.avroSchema == null) {
                 logger.info("Loading schema ..................................");
                 JsonStringSchema.avroSchema = new org.apache.avro.Schema.Parser()
                         .parse(config.getAvroSchema());
-                avroSchema = JsonStringSchema.getSchema();
+                this.avroSchema = JsonStringSchema.getSchema();
             }
 
-            try {
-                logger.info("New schema: {}", avroSchema);
-            } catch (Exception e1) {
-                logger.error("Error in new schema");
-            }
-            confluentAvroSchema = new AvroSchema(avroSchema);
             outputFile = new ParquetOutputFile(config, blobName);
             AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(avroSchema)
@@ -115,10 +112,16 @@ public class ParquetRecordWriter implements RecordWriter {
 
     private Object parseJsonString(String jsonString) throws IOException {
         try {
-            return AvroSchemaUtils.toObject(jsonString, confluentAvroSchema);
+            GenericRecord record = new GenericData.Record(this.avroSchema);
+            Map<String, Object> valueMap = objectMapper.readValue(jsonString,
+                    new TypeReference<HashMap<String, Object>>() {});
+
+            valueMap.forEach(record::put);
+            return record;
+
         } catch (Exception e) {
-            logger.error("Error deserializing json {} to Avro of schema {} with exception: {}", jsonString,
-                    confluentAvroSchema, e.getMessage());
+            logger.error("Failed to process record {}, with exception: {},  skipping record .......", jsonString,
+                    e.getMessage());
             throw e;
         }
     }
