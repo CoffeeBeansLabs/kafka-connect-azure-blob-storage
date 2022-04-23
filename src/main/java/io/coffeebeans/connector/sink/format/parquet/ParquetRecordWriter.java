@@ -1,20 +1,25 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.*;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.format.avro.AvroSchemaBuilder;
 import io.coffeebeans.connector.sink.storage.RecordWriter;
 import io.confluent.connect.avro.AvroData;
+
+import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
@@ -22,20 +27,24 @@ import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 
 
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger logger = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
+    private static final String FILE_PATH = "/usr/share/java/kafka-connect-sample/schema.avsc";
 
     private Schema kafkaSchema;
     private final String blobName;
     private final AvroData avroData;
     private final ObjectMapper objectMapper;
+    private final AvroSchemaBuilder avroSchemaBuilder;
     private ParquetOutputFile outputFile;
     private final AzureBlobSinkConfig config;
     private org.apache.avro.Schema avroSchema;
-    private ParquetWriter<GenericRecord> writer;
+    private ParquetWriter writer;
+    private JsonAvroConverter converter = new JsonAvroConverter();
 
     ParquetRecordWriter(AzureBlobSinkConfig config, AvroData avroData, String blobName) {
         this.config = config;
@@ -44,6 +53,7 @@ public class ParquetRecordWriter implements RecordWriter {
         this.kafkaSchema = null;
         this.avroSchema = null;
         this.objectMapper = new ObjectMapper();
+        this.avroSchemaBuilder = new AvroSchemaBuilder(objectMapper);
     }
 
     @Override
@@ -93,37 +103,107 @@ public class ParquetRecordWriter implements RecordWriter {
             if (this.avroSchema == null) {
                 logger.info("Loading schema ..................................");
                 JsonStringSchema.avroSchema = new org.apache.avro.Schema.Parser()
-                        .parse(config.getAvroSchema());
+                        .parse(new File(FILE_PATH));
                 this.avroSchema = JsonStringSchema.getSchema();
+
+                logger.info("Parsed Schema -> ");
+                logger.info(avroSchema.toString(true));
+
             }
 
+//            JsonNode jsonNode = objectMapper.readTree((String) value);
+//            avroSchema = new AvroSchemaBuilder(objectMapper).buildAvroSchema(jsonNode);
+
             outputFile = new ParquetOutputFile(config, blobName);
-            AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
+            AvroParquetWriter.Builder<GenericData.Record> builder = AvroParquetWriter.<GenericData.Record>builder(outputFile)
                     .withSchema(avroSchema)
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
-                    .withDictionaryEncoding(true)
+                    .withDictionaryEncoding(false)
                     .withPageSize(PAGE_SIZE);
 
             writer = builder.build();
         }
         Object obj = parseJsonString((String) value);
-        writer.write((GenericRecord) obj);
+        logger.info("Generic Record \n {}", ((GenericData.Record) obj).toString());
+        writer.write((GenericData.Record) obj);
     }
 
     private Object parseJsonString(String jsonString) throws IOException {
         try {
-            GenericRecord record = new GenericData.Record(this.avroSchema);
-            Map<String, Object> valueMap = objectMapper.readValue(jsonString,
-                    new TypeReference<HashMap<String, Object>>() {});
+            //            GenericRecord record = new GenericData.Record(this.avroSchema);
+            //            Map<String, Object> valueMap = objectMapper.readValue(jsonString,
+            //                    new TypeReference<HashMap<String, Object>>() {});
+            //
+            //            valueMap.forEach(record::put);
+            //            return record;
 
-            valueMap.forEach(record::put);
-            return record;
+            // Approach 2
+//                        JsonNode jsonNode = objectMapper.readTree(jsonString);
+//                        logger.info("Generated schema ->");
+//                        logger.info(new AvroSchemaBuilder(objectMapper).buildAvroSchemaAsString(jsonNode));
+//                        return getOutputRecord(jsonNode, this.avroSchema);
+
+            // Approach 3
+            return converter.convertToGenericDataRecord(jsonString.getBytes(), avroSchema);
 
         } catch (Exception e) {
             logger.error("Failed to process record {}, with exception: {},  skipping record .......", jsonString,
                     e.getMessage());
             throw e;
         }
+    }
+
+    private GenericRecord getOutputRecord(JsonNode jsonNode, org.apache.avro.Schema avroSchema) throws JsonProcessingException {
+        GenericRecordBuilder builder = new GenericRecordBuilder(avroSchema);
+        final Iterator<Map.Entry<String, JsonNode>> elements = jsonNode.fields();
+        Map.Entry<String, JsonNode> mapEntry;
+
+        while (elements.hasNext()) {
+            mapEntry = elements.next();
+            final JsonNode nextNode = mapEntry.getValue();
+
+            if (!(nextNode instanceof NullNode)) {
+                if (nextNode instanceof ValueNode) {
+                    builder.set(mapEntry.getKey(), getValue(nextNode));
+                } else if (nextNode instanceof ObjectNode) {
+                    org.apache.avro.Schema schemaTo = avroSchemaBuilder.buildAvroSchema(nextNode);
+                    GenericRecord record = getOutputRecord(nextNode, schemaTo);
+                    builder.set(mapEntry.getKey(), record);
+                } else  if (nextNode instanceof ArrayNode) {
+                    List<Object> listRecords = new ArrayList<>();
+                    Iterator<JsonNode> elementsIterator = ((ArrayNode) nextNode).elements();
+                    while (elementsIterator.hasNext()) {
+                        JsonNode nodeTo = elementsIterator.next();
+                        if (nodeTo instanceof ValueNode) {
+                            listRecords.add(getValue(nodeTo));
+                        } else {
+                            org.apache.avro.Schema schemaTo = avroSchemaBuilder.buildAvroSchema(nodeTo);
+                            GenericRecord record = getOutputRecord(nodeTo, schemaTo);
+                            listRecords.add(record);
+                        }
+                    }
+                    builder.set(mapEntry.getKey(), listRecords);
+                }
+            } else {
+                builder.set(mapEntry.getKey(), null);
+            }
+        }
+        return builder.build();
+    }
+
+    private Object getValue(JsonNode node) {
+        if (node instanceof TextNode) {
+            return node.textValue();
+        } else if (node instanceof IntNode) {
+            return node.intValue();
+        } else if (node instanceof LongNode) {
+            return node.longValue();
+        } else if (node instanceof DoubleNode) {
+            return node.doubleValue();
+        } else if (node instanceof BooleanNode) {
+            return node.booleanValue();
+        }
+        return null;
     }
 
     @Override
