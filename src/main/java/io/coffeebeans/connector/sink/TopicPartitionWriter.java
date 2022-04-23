@@ -83,6 +83,8 @@ public class TopicPartitionWriter {
             } catch (Exception e) {
                 logger.error("Failed to write record with offset: {}, encodedPartition: {}, sending to DLQ",
                         record.kafkaOffset(), encodedPartition);
+                logger.error(e.getMessage());
+                e.printStackTrace();
                 //                reporter.report(record, e);
             }
         }
