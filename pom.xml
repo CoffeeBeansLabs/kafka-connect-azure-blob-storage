@@ -68,6 +68,11 @@
             <artifactId>kafka-connect-avro-data</artifactId>
             <version>7.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>tech.allegro.schema.json2avro</groupId>
+            <artifactId>converter</artifactId>
+            <version>0.2.13</version>
+        </dependency>
 
         <!-- Testing -->
         <dependency>

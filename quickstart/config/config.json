@@ -13,8 +13,6 @@
     "topics.dir": "parquet-time",
     "partition.strategy.field.name": "junk",
     "file.format": "PARQUET",
-    "buffer.length": 5,
-    "buffer.timeout": 10,
-    "buffer.timeout.pool": 1
+    "flush.size": 5
   }
 }
