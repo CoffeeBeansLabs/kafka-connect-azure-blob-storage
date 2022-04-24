@@ -1,7 +1,5 @@
 package io.coffeebeans.connector.sink.partitioner.time.extractor;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
