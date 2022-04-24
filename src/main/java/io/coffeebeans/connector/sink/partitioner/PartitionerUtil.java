@@ -22,7 +22,7 @@ public class PartitionerUtil {
     }
 
     /**
-     * I need SinkRecord and field name as parameters. I will return the value of that field as an object.
+     * Return the value of the field specified.
      *
      * @param sinkRecord SinkRecord
      * @param fieldName Name of the field
@@ -40,7 +40,7 @@ public class PartitionerUtil {
     private static Object getFieldValueFromJsonString(SinkRecord record, String fieldName) throws
             JsonProcessingException {
 
-        Map<?, ?> valueMap = null;
+        Map<?, ?> valueMap;
         try {
             valueMap = objectMapper.readValue((String) record.value(), Map.class);
             return valueMap.get(fieldName);
