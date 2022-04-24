@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
  * This class will return the current version of the connector.
  */
 public class Version {
-    private static final Logger logger = LoggerFactory.getLogger(Version.class);
+    private static final Logger log = LoggerFactory.getLogger(Version.class);
     private static final String PROPERTIES_FILE_NAME = "/application.properties";
     private static final String VERSION_KEY = "version";
     private static final String UNKNOWN_VERSION = "unknown";
@@ -23,7 +23,7 @@ public class Version {
             versionProperty = properties.getProperty(VERSION_KEY, versionProperty).trim();
 
         } catch (Exception e) {
-            logger.error("Error while loading version: " + e);
+            log.error("Error while loading version: " + e);
 
         } finally {
             VERSION = versionProperty;
