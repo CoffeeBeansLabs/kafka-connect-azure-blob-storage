@@ -12,12 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The class name is provided to connect runtime over REST API for configuration -> 'connector.class' , This class
- * is called used by connect runtime internally to perform any operation during starting or stopping the connector.
- * This class also configures the list of configs based on the configuration {@code 'tasks.max'} .
- * <br><br>
- * A connect-runtime can have multiple connectors running.
- * <br><br>
+ * The class name is provided to connect runtime over REST API
+ * for configuration -> 'connector.class' , This class is called
+ * used by connect runtime internally to perform any operation
+ * during starting or stopping the connector. This class also
+ * configures the list of configs based on the configuration
+ * {@code 'tasks.max'} .
+ *
+ * <p>A connect-runtime can have multiple connectors running.
  */
 public class AzureBlobSinkConnector extends SinkConnector {
     private static final Logger log = LoggerFactory.getLogger(SinkConnector.class);
@@ -25,9 +27,11 @@ public class AzureBlobSinkConnector extends SinkConnector {
     private Map<String, String> configProps;
 
     /**
-     * Called by connect-runtime before configuring and starting the sink task. Map of configuration properties is
-     * passed as argument. This map of configuration properties need to be used by
-     * {@link #taskConfigs(int) taskConfigs(maxTasks)} to configure multiple sink tasks.
+     * Called by connect-runtime before configuring and starting
+     * the sink task. Map of configuration properties is passed as
+     * argument. This map of configuration properties need to be used by
+     * {@link #taskConfigs(int) taskConfigs(maxTasks)} to configure
+     * multiple sink tasks.
      *
      * @param props Map of configuration properties passed over REST API to connect-runtime
      */
@@ -38,10 +42,13 @@ public class AzureBlobSinkConnector extends SinkConnector {
     }
 
     /**
-     * Called by the connect-runtime to get the Class extending Task. Multiple instances of this class will be
-     * created by the connect-runtime based on the configuration {@code 'tasks.max'} to perform sink task.
+     * Called by the connect-runtime to get the Class extending Task.
+     * Multiple instances of this class will be created by the
+     * connect-runtime based on the configuration {@code 'tasks.max'}
+     * to perform sink task.
      *
-     * @return Class extending the Task class implementing the logic to perform the sink task
+     * @return Class extending the Task class implementing the
+     *         logic to perform the sink task
      */
     @Override
     public Class<? extends Task> taskClass() {
@@ -49,12 +56,15 @@ public class AzureBlobSinkConnector extends SinkConnector {
     }
 
     /**
-     * Called by the connect-runtime to get the list of map of configuration properties received by the
-     * {@link #start(Map) start(Map)} method. The length of the list should be equal to the maxTasks.
+     * Called by the connect-runtime to get the list of map of
+     * configuration properties received by the {@link #start(Map) start(Map)}
+     * method. The length of the list should be equal to the maxTasks.
      *
-     * @param maxTasks Configuration property passed over REST API {@code 'tasks.max'}
-     * @return List of Map of configuration properties passed to the connect-runtime over REST API. The length of the
-     *      list is equal to the number of the tasks to be configured
+     * @param maxTasks Configuration property passed over
+     *                 REST API {@code 'tasks.max'}
+     * @return List of Map of configuration properties passed
+     *         to the connect-runtime over REST API. The length of the
+     *         list is equal to the number of the tasks to be configured
      */
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
