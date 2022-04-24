@@ -1,7 +1,7 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.storage.StorageFactory;
-import io.coffeebeans.connector.sink.storage.StorageManager;
+import io.coffeebeans.connector.sink.storage.Storage;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -26,7 +26,7 @@ public class ParquetOutputStream extends PositionOutputStream {
     private final int partSize;
     private final String blobName;
     private final ByteBuffer buffer;
-    private final StorageManager azureStorage;
+    private final Storage azureStorage;
 
     /**
      * Pass the blob name with complete path and the part size as arguments.
@@ -44,7 +44,7 @@ public class ParquetOutputStream extends PositionOutputStream {
         this.blobName = blobName;
         this.partSize = partSize;
         this.buffer = ByteBuffer.allocate(this.partSize);
-        this.azureStorage = StorageFactory.getStorageManager();
+        this.azureStorage = StorageFactory.get();
 
         log.info("Configured parquet output stream with part size: {}, for blob: {}", this.partSize, blobName);
     }

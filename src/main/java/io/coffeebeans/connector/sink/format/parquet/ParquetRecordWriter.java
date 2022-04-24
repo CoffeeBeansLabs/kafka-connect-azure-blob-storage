@@ -2,7 +2,7 @@ package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
-import io.coffeebeans.connector.sink.storage.RecordWriter;
+import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.confluent.connect.avro.AvroData;
 import java.io.IOException;
 import java.util.HashSet;

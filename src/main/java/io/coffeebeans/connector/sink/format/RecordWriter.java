@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink.storage;
+package io.coffeebeans.connector.sink.format;
 
 import java.io.IOException;
 import org.apache.kafka.connect.sink.SinkRecord;

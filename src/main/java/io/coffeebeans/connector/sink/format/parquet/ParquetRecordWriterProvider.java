@@ -1,8 +1,8 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.storage.RecordWriter;
-import io.coffeebeans.connector.sink.storage.RecordWriterProvider;
+import io.coffeebeans.connector.sink.format.RecordWriter;
+import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.confluent.connect.avro.AvroData;
 
 /**
