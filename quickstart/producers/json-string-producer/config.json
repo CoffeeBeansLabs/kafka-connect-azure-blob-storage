@@ -9,13 +9,10 @@
     "errors.tolerance": "all",
     "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;",
     "container.name": "kafka-connect",
-    "topics.dir": "parquet-time-0",
-    "partition.strategy": "TIME",
-    "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
-    "partition.strategy.field.name": "na",
+    "topics.dir": "def",
     "file.format": "PARQUET",
-    "flush.size": 300,
-    "azblob.part.size": 4000,
-    "avro.schema": ""
+    "flush.size": 2000,
+    "azblob.part.size": 64000,
+    "schema.file": "/usr/share/java/kafka-connect-sample/schema.avsc"
   }
 }
