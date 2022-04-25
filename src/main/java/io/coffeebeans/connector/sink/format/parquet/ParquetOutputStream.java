@@ -1,7 +1,7 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import io.coffeebeans.connector.sink.storage.StorageFactory;
 import io.coffeebeans.connector.sink.storage.Storage;
+import io.coffeebeans.connector.sink.storage.StorageFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;

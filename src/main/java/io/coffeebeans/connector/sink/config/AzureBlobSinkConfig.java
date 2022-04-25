@@ -465,8 +465,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_LONG,
                         FILE_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
-                        FILE_SIZE_DOC
-                );
+                        FILE_SIZE_DOC);
     }
 
     public String getConnectionString() {

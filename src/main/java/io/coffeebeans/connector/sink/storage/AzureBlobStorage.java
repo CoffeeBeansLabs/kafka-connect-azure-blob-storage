@@ -1,7 +1,8 @@
 package io.coffeebeans.connector.sink.storage;
 
 import com.azure.core.util.Context;
-import com.azure.storage.blob.*;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.AppendBlobRequestConditions;
 import com.azure.storage.blob.options.AppendBlobCreateOptions;
 import com.azure.storage.blob.specialized.AppendBlobClient;
