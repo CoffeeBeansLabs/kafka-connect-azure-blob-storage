@@ -1,25 +1,16 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.format.avro.AvroSchemaBuilder;
-import io.coffeebeans.connector.sink.storage.RecordWriter;
+import io.coffeebeans.connector.sink.format.RecordWriter;
+import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
 import io.confluent.connect.avro.AvroData;
-
-import java.io.File;
 import java.io.IOException;
-import java.util.*;
-
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
@@ -29,47 +20,65 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 
-
+/**
+ * ParquetRecordWriter is used to write Parquet files.
+ * It can process Kafka Struct, JSON String and value Map.
+ */
 public class ParquetRecordWriter implements RecordWriter {
-    private static final Logger logger = LoggerFactory.getLogger(ParquetRecordWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
-    private static final String FILE_PATH = "/usr/share/java/kafka-connect-sample/schema.avsc";
 
     private Schema kafkaSchema;
+    private ParquetWriter writer;
     private final String blobName;
     private final AvroData avroData;
-    private final ObjectMapper objectMapper;
-    private final AvroSchemaBuilder avroSchemaBuilder;
+    private JsonAvroConverter converter;
     private ParquetOutputFile outputFile;
     private final AzureBlobSinkConfig config;
     private org.apache.avro.Schema avroSchema;
-    private ParquetWriter writer;
-    private JsonAvroConverter converter = new JsonAvroConverter();
 
-    ParquetRecordWriter(AzureBlobSinkConfig config, AvroData avroData, String blobName) {
+    /**
+     * Constructor.
+     *
+     * @param config Connector config object
+     * @param avroData Avro data containing configuration properties
+     * @param blobName blob name (prefixed with directory info and suffixed with file extension)
+     */
+    public ParquetRecordWriter(AzureBlobSinkConfig config, AvroData avroData, String blobName) {
         this.config = config;
         this.avroData = avroData;
         this.blobName = blobName;
         this.kafkaSchema = null;
         this.avroSchema = null;
-        this.objectMapper = new ObjectMapper();
-        this.avroSchemaBuilder = new AvroSchemaBuilder(objectMapper);
     }
 
+    /**
+     * It will extract the kafka schema from the <code>sinkRecord</code>
+     * value and convert it to Avro schema. It initializes
+     * {@link ParquetOutputFile} and {@link AvroParquetWriter} to write
+     * Parquet files.
+     *
+     * <p>It also checks for if the schema has an array of optional items.
+     * It converts the value object to {@link GenericRecord} and write
+     * using the ParquetWriter.
+     *
+     * @param sinkRecord sink record to be processed
+     * @throws IOException if any I/O error occur
+     */
     @Override
     public void write(SinkRecord sinkRecord) throws IOException {
         if (sinkRecord.value() instanceof String) {
-            writeJsonString(sinkRecord.value());
+            writeFromJsonString(sinkRecord.value());
             return;
         }
 
         if (kafkaSchema == null || writer == null) {
-            logger.info("Opening parquet record writer for blob: {}", blobName);
+            log.info("Opening parquet record writer for blob: {}", blobName);
 
             kafkaSchema = sinkRecord.valueSchema();
             org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(kafkaSchema);
 
-            outputFile = new ParquetOutputFile(config, blobName);
+            outputFile = new ParquetOutputFile(blobName, config.getPartSize());
             AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(avroSchema)
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
@@ -81,7 +90,7 @@ public class ParquetRecordWriter implements RecordWriter {
                 // it is possible that the array may have null items during the
                 // writing process.  In this case, we set a flag so as not to
                 // incur a NullPointerException
-                logger.debug(
+                log.debug(
                         "Setting \"" + AvroWriteSupport.WRITE_OLD_LIST_STRUCTURE
                                 + "\" to false because the schema contains an array "
                                 + "with optional items"
@@ -92,30 +101,33 @@ public class ParquetRecordWriter implements RecordWriter {
         }
 
         Object value = avroData.fromConnectData(kafkaSchema, sinkRecord.value());
-        writer.write((GenericRecord) value);
+        writer.write(value);
     }
 
-    private void writeJsonString(Object value) throws IOException {
-        if (this.avroSchema == null || writer == null) {
-            logger.info("Opening parquet record writer for blob: {}", blobName);
+    /**
+     * To write a JSON String value, {@link AvroParquetWriter} needs an
+     * Avro schema of the data. It will get the schema file path from
+     * the {@link #config} object and use {@link AvroSchemaStore#loadFromFile(String)}
+     * to load, parse and save the Avro schema.
+     *
+     * <p>It initializes the ParquetWriter, convert the JSON string to
+     * {@link GenericData.Record} and write it using the ParquetWriter.
+     *
+     * @param value the value of the sink record to be processed
+     * @throws IOException If I/O error occur
+     */
+    private void writeFromJsonString(Object value) throws IOException {
+        if (avroSchema == null || writer == null) {
+            log.info("Opening parquet record writer for blob: {}", blobName);
 
-            this.avroSchema = JsonStringSchema.getSchema();
-            if (this.avroSchema == null) {
-                logger.info("Loading schema ..................................");
-                JsonStringSchema.avroSchema = new org.apache.avro.Schema.Parser()
-                        .parse(new File(FILE_PATH));
-                this.avroSchema = JsonStringSchema.getSchema();
-
-                logger.info("Parsed Schema -> ");
-                logger.info(avroSchema.toString(true));
-
+            if (AvroSchemaStore.get() == null) {
+                AvroSchemaStore.loadFromFile(config.getSchemaFile());
             }
+            avroSchema = AvroSchemaStore.get();
 
-//            JsonNode jsonNode = objectMapper.readTree((String) value);
-//            avroSchema = new AvroSchemaBuilder(objectMapper).buildAvroSchema(jsonNode);
-
-            outputFile = new ParquetOutputFile(config, blobName);
-            AvroParquetWriter.Builder<GenericData.Record> builder = AvroParquetWriter.<GenericData.Record>builder(outputFile)
+            outputFile = new ParquetOutputFile(blobName, config.getPartSize());
+            AvroParquetWriter.Builder<GenericData.Record> builder =
+                    AvroParquetWriter.<GenericData.Record>builder(outputFile)
                     .withSchema(avroSchema)
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
                     .withDictionaryEncoding(false)
@@ -123,108 +135,66 @@ public class ParquetRecordWriter implements RecordWriter {
 
             writer = builder.build();
         }
-        Object obj = parseJsonString((String) value);
-        logger.info("Generic Record \n {}", ((GenericData.Record) obj).toString());
-        writer.write((GenericData.Record) obj);
+        Object record = convertToGenericDataRecord((String) value);
+        writer.write(record);
     }
 
-    private Object parseJsonString(String jsonString) throws IOException {
+    /**
+     * It will convert the JSON String to GenericData.Record .
+     *
+     * @param jsonString JSON String
+     * @return GenericData.Record
+     */
+    private GenericData.Record convertToGenericDataRecord(String jsonString) {
         try {
-            //            GenericRecord record = new GenericData.Record(this.avroSchema);
-            //            Map<String, Object> valueMap = objectMapper.readValue(jsonString,
-            //                    new TypeReference<HashMap<String, Object>>() {});
-            //
-            //            valueMap.forEach(record::put);
-            //            return record;
-
-            // Approach 2
-//                        JsonNode jsonNode = objectMapper.readTree(jsonString);
-//                        logger.info("Generated schema ->");
-//                        logger.info(new AvroSchemaBuilder(objectMapper).buildAvroSchemaAsString(jsonNode));
-//                        return getOutputRecord(jsonNode, this.avroSchema);
-
-            // Approach 3
+            if (converter == null) {
+                converter = new JsonAvroConverter(); // Lazy Initialization
+            }
             return converter.convertToGenericDataRecord(jsonString.getBytes(), avroSchema);
-
         } catch (Exception e) {
-            logger.error("Failed to process record {}, with exception: {},  skipping record .......", jsonString,
-                    e.getMessage());
+            log.error("Failed to process record {}, with exception: {}", jsonString, e.getMessage());
             throw e;
         }
     }
 
-    private GenericRecord getOutputRecord(JsonNode jsonNode, org.apache.avro.Schema avroSchema) throws JsonProcessingException {
-        GenericRecordBuilder builder = new GenericRecordBuilder(avroSchema);
-        final Iterator<Map.Entry<String, JsonNode>> elements = jsonNode.fields();
-        Map.Entry<String, JsonNode> mapEntry;
-
-        while (elements.hasNext()) {
-            mapEntry = elements.next();
-            final JsonNode nextNode = mapEntry.getValue();
-
-            if (!(nextNode instanceof NullNode)) {
-                if (nextNode instanceof ValueNode) {
-                    builder.set(mapEntry.getKey(), getValue(nextNode));
-                } else if (nextNode instanceof ObjectNode) {
-                    org.apache.avro.Schema schemaTo = avroSchemaBuilder.buildAvroSchema(nextNode);
-                    GenericRecord record = getOutputRecord(nextNode, schemaTo);
-                    builder.set(mapEntry.getKey(), record);
-                } else  if (nextNode instanceof ArrayNode) {
-                    List<Object> listRecords = new ArrayList<>();
-                    Iterator<JsonNode> elementsIterator = ((ArrayNode) nextNode).elements();
-                    while (elementsIterator.hasNext()) {
-                        JsonNode nodeTo = elementsIterator.next();
-                        if (nodeTo instanceof ValueNode) {
-                            listRecords.add(getValue(nodeTo));
-                        } else {
-                            org.apache.avro.Schema schemaTo = avroSchemaBuilder.buildAvroSchema(nodeTo);
-                            GenericRecord record = getOutputRecord(nodeTo, schemaTo);
-                            listRecords.add(record);
-                        }
-                    }
-                    builder.set(mapEntry.getKey(), listRecords);
-                }
-            } else {
-                builder.set(mapEntry.getKey(), null);
-            }
-        }
-        return builder.build();
-    }
-
-    private Object getValue(JsonNode node) {
-        if (node instanceof TextNode) {
-            return node.textValue();
-        } else if (node instanceof IntNode) {
-            return node.intValue();
-        } else if (node instanceof LongNode) {
-            return node.longValue();
-        } else if (node instanceof DoubleNode) {
-            return node.doubleValue();
-        } else if (node instanceof BooleanNode) {
-            return node.booleanValue();
-        }
-        return null;
-    }
-
+    /**
+     * Invoke to close the ParquetWriter. This will trigger the
+     * writer to close and write the metadata at the end of the file.
+     * Once closed no data can be written by this writer.
+     *
+     * @throws IOException If any I/O error occurs
+     */
     @Override
     public void close() throws IOException {
-        logger.info("ParquetRecordWriter: close initiated");
         if (writer != null) {
             writer.close();
         }
     }
 
+    /**
+     * It will set the commit flag in the ParquetOutputStream object
+     * and invoke the close method of the ParquetWriter.
+     * Once closed no data can be written by this writer.
+     *
+     * @throws IOException If any I/O error occurs
+     */
     @Override
     public void commit() throws IOException {
-        logger.info("ParquetRecordWriter: commit initiated");
         outputFile.getOutputStream().setCommit(true);
         if (writer != null) {
             writer.close();
         }
     }
 
+    /**
+     * This will check if the schema contains an array of optional items.
+     *
+     * @param schema Avro schema
+     * @param seenSchemas set of seen schemas
+     * @return whether it has an array of optional items or not
+     */
     public static boolean schemaHasArrayOfOptionalItems(Schema schema, Set<Schema> seenSchemas) {
-        // First, check for infinitely recursing schemas
+        // First, check for infinitely recursive schemas
         if (seenSchemas == null) {
             seenSchemas = new HashSet<>();
         } else if (seenSchemas.contains(schema)) {
@@ -232,23 +202,28 @@ public class ParquetRecordWriter implements RecordWriter {
         }
         seenSchemas.add(schema);
         switch (schema.type()) {
-            case STRUCT:
-                for (Field field : schema.fields()) {
-                    if (schemaHasArrayOfOptionalItems(field.schema(), seenSchemas)) {
-                        return true;
-                    }
-                }
-                return false;
-            case MAP:
-                return schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
-            case ARRAY:
-                return schema.valueSchema().isOptional()
-                        || schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
-            default:
-                return false;
+          case STRUCT:
+              for (Field field : schema.fields()) {
+                  if (schemaHasArrayOfOptionalItems(field.schema(), seenSchemas)) {
+                      return true;
+                  }
+              }
+              return false;
+          case MAP:
+              return schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
+          case ARRAY:
+              return schema.valueSchema().isOptional()
+                      || schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
+          default:
+              return false;
         }
     }
 
+    /**
+     * The amount of data that has been written by the ParquetWriter till now.
+     *
+     * @return amount of data written so far
+     */
     @Override
     public long getDataSize() {
         if (writer == null) {

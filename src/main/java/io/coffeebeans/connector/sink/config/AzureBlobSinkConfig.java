@@ -4,8 +4,6 @@ import static org.apache.kafka.common.config.ConfigDef.Importance;
 import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 import static org.apache.kafka.common.config.ConfigDef.Type;
 
-import io.coffeebeans.connector.sink.config.recommenders.BufferLengthRecommender;
-import io.coffeebeans.connector.sink.config.recommenders.BufferTimeoutRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.FileFormatRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RolloverFileSizeRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.StrategyRecommender;
@@ -85,7 +83,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      * Visible only for field-based partitioning.
      * No default value, order 2
      */
-    // TODO: Add support for List of fields
     public static final String PARTITION_STRATEGY_FIELD_NAME_CONF_KEY = "partition.strategy.field.name";
     public static final String PARTITION_STRATEGY_FIELD_NAME_CONF_DOC = "Name of the field from which value should be"
             + " extracted";
@@ -107,7 +104,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      * Timezone for time partitioner.
      * Visible only if partition strategy is time based.
      */
-    // TODO: Default should be UTC
     public static final String PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY = "timezone";
     public static final String PARTITION_STRATEGY_TIME_TIMEZONE_DEFAULT_VALUE = "UTC";
     public static final Validator PARTITION_STRATEGY_TIME_TIMEZONE_VALIDATOR = new TimezoneValidator();
@@ -149,65 +145,42 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String ROLLOVER_POLICY_SIZE_CONF_DOC = "Maximum size of the blob for rollover to happen";
 
     /**
-     * Buffer length related configuration.
-     * Visible only if file format is PARQUET
+     * Number of records after which rotation should be done. -1 indicates
+     * rotation should not happen based on number of records.
      */
-    public static final String BUFFER_LENGTH_CONF_KEY = "buffer.length";
-    public static final int BUFFER_LENGTH_DEFAULT_VALUE = 1000;
-    public static final Recommender BUFFER_LENGTH_RECOMMENDER = new BufferLengthRecommender();
-    public static final String BUFFER_LENGTH_CONF_DOC = "Length of the buffer to store after which it is written";
-
-    /**
-     * Buffer timeout related configuration.
-     * Visible only if file format is PARQUET
-     */
-    public static final String BUFFER_TIMEOUT_CONF_KEY = "buffer.timeout";
-    public static final int BUFFER_TIMEOUT_DEFAULT_VALUE = 300; // in seconds, i.e 5 minutes
-    public static final Recommender BUFFER_TIMEOUT_RECOMMENDER = new BufferTimeoutRecommender();
-    public static final String BUFFER_TIMEOUT_CONF_DOC = "Time up to which the connector will wait for the buffer to"
-            + " get full, if not then it is written to blob storage after the timeout completes";
-
-    /**
-     * Buffer timeout task executor thread pool size configuration.
-     */
-    public static final String BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY = "buffer.timeout.pool.size";
-    public static final int BUFFER_TIMEOUT_TASK_POOL_SIZE_DEFAULT_VALUE = 1;
-    public static final String BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_DOC = "Pool size of threads which will execute the "
-            + "scheduled timeout tasks";
-
-    /**
-     * Metadata bootstrap server config.
-     */
-    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY = "metadata.bootstrap.servers";
-    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_DEFAULT_VALUE = "localhost:9092";
-    public static final String METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC = "Bootstrap server address where "
-            + "metadata will be sent";
-
-
     public static final String FLUSH_SIZE_CONF = "flush.size";
     public static final int FLUSH_SIZE_DEFAULT = -1;
     public static final String FLUSH_SIZE_DOC = "Number of records written to store before committing the file";
 
+    /**
+     * Time interval up to which a record writer is open, after which
+     * rotation will be done.
+     */
     public static final String ROTATION_INTERVAL_MS_CONF = "rotation.interval.ms";
     public static final long ROTATION_INTERVAL_MS_DEFAULT = -1L;
     public static final String ROTATION_INTERVAL_MS_DOC = "The time interval in ms after which file commit will be"
             + "invoked. The base time is set after first record is processed";
 
-
+    /**
+     * Part size will be used to create a buffer to store the
+     * processed data.
+     */
     public static final String PART_SIZE_CONF = "azblob.part.size";
     public static final int PART_SIZE_DEFAULT = 2000000; // 2MB
     public static final String PART_SIZE_DOC = "The size of the buffer to store the data of processed records by the"
             + "writer and this will also be the size of part upload to the blob storage";
 
 
-    public static final String AVRO_SCHEMA_CONF = "avro.schema";
-    public static final String AVRO_SCHEMA_DEFAULT = "{\"namespace\":\"topics.avro\",\"type\":\"record\","
-            + "\"name\":\"avrò\",\"fields\":[]}";
-    public static final String AVRO_SCHEMA_DOC = "Avro schema for scenarios when the payload is a Json string or "
+    public static final String SCHEMA_FILE_CONF = "schema.file";
+    public static final String SCHEMA_FILE_DEFAULT = "/usr/share/java/kafka-connect-sample/schema.avsc";
+    public static final String SCHEMA_FILE_DOC = "Avro schema file for scenarios when the payload is a Json string or "
             + "Json without embedded schema or schema registry. This schema will be used to process the record for "
             + "various file formats like parquet etc.";
 
 
+    /**
+     * Amount of data written after which rotation should happen.
+     */
     public static final String FILE_SIZE_CONF = "azblob.file.size";
     public static final long FILE_SIZE_DEFAULT = 190000000000L; // 190 GB
     public static final String FILE_SIZE_DOC = "Maximum size of the blob after which tbe file will be committed";
@@ -226,14 +199,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String timezone;
     private final String timeExtractor;
     private final long rolloverFileSize;
-    private final long bufferLength;
-    private final int bufferTimeout;
-    private final int bufferTimeoutTaskPoolSize;
-    private final String metadataBootstrapServers;
     private final int flushSize;
     private final long rotationIntervalMs;
     private final int partSize;
-    private final String avroSchema;
+    private final String schemaFile;
     private final long fileSize;
 
 
@@ -259,14 +228,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.timezone = this.getString(PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY);
         this.timeExtractor = this.getString(PARTITION_STRATEGY_TIME_TIMESTAMP_EXTRACTOR_CONF_KEY);
         this.rolloverFileSize = this.getLong(ROLLOVER_POLICY_SIZE_CONF_KEY);
-        this.bufferLength = this.getLong(BUFFER_LENGTH_CONF_KEY);
-        this.bufferTimeout = this.getInt(BUFFER_TIMEOUT_CONF_KEY);
-        this.bufferTimeoutTaskPoolSize = this.getInt(BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY);
-        this.metadataBootstrapServers = this.getString(METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY);
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
         this.partSize = this.getInt(PART_SIZE_CONF);
-        this.avroSchema = this.getString(AVRO_SCHEMA_CONF);
+        this.schemaFile = this.getString(SCHEMA_FILE_CONF);
         this.fileSize = this.getLong(FILE_SIZE_CONF);
     }
 
@@ -403,40 +368,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         ROLLOVER_POLICY_SIZE_CONF_KEY,
                         ROLLOVER_POLICY_SIZE_RECOMMENDER
                 ).define(
-                        BUFFER_LENGTH_CONF_KEY,
-                        TYPE_LONG,
-                        BUFFER_LENGTH_DEFAULT_VALUE,
-                        IMPORTANCE_LOW,
-                        BUFFER_LENGTH_CONF_DOC,
-                        null,
-                        -1,
-                        ConfigDef.Width.NONE,
-                        BUFFER_LENGTH_CONF_KEY,
-                        BUFFER_LENGTH_RECOMMENDER
-                ).define(
-                        BUFFER_TIMEOUT_CONF_KEY,
-                        TYPE_INT,
-                        BUFFER_TIMEOUT_DEFAULT_VALUE,
-                        IMPORTANCE_LOW,
-                        BUFFER_TIMEOUT_CONF_DOC,
-                        null,
-                        -1,
-                        ConfigDef.Width.NONE,
-                        BUFFER_TIMEOUT_CONF_KEY,
-                        BUFFER_TIMEOUT_RECOMMENDER
-                ).define(
-                        BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_KEY,
-                        TYPE_INT,
-                        BUFFER_TIMEOUT_TASK_POOL_SIZE_DEFAULT_VALUE,
-                        IMPORTANCE_LOW,
-                        BUFFER_TIMEOUT_TASK_POOL_SIZE_CONF_DOC
-                ).define(
-                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_KEY,
-                        TYPE_STRING,
-                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_DEFAULT_VALUE,
-                        IMPORTANCE_MEDIUM,
-                        METADATA_BOOTSTRAP_SERVERS_ADDRESS_CONF_DOC
-                ).define(
                         FLUSH_SIZE_CONF,
                         TYPE_INT,
                         FLUSH_SIZE_DEFAULT,
@@ -455,18 +386,17 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         IMPORTANCE_LOW,
                         PART_SIZE_DOC
                 ).define(
-                        AVRO_SCHEMA_CONF,
+                        SCHEMA_FILE_CONF,
                         TYPE_STRING,
-                        AVRO_SCHEMA_DEFAULT,
+                        SCHEMA_FILE_DEFAULT,
                         IMPORTANCE_LOW,
-                        AVRO_SCHEMA_DOC
+                        SCHEMA_FILE_DOC
                 ).define(
                         FILE_SIZE_CONF,
                         TYPE_LONG,
                         FILE_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
-                        FILE_SIZE_DOC
-                );
+                        FILE_SIZE_DOC);
     }
 
     public String getConnectionString() {
@@ -505,22 +435,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return rolloverFileSize;
     }
 
-    public long getBufferLength() {
-        return bufferLength;
-    }
-
-    public int getBufferTimeout() {
-        return bufferTimeout;
-    }
-
-    public int getBufferTimeoutTaskPoolSize() {
-        return bufferTimeoutTaskPoolSize;
-    }
-
-    public String getMetadataBootstrapServers() {
-        return metadataBootstrapServers;
-    }
-
     public int getFlushSize() {
         return this.flushSize;
     }
@@ -533,8 +447,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return this.partSize;
     }
 
-    public String getAvroSchema() {
-        return this.avroSchema;
+    public String getSchemaFile() {
+        return this.schemaFile;
     }
 
     public long getFileSize() {

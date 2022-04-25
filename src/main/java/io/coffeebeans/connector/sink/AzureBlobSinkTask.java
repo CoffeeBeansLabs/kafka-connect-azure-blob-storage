@@ -1,21 +1,21 @@
 package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
 import io.coffeebeans.connector.sink.partitioner.Partitioner;
 import io.coffeebeans.connector.sink.partitioner.field.FieldPartitioner;
 import io.coffeebeans.connector.sink.partitioner.time.TimePartitioner;
-import io.coffeebeans.connector.sink.storage.BlobStorageManager;
-import io.coffeebeans.connector.sink.storage.RecordWriterProvider;
 import io.coffeebeans.connector.sink.storage.StorageFactory;
 import io.coffeebeans.connector.sink.util.Version;
-
 import java.io.IOException;
-import java.util.*;
-
-import io.confluent.connect.avro.AvroData;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * props.
  */
 public class AzureBlobSinkTask extends SinkTask {
-    private static final Logger logger = LoggerFactory.getLogger(AzureBlobSinkTask.class);
+    private static final Logger log = LoggerFactory.getLogger(AzureBlobSinkTask.class);
 
     private SinkTaskContext context;
     private Partitioner partitioner;
@@ -38,92 +38,133 @@ public class AzureBlobSinkTask extends SinkTask {
     private RecordWriterProvider recordWriterProvider;
     private Map<TopicPartition, TopicPartitionWriter> topicPartitionWriters;
 
+    /**
+     * Current version of the connector.
+     *
+     * @return current version
+     */
     @Override
     public String version() {
         return Version.getVersion();
     }
 
+    /**
+     * Invoked by the connect-runtime to start the task.
+     *
+     * @param configProps map of config props
+     */
     @Override
     public void start(Map<String, String> configProps) {
-        logger.info("Starting Sink Task ....................");
-        config = new AzureBlobSinkConfig(configProps);
-        this.topicPartitionWriters = new HashMap<>();
-        this.partitioner = getPartitioner();
+        log.info("Starting Sink Task ....................");
 
-        StorageFactory.storageManager = new BlobStorageManager(config.getConnectionString(), config.getContainerName());
-        this.reporter = this.context.errantRecordReporter();
-        recordWriterProvider = new ParquetRecordWriterProvider(new AvroData(20));
+        config = new AzureBlobSinkConfig(configProps);
+        topicPartitionWriters = new HashMap<>();
+        partitioner = getPartitioner();
+
+        StorageFactory.set(config.getConnectionString(), config.getContainerName());
+        reporter = context.errantRecordReporter();
+        recordWriterProvider = new ParquetRecordWriterProvider();
         open(context.assignment());
 
-        logger.info("Sink Task started successfully ....................");
+        log.info("Sink Task started successfully ....................");
     }
 
+    /**
+     * Invoked by the connect-runtime to put the records in to sink.
+     * It receives a collection of sink records.
+     *
+     * @param collection collection of sink records
+     */
     @Override
     public void put(Collection<SinkRecord> collection) {
         if (collection.isEmpty()) {
             return;
         }
+        List<SinkRecord> records = new ArrayList<>(collection);
+        log.info("Received {} records", records.size());
 
         long startTime = System.nanoTime();
 
-        List<SinkRecord> records = new ArrayList<>(collection);
-        logger.info("Received {} records", records.size());
-
-        // Loop through each record and store it in the blob storage.
+        // Loop through each record and store it in the buffer.
         for (SinkRecord record : records) {
-            TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
             if (record.value() == null) {
                 continue;
             }
-            topicPartitionWriters.get(topicPartition).buffer(record);
+            TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
+            TopicPartitionWriter topicPartitionWriter = topicPartitionWriters.get(topicPartition);
+
+            if (topicPartitionWriter == null) {
+                topicPartitionWriter = newTopicPartitionWriter(topicPartition);
+                topicPartitionWriters.put(topicPartition, topicPartitionWriter);
+            }
+            topicPartitionWriter.buffer(record);
         }
 
         for (TopicPartitionWriter writer : topicPartitionWriters.values()) {
             try {
                 writer.write();
             } catch (Exception e) {
-                logger.error("Failed to process record with exception: {}", e.getMessage());
+                log.error("Failed to process record with exception: {}", e.getMessage());
             }
         }
 
-        logger.info("Processed {} records in {} ns time", collection.size(), System.nanoTime() - startTime);
+        log.info("Processed {} records in {} ns time", collection.size(), System.nanoTime() - startTime);
     }
 
+    /**
+     * Invoked when stopping the task.
+     */
     @Override
     public void stop() {
-        logger.info("Stopping Sink Task ...................");
+        log.info("Stopping Sink Task ...................");
     }
 
+    /**
+     * Initialize the SinkContext.
+     *
+     * @param context Sink context
+     */
     @Override
     public void initialize(SinkTaskContext context) {
         this.context = context;
-
-        logger.info("Checking assignments ............................");
-        logger.info("Total assignments are => " + this.context.assignment().size());
-
-        this.context.assignment().forEach((topicPartition) -> logger.info(
-                topicPartition.topic() + ": " + topicPartition.partition())
-        );
     }
 
+    /**
+     * Invoked after starting the task to open any resources.
+     *
+     * @param topicPartitions collection of topic partitions
+     */
     @Override
-    public void open(Collection<TopicPartition> partitions) {
-        for (TopicPartition topicPartition : partitions) {
+    public void open(Collection<TopicPartition> topicPartitions) {
+        for (TopicPartition topicPartition : topicPartitions) {
             topicPartitionWriters.put(topicPartition, newTopicPartitionWriter(topicPartition));
         }
     }
 
+    /**
+     * Invoked before stopping the task to close any resource.
+     *
+     * @param topicPartitions Collection of topic partition
+     */
     @Override
-    public void close(Collection<TopicPartition> partitions) {
-        for (TopicPartition partition : partitions) {
+    public void close(Collection<TopicPartition> topicPartitions) {
+        for (TopicPartition topicPartition : topicPartitions) {
             try {
-                topicPartitionWriters.get(partition).close();
+                topicPartitionWriters.get(topicPartition).close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Failed to close TopicPartition, topic: {}, partition: {}",
+                        topicPartition.topic(), topicPartition.partition()
+                );
             }
         }
     }
 
+    /**
+     * Get a new instance of TopicPartitionWriter.
+     *
+     * @param topicPartition Topic Partition
+     * @return TopicPartitionWriter
+     */
     private TopicPartitionWriter newTopicPartitionWriter(TopicPartition topicPartition) {
         return new TopicPartitionWriter(
                 topicPartition, config, reporter, partitioner, recordWriterProvider
@@ -131,22 +172,18 @@ public class AzureBlobSinkTask extends SinkTask {
     }
 
     /**
-     * I will generate a random alphanumeric string of given length.
+     * Initialize partitioner based on the strategy configured.
      *
-     * @return Generated random alphanumeric string
+     * @return Partitioner
      */
-    //    public String generateRandomAlphanumericString(int length) {
-    //        return RandomStringUtils.randomAlphanumeric(length);
-    //    }
-
     private Partitioner getPartitioner() {
         PartitionStrategy strategy = PartitionStrategy.valueOf(config.getPartitionStrategy());
-        logger.info("Partition strategy configured: {}", strategy);
+        log.info("Partition strategy configured: {}", strategy);
 
         switch (strategy) {
-            case TIME: return new TimePartitioner(config);
-            case FIELD: return new FieldPartitioner(config);
-            default: return new DefaultPartitioner(config);
+          case TIME: return new TimePartitioner(config);
+          case FIELD: return new FieldPartitioner(config);
+          default: return new DefaultPartitioner(config);
         }
     }
 }

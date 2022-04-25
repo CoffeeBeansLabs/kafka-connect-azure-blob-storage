@@ -1,25 +1,43 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.storage.RecordWriter;
-import io.coffeebeans.connector.sink.storage.RecordWriterProvider;
+import io.coffeebeans.connector.sink.format.RecordWriter;
+import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.confluent.connect.avro.AvroData;
 
+/**
+ * ParquetRecordWriterProvider is responsible for creating
+ * and providing new instances of ParquetRecordWriter.
+ */
 public class ParquetRecordWriterProvider implements RecordWriterProvider {
     private static final String EXTENSION = ".parquet";
 
-    private final AvroData avroData;
+    private AvroData avroData;
 
-    public ParquetRecordWriterProvider(AvroData avroData) {
-        this.avroData = avroData;
-    }
-
-    public String getExtension() {
-        return EXTENSION;
-    }
-
+    /**
+     * It will initialize the {@link #avroData} in lazy-loading fashion
+     * if not already initialized. It will concatenate the file name with
+     * the extension of Parquet file format and create a new instance of
+     * ParquetRecordWriter.
+     *
+     * @param config Config object of the connector
+     * @param fileName Blob name (Prefixed with the directory info.)
+     * @return Record Writer to write parquet files
+     */
     public RecordWriter getRecordWriter(final AzureBlobSinkConfig config, final String fileName) {
+        if (avroData == null) {
+            avroData = new AvroData(20); // Lazy initialization
+        }
         String blobName = fileName + getExtension();
         return new ParquetRecordWriter(config, avroData, blobName);
+    }
+
+    /**
+     * Get the extension of Parquet file.
+     *
+     * @return Parquet extension
+     */
+    public String getExtension() {
+        return EXTENSION;
     }
 }

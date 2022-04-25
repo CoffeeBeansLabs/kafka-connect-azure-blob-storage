@@ -3,7 +3,7 @@ package io.coffeebeans.connector.sink.storage;
 /**
  * This will be responsible for calling creation, append, and upload APIs of the storage service.
  */
-public interface StorageManager {
+public interface Storage {
 
     /**
      * I will append the data in append blob in the container with provided blob name. If append blob does not exist it

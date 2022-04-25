@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 /**
  * To build avro schema.
  */
+@Deprecated
 public class AvroSchemaBuilder {
     private static final Logger logger = LoggerFactory.getLogger(AvroSchemaBuilder.class);
     private static final String NAME = "name";

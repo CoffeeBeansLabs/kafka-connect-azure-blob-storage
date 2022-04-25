@@ -1,26 +1,28 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import java.io.IOException;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 
-
+/**
+ * This will be used by the ParquetWriter to create
+ * PositionOutputStream and flush the data from in-memory
+ * store to some sink.
+ *
+ * <p>This implementation of OutputFile will create instance
+ * of {@link ParquetOutputStream} to store data in sink.
+ */
 public class ParquetOutputFile implements OutputFile {
     private static final int DEFAULT_BLOCK_SIZE = 0;
 
-    private final String blobName;
-    private final AzureBlobSinkConfig config;
-    private ParquetOutputStream outputStream;
+    private final ParquetOutputStream outputStream;
 
-    public ParquetOutputFile(AzureBlobSinkConfig config, String blobName) {
-        this.config = config;
-        this.blobName = blobName;
+    public ParquetOutputFile(String blobName, int partSize) {
+        outputStream = new ParquetOutputStream(blobName, partSize);
     }
 
     @Override
     public PositionOutputStream create(long blockSizeHint) throws IOException {
-        outputStream = new ParquetOutputStream(config, blobName);
         return outputStream;
     }
 

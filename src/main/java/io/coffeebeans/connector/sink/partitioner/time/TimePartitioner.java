@@ -28,18 +28,17 @@ public class TimePartitioner extends DefaultPartitioner {
     }
 
     /**
-     * I need the SinkRecord and starting offset as parameters. I will extract the timestamp based on the timestamp
-     * extractor strategy configured and will generate the encoded partition string based on that.
+     * Generate the encoded partition based on the timestamp value.
+     * The timestamp value is extracted either from the record,
+     * server or record producing time based on the extractor strategy configured.
+     *
+     * <p>&lt;formattedTimestamp&gt;
      *
      * @param sinkRecord The record to be stored
      * @return Encoded partition string
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord) throws JsonProcessingException {
-        /*
-          Output format:
-          <formattedTimestamp>
-         */
         return timestampExtractor.getFormattedTimestamp(sinkRecord);
     }
 
@@ -51,7 +50,7 @@ public class TimePartitioner extends DefaultPartitioner {
      */
     private TimestampExtractor getTimestampExtractor(String timestampExtractor, AzureBlobSinkConfig config) {
         TimestampExtractorStrategy strategy = TimestampExtractorStrategy.valueOf(timestampExtractor);
-        logger.info("Timestamp extractor strategy configured: {}", strategy);
+        log.info("Timestamp extractor strategy configured: {}", strategy);
 
         switch (strategy) {
           case  RECORD: return new RecordTimestampExtractor(config);

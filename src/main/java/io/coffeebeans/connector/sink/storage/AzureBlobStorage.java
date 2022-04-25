@@ -1,7 +1,8 @@
 package io.coffeebeans.connector.sink.storage;
 
 import com.azure.core.util.Context;
-import com.azure.storage.blob.*;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.AppendBlobRequestConditions;
 import com.azure.storage.blob.options.AppendBlobCreateOptions;
 import com.azure.storage.blob.specialized.AppendBlobClient;
@@ -14,17 +15,18 @@ import org.slf4j.LoggerFactory;
 /**
  * This class will handle the interaction with blob storage service.
  */
-public class BlobStorageManager implements StorageManager {
-    private static final Logger logger = LoggerFactory.getLogger(StorageManager.class);
+public class AzureBlobStorage implements Storage {
+    private static final Logger logger = LoggerFactory.getLogger(Storage.class);
 
     private final BlobContainerClient containerClient;
 
     /**
-     * Constructor with connection url of the blob storage service.
+     * Constructor.
      *
      * @param connectionString Connection url string of the blob storage service
+     * @param containerName Container name where data will be stored
      */
-    public BlobStorageManager(String connectionString, String containerName) {
+    public AzureBlobStorage(String connectionString, String containerName) {
         this.containerClient = new BlobContainerClientBuilder()
                 .connectionString(connectionString)
                 .containerName(containerName)
@@ -32,11 +34,11 @@ public class BlobStorageManager implements StorageManager {
     }
 
     /**
-     * I will append the data in append blob in the container with provided blob name. If append blob does not exist it
-     * will first create and then append.
+     * Append the data in append blob in the container with provided blob name.
+     * If append blob does not exist it will first create and then append.
      *
-     * @param blobName - Blob name (including the complete folder path)
-     * @param data - Data as byte array
+     * @param blobName Blob name (including the complete folder path)
+     * @param data Data as byte array
      */
     @Override
     public void append(String blobName, byte[] data) {
@@ -44,12 +46,12 @@ public class BlobStorageManager implements StorageManager {
     }
 
     /**
-     * I will append the data in append blob in the container with provided blob name. If append blob does not exist it
+     * Append the data in append blob in the container with provided blob name. If append blob does not exist it
      * will first create with setting the max. blob size and then append.
      *
-     * @param blobName - Blob name (including the complete folder path)
-     * @param maxBlobSize - Maximum size up to which the blob will grow
-     * @param data - Data as byte array
+     * @param blobName Blob name (including the complete folder path)
+     * @param maxBlobSize Maximum size up to which the blob will grow
+     * @param data Data as byte array
      */
     @Override
     public void append(String blobName, long maxBlobSize, byte[] data) {
@@ -68,11 +70,11 @@ public class BlobStorageManager implements StorageManager {
     }
 
     /**
-     * I will upload the data in the container with provided blob name. If blob does not exist it
+     * Upload the data in the container with provided blob name. If blob does not exist it
      * will first create and then upload.
      *
-     * @param blobName - Blob name (including the complete folder path)
-     * @param data - Data as byte array
+     * @param blobName Blob name (including the complete folder path)
+     * @param data Data as byte array
      */
     @Override
     public void upload(String blobName, byte[] data) {
@@ -80,12 +82,12 @@ public class BlobStorageManager implements StorageManager {
     }
 
     /**
-     * I will upload the data in the container with provided blob name. If blob does not exist it
+     * Upload the data in the container with provided blob name. If blob does not exist it
      * will first create and then upload.
      *
-     * @param blobName - Blob name (including the complete folder path)
-     * @param maxBlobSize - Maximum size up to which the blob will grow
-     * @param data - Data as byte array
+     * @param blobName Blob name (including the complete folder path)
+     * @param maxBlobSize Maximum size up to which the blob will grow
+     * @param data Data as byte array
      */
     @Override
     public void upload(String blobName, long maxBlobSize, byte[] data) {
