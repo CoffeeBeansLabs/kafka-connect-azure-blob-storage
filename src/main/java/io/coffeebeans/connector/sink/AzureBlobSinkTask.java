@@ -83,7 +83,7 @@ public class AzureBlobSinkTask extends SinkTask {
         List<SinkRecord> records = new ArrayList<>(collection);
         log.info("Received {} records", records.size());
 
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
 
         // Loop through each record and store it in the buffer.
         for (SinkRecord record : records) {
@@ -108,7 +108,7 @@ public class AzureBlobSinkTask extends SinkTask {
             }
         }
 
-        log.info("Processed {} records in {} ns time", collection.size(), System.nanoTime() - startTime);
+        log.info("Processed {} records in {} ms time", collection.size(), System.currentTimeMillis() - startTime);
     }
 
     /**
