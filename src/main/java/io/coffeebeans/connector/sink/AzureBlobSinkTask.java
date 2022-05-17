@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -139,6 +140,22 @@ public class AzureBlobSinkTask extends SinkTask {
         for (TopicPartition topicPartition : topicPartitions) {
             topicPartitionWriters.put(topicPartition, newTopicPartitionWriter(topicPartition));
         }
+    }
+
+    @Override
+    public Map<TopicPartition, OffsetAndMetadata> preCommit(Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
+        Map<TopicPartition, OffsetAndMetadata> offsetsToCommit = new HashMap<>();
+
+        for (TopicPartition topicPartition : topicPartitionWriters.keySet()) {
+            Long offsetToCommit = topicPartitionWriters.get(topicPartition)
+                    .getLastSuccessfulOffset();
+
+            if (offsetToCommit == null) {
+                continue;
+            }
+            offsetsToCommit.put(topicPartition, new OffsetAndMetadata(offsetToCommit));
+        }
+        return offsetsToCommit;
     }
 
     /**
