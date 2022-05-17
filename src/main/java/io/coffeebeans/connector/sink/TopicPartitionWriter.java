@@ -27,6 +27,7 @@ public class TopicPartitionWriter {
 
     private final int flushSize;
     private final long dataSize;
+    private Long lastSuccessfulOffset;
     private final long rotationIntervalMs;
     private final Partitioner partitioner;
     private final Queue<SinkRecord> buffer;
@@ -55,6 +56,7 @@ public class TopicPartitionWriter {
 
         this.config = config;
         this.reporter = reporter;
+        this.lastSuccessfulOffset = null;
         this.partitioner = partitioner;
         this.buffer = new LinkedList<>();
         this.dataSize = config.getFileSize();
@@ -99,13 +101,23 @@ public class TopicPartitionWriter {
 
             try {
                 writer.write(record);
-                startTimes.put(encodedPartition, now);
+
+                /*
+                Start time should only be stored for that encoded
+                partition when the first record has been successfully
+                written.
+                 */
+                startTimes.putIfAbsent(encodedPartition, now);
                 recordsCount.put(encodedPartition, recordsCount.get(encodedPartition) + 1);
+                lastSuccessfulOffset = record.kafkaOffset();
 
             } catch (Exception e) {
+                log.error("Failed to write record with error message: {}", e.getMessage());
                 log.error("Failed to write record with offset: {}, encodedPartition: {}, sending to DLQ",
                         record.kafkaOffset(), encodedPartition);
-                reporter.report(record, e);
+                if (reporter != null) {
+                    reporter.report(record, e);
+                }
             }
         }
         rotateIfRotateIntervalMsConditionMet(now);
@@ -257,5 +269,12 @@ public class TopicPartitionWriter {
         writers.clear();
         startTimes.clear();
         recordsCount.clear();
+    }
+
+    public Long getLastSuccessfulOffset() {
+        Long offset = lastSuccessfulOffset;
+        lastSuccessfulOffset = null;
+
+        return offset;
     }
 }
