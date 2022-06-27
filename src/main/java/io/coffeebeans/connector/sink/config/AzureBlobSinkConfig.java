@@ -171,9 +171,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
             + "writer and this will also be the size of part upload to the blob storage";
 
 
-    public static final String SCHEMA_FILE_CONF = "schema.file";
-    public static final String SCHEMA_FILE_DEFAULT = "/usr/share/java/kafka-connect-sample/schema.avsc";
-    public static final String SCHEMA_FILE_DOC = "Avro schema file for scenarios when the payload is a Json string or "
+    public static final String SCHEMA_URL_CONF = "schema.url";
+    public static final String SCHEMA_URL_DEFAULT = "/usr/share/java/kafka-connect-sample/schema.avsc";
+    public static final String SCHEMA_URL_DOC = "Avro schema file url for scenarios when the payload is a Json string or "
             + "Json without embedded schema or schema registry. This schema will be used to process the record for "
             + "various file formats like parquet etc.";
 
@@ -202,7 +202,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int flushSize;
     private final long rotationIntervalMs;
     private final int partSize;
-    private final String schemaFile;
+    private final String schemaURL;
     private final long fileSize;
 
 
@@ -231,7 +231,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
         this.partSize = this.getInt(PART_SIZE_CONF);
-        this.schemaFile = this.getString(SCHEMA_FILE_CONF);
+        this.schemaURL = this.getString(SCHEMA_URL_CONF);
         this.fileSize = this.getLong(FILE_SIZE_CONF);
     }
 
@@ -386,11 +386,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         IMPORTANCE_LOW,
                         PART_SIZE_DOC
                 ).define(
-                        SCHEMA_FILE_CONF,
+                        SCHEMA_URL_CONF,
                         TYPE_STRING,
-                        SCHEMA_FILE_DEFAULT,
+                        SCHEMA_URL_DEFAULT,
                         IMPORTANCE_LOW,
-                        SCHEMA_FILE_DOC
+                        SCHEMA_URL_DOC
                 ).define(
                         FILE_SIZE_CONF,
                         TYPE_LONG,
@@ -447,8 +447,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         return this.partSize;
     }
 
-    public String getSchemaFile() {
-        return this.schemaFile;
+    public String getSchemaURL() {
+        return this.schemaURL;
     }
 
     public long getFileSize() {
