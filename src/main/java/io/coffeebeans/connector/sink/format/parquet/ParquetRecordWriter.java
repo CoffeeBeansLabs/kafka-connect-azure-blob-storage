@@ -121,7 +121,7 @@ public class ParquetRecordWriter implements RecordWriter {
             log.info("Opening parquet record writer for blob: {}", blobName);
 
             if (AvroSchemaStore.get() == null) {
-                AvroSchemaStore.loadFromFile(config.getSchemaFile());
+                AvroSchemaStore.loadFromURL(config.getSchemaURL());
             }
             avroSchema = AvroSchemaStore.get();
 
