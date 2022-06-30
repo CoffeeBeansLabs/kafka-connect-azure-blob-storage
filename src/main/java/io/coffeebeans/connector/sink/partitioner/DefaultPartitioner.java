@@ -15,12 +15,13 @@ public class DefaultPartitioner implements Partitioner {
 
     private static final String KAFKA_PARTITION_PROPERTY = "partition";
     public static final String FOLDER_DELIMITER = "/";
-    public static final String FILE_DELIMITER = "+";
 
-    protected String prefix;
+    private String prefix;
+    private String fileDelimiter;
 
     public DefaultPartitioner(AzureBlobSinkConfig config) {
         this.prefix = config.getTopicsDir();
+        this.fileDelimiter = config.getFileDelimiter();
     }
 
     /**
@@ -53,7 +54,7 @@ public class DefaultPartitioner implements Partitioner {
         return generateFolderPath(sinkRecord) + FOLDER_DELIMITER
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+                + sinkRecord.topic() + fileDelimiter + sinkRecord.kafkaPartition() + fileDelimiter + startingOffset;
     }
 
     /**
@@ -72,7 +73,7 @@ public class DefaultPartitioner implements Partitioner {
         return generateFolderPath(sinkRecord, encodedPartition) + FOLDER_DELIMITER
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+                + sinkRecord.topic() + fileDelimiter + sinkRecord.kafkaPartition() + fileDelimiter + startingOffset;
     }
 
     /**
