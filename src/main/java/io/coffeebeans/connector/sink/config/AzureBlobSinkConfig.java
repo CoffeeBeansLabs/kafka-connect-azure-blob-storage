@@ -43,6 +43,15 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     // ###################################### Azure blob configurations ######################################
     /**
+     * Azure Blob File Delimiter related configuration
+     *
+     */
+    public static final String FILE_DELIMITER_CONFIGURATION = "file.delimiter";
+    public static final String FILE_DELIMITER_DOC = "File delimiter for generated full path";
+    public static final String FILE_DELIMITER_DEFAULT_VALUE="+";
+
+
+    /**
      * Azure Blob Connection URL related configurations.
      * No default value, order 1
      */
@@ -190,6 +199,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
 
 
+    private final String fileDelimiter;
     private final String connectionString;
     private final String containerName;
     private final String topicsDir;
@@ -219,6 +229,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      */
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
+        this.fileDelimiter=this.getString(FILE_DELIMITER_CONFIGURATION);
         this.connectionString = this.getString(CONN_URL_CONF_KEY);
         this.containerName = this.getString(CONTAINER_NAME_CONF_KEY);
         this.topicsDir = this.getString(TOPICS_DIR_CONF_KEY);
@@ -256,6 +267,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      */
     public static void defineConfig(ConfigDef configDef) {
         configDef
+                .define(
+                        FILE_DELIMITER_CONFIGURATION,
+                        TYPE_STRING,
+                        FILE_DELIMITER_DEFAULT_VALUE,
+                        IMPORTANCE_HIGH,
+                        FILE_DELIMITER_DOC
+                )
                 .define(
                         CONN_URL_CONF_KEY,
                         TYPE_STRING,
@@ -397,6 +415,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         FILE_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
                         FILE_SIZE_DOC);
+    }
+
+    public String getFileDelimiter() {
+        return this.fileDelimiter;
     }
 
     public String getConnectionString() {
