@@ -1,7 +1,11 @@
 package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
+import io.coffeebeans.connector.sink.format.FileFormat;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
+import io.coffeebeans.connector.sink.format.SchemaStore;
+import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
 import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
@@ -36,11 +40,14 @@ public class AzureBlobSinkTask extends SinkTask {
     private Partitioner partitioner;
     private AzureBlobSinkConfig config;
     private ErrantRecordReporter reporter;
+    private AzureBlobSinkConnectorContext azureBlobSinkConnectorContext;
     private RecordWriterProvider recordWriterProvider;
     private Map<TopicPartition, TopicPartitionWriter> topicPartitionWriters;
 
     /**
-     * Current version of the connector.
+     * Get the current version of the connector. Used by the connector cluster to
+     * know which node is running which version when running in distributed mode.
+     * The version can be changed in the application.properties file.
      *
      * @return current version
      */
@@ -50,7 +57,7 @@ public class AzureBlobSinkTask extends SinkTask {
     }
 
     /**
-     * Invoked by the connect-runtime to start the task.
+     * Invoked by the connect-runtime to start the sink task.
      *
      * @param configProps map of config props
      */
@@ -59,13 +66,26 @@ public class AzureBlobSinkTask extends SinkTask {
         log.info("Starting Sink Task ....................");
 
         config = new AzureBlobSinkConfig(configProps);
+
+        SchemaStore schemaStore = getSchemaStore(config.getFileFormat());
+        try {
+            this.azureBlobSinkConnectorContext = AzureBlobSinkConnectorContext.builder(configProps)
+                    .schemaStore(schemaStore)
+                    .build();
+
+        } catch (IOException | SchemaNotFoundException e) {
+            log.error("Failed to start the connector: Error loading schema");
+            throw new RuntimeException("Failed to start connector");
+        }
+
         topicPartitionWriters = new HashMap<>();
         partitioner = getPartitioner();
 
         StorageFactory.set(config.getConnectionString(), config.getContainerName());
         reporter = context.errantRecordReporter();
-        recordWriterProvider = new ParquetRecordWriterProvider();
+        recordWriterProvider = new ParquetRecordWriterProvider(schemaStore);
         open(context.assignment());
+
 
         log.info("Sink Task started successfully ....................");
     }
@@ -184,7 +204,12 @@ public class AzureBlobSinkTask extends SinkTask {
      */
     private TopicPartitionWriter newTopicPartitionWriter(TopicPartition topicPartition) {
         return new TopicPartitionWriter(
-                topicPartition, config, reporter, partitioner, recordWriterProvider
+                topicPartition,
+                config,
+                reporter,
+                partitioner,
+                recordWriterProvider,
+                azureBlobSinkConnectorContext
         );
     }
 
@@ -201,6 +226,15 @@ public class AzureBlobSinkTask extends SinkTask {
           case TIME: return new TimePartitioner(config);
           case FIELD: return new FieldPartitioner(config);
           default: return new DefaultPartitioner(config);
+        }
+    }
+
+    private SchemaStore getSchemaStore(String fileFormat) {
+        FileFormat format = FileFormat.valueOf(fileFormat);
+
+        switch (format) {
+          case PARQUET: return AvroSchemaStore.getSchemaStore();
+          default: return null;
         }
     }
 }
