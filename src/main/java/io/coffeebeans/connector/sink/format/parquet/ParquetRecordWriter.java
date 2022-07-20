@@ -2,6 +2,7 @@ package io.coffeebeans.connector.sink.format.parquet;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
+import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
 import io.confluent.connect.avro.AvroData;
 import java.io.IOException;
@@ -28,10 +29,12 @@ public class ParquetRecordWriter implements RecordWriter {
     private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
 
+    private String topic;
     private Schema kafkaSchema;
     private ParquetWriter writer;
     private final String blobName;
     private final AvroData avroData;
+    private SchemaStore schemaStore;
     private JsonAvroConverter converter;
     private ParquetOutputFile outputFile;
     private final AzureBlobSinkConfig config;
@@ -44,8 +47,15 @@ public class ParquetRecordWriter implements RecordWriter {
      * @param avroData Avro data containing configuration properties
      * @param blobName blob name (prefixed with directory info and suffixed with file extension)
      */
-    public ParquetRecordWriter(AzureBlobSinkConfig config, AvroData avroData, String blobName) {
+    public ParquetRecordWriter(AzureBlobSinkConfig config,
+                               SchemaStore schemaStore,
+                               AvroData avroData,
+                               String blobName,
+                               String topic) {
+
+        this.topic = topic;
         this.config = config;
+        this.schemaStore = schemaStore;
         this.avroData = avroData;
         this.blobName = blobName;
         this.kafkaSchema = null;
@@ -107,8 +117,8 @@ public class ParquetRecordWriter implements RecordWriter {
     /**
      * To write a JSON String value, {@link AvroParquetWriter} needs an
      * Avro schema of the data. It will get the schema file path from
-     * the {@link #config} object and use {@link AvroSchemaStore#loadFromFile(String)}
-     * to load, parse and save the Avro schema.
+     * the {@link #config} object and use {@link AvroSchemaStore#getSchema(String)}}
+     * to get the Avro schema.
      *
      * <p>It initializes the ParquetWriter, convert the JSON string to
      * {@link GenericData.Record} and write it using the ParquetWriter.
@@ -120,10 +130,7 @@ public class ParquetRecordWriter implements RecordWriter {
         if (avroSchema == null || writer == null) {
             log.info("Opening parquet record writer for blob: {}", blobName);
 
-            if (AvroSchemaStore.get() == null) {
-                AvroSchemaStore.loadFromURL(config.getSchemaURL());
-            }
-            avroSchema = AvroSchemaStore.get();
+            avroSchema = (org.apache.avro.Schema) schemaStore.getSchema(topic);
 
             outputFile = new ParquetOutputFile(blobName, config.getPartSize());
             AvroParquetWriter.Builder<GenericData.Record> builder =
