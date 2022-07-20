@@ -1,64 +1,107 @@
 package io.coffeebeans.connector.sink.format.avro;
 
+import io.coffeebeans.connector.sink.format.SchemaStore;
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * To write JSON string values by any writer (like ParquetWriter),
- * it needs Schema of the data during initialization.
- * Extracting schema from JSON String will have inconsistencies
- * and will miss out information like default value, type
- * unions etc. Instead of that it is better to load Avro schema
- * for that data from a schema file.
- *
- * <p>The IO operation to load schema from a file and parsing it
- * is an expensive operation therefore, it is better to do it
- * once and store it in a static variable so that there is no
- * need of loading and parsing of schema everytime a
- * new RecordWriter is initialized.
+ * It's a singleton class to store the topic and its respective Avro schema.
+ * It can download the schema data from URL and store it after parsing it.
+ * <br>
+ * It's possible to have separate schema for each partition but that is
+ * not supported currently.
  */
-public class AvroSchemaStore {
+public class AvroSchemaStore implements SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(AvroSchemaStore.class);
+    private static AvroSchemaStore instance;
 
-    private static Schema schema;
+    private final Schema.Parser schemaParser;
+    private final Map<String, Schema> schemaMap;
 
     /**
-     * It will load the schema from the file, parse it using Avro schema parser and store it in a static variable.
-     *
-     * @param file Absolute file path
-     * @throws IOException Thrown when unable to find the file, open the file or read contents from it
+     * Singleton.
      */
-    @Deprecated
-    public static void loadFromFile(String file) throws IOException {
-        log.info("Loading avro schema from file: {}", file);
+    private AvroSchemaStore() {
+        schemaParser = new Schema.Parser();
+        schemaMap = new HashMap<>();
+    }
+
+    /**
+     * Initializes (if not did already) the AvroSchemaStore instance and return it.
+     *
+     * @return Instance of AvroSchemaStore
+     */
+    public static AvroSchemaStore getSchemaStore() {
+        if (instance == null) {
+            instance = new AvroSchemaStore();
+        }
+        return instance;
+    }
+
+    /**
+     * Each Topic can have its own schema, so it is important to store
+     * schema for each one of them.
+     * <br>
+     * Downloads the schema from the given URL, parse it and store it with the
+     * given topic.
+     * <br>
+     * Topic is treated as the key and the Schema as the value.
+     * <br>
+     * Possible values for Schema URL->
+     * <blockquote>
+     *     <pre>
+     *         From remote server: http://localhost:8080/schema
+     *         From local file system: file:///path/to/schema/file
+     *     </pre>
+     * </blockquote>
+     *
+     * @param topic Topic as key for storing the schema w.r.t it
+     * @param schemaURL The URL from where the schema has to be downloaded
+     * @throws IOException Thrown if the provided URL is malformed or if it encounters any issue
+     *      while downloading the schema.
+     */
+    public void register(String topic, String schemaURL) throws IOException {
+        if (schemaMap.containsKey(topic)) {
+            return;
+        }
         try {
-            schema = new Schema.Parser().parse(new File(file));
+            Schema schema = loadFromURL(schemaURL);
+            schemaMap.put(topic, schema);
+
         } catch (IOException e) {
-            log.error("Failed to load schema from file with exception: {}", e.getMessage());
+            log.info("Failed to register schema for topic: {}", topic);
             throw e;
         }
     }
 
     /**
      * Fetch the schema from the given url and parse it as an Avro schema.
+     * <br>
      * Possible values ->
-     *      From remote server: http://localhost:8080/schema
-     *      From local file system: file:///path/to/schema/file
+     * <blockquote>
+     *     <pre>
+     *         From remote server: http://localhost:8080/schema
+     *         From local file system: file:///path/to/schema/file
+     *     </pre>
+     * </blockquote>
      *
      * @param url URL from which data has to be fetched
+     * @return Parsed Avro schema
      * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
-    public static void loadFromURL(String url) throws IOException {
-        log.info("Loading avro schema from file: {}", url);
-        try(BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(url).openStream())) {
-            schema = new Schema.Parser().parse(bufferedInputStream);
+    public Schema loadFromURL(String url) throws IOException {
+        log.info("Loading avro schema from url: {}", url);
+        try {
+            URL schemaURL = new URL(url);
+            return loadFromURL(schemaURL);
 
         } catch (MalformedURLException e) {
             log.error("Malformed URL: {}", url);
@@ -71,11 +114,52 @@ public class AvroSchemaStore {
     }
 
     /**
-     * Get the Avro schema parsed from the schema file.
+     * Fetch the schema from the given url and parse it as an Avro schema.
      *
-     * @return Avro schema
+     * @param url URL from which data has to be fetched
+     * @return Parsed Avro schema
+     * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
-    public static Schema get() {
-        return schema;
+    public Schema loadFromURL(URL url) throws IOException {
+        log.info("Downloading avro schema from URL: {}", url);
+        try (InputStream inputStream = getInputStream(url)) {
+            return schemaParser.parse(inputStream);
+
+        } catch (IOException e) {
+            log.error("Failed to download schema from URL: {}", url);
+            throw e;
+        }
+    }
+
+    /**
+     * Opens the input stream on the provided URL and returns an InputStream.
+     * BufferedInputStream improves the performance.
+     *
+     * @param url URL of the resource
+     * @return InputStream
+     * @throws IOException thrown if encounters an exception while opening the input stream
+     */
+    private InputStream getInputStream(URL url) throws IOException {
+        try {
+            // BufferedInputStream is much better in terms of performance.
+            return new BufferedInputStream(url.openStream());
+
+        } catch (IOException e) {
+            log.error("Error opening stream on the provided url: {} ", url);
+            log.error("Failed with exception: {}", e.getMessage());
+
+            throw e;
+        }
+    }
+
+    /**
+     * Get the schema for the given topic.
+     *
+     * @param topic kafka topic
+     * @return Stored Avro schema
+     */
+    public Schema getSchema(String topic) {
+        return this.schemaMap
+                .get(topic);
     }
 }
