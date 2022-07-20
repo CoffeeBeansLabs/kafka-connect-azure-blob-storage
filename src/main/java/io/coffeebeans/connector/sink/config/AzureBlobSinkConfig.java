@@ -185,6 +185,22 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final long FILE_SIZE_DEFAULT = 190000000000L; // 190 GB
     public static final String FILE_SIZE_DOC = "Maximum size of the blob after which tbe file will be committed";
 
+    /**
+     * Not a configuration. It's a suffix which when concatenated with the topic name, will act
+     * as a configuration (dynamic).
+     *
+     * For example, if configured topics are: alpha, lambda
+     * configuration for its schema can be done using:
+     *      alpha.schema.url: url,
+     *      lambda.schema.url: url
+     *
+     * This configuration depends upon the file format.
+     *
+     * Note:
+     * This configuration is not recommended / validated by the connect-runtime.
+     */
+    public static final String TOPIC_SCHEMA_URL_SUFFIX = ".schema.url";
+
 
     // Common validators
     public static final Validator NON_EMPTY_STRING_VALIDATOR = new ConfigDef.NonEmptyString();
@@ -204,6 +220,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int partSize;
     private final String schemaURL;
     private final long fileSize;
+    private final String fileFormat;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -233,6 +250,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.partSize = this.getInt(PART_SIZE_CONF);
         this.schemaURL = this.getString(SCHEMA_URL_CONF);
         this.fileSize = this.getLong(FILE_SIZE_CONF);
+        this.fileFormat = this.getString(FILE_FORMAT_CONF_KEY);
     }
 
 
@@ -453,5 +471,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public long getFileSize() {
         return this.fileSize;
+    }
+
+    public String getFileFormat() {
+        return this.fileFormat;
     }
 }
