@@ -3,6 +3,7 @@ package io.coffeebeans.connector.sink.format.parquet;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
+import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.confluent.connect.avro.AvroData;
 
 /**
@@ -13,6 +14,11 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
     private static final String EXTENSION = ".parquet";
 
     private AvroData avroData;
+    private SchemaStore schemaStore;
+
+    public ParquetRecordWriterProvider(SchemaStore schemaStore) {
+        this.schemaStore = schemaStore;
+    }
 
     /**
      * It will initialize the {@link #avroData} in lazy-loading fashion
@@ -24,12 +30,12 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
      * @param fileName Blob name (Prefixed with the directory info.)
      * @return Record Writer to write parquet files
      */
-    public RecordWriter getRecordWriter(final AzureBlobSinkConfig config, final String fileName) {
+    public RecordWriter getRecordWriter(final AzureBlobSinkConfig config, final String fileName, String topic) {
         if (avroData == null) {
             avroData = new AvroData(20); // Lazy initialization
         }
         String blobName = fileName + getExtension();
-        return new ParquetRecordWriter(config, avroData, blobName);
+        return new ParquetRecordWriter(config, schemaStore, avroData, blobName, topic);
     }
 
     /**

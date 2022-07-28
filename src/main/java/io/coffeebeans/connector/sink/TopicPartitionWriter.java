@@ -32,8 +32,10 @@ public class TopicPartitionWriter {
     private final Partitioner partitioner;
     private final Queue<SinkRecord> buffer;
     private final AzureBlobSinkConfig config;
+    private final TopicPartition topicPartition;
     private final ErrantRecordReporter reporter;
     private final RecordWriterProvider recordWriterProvider;
+    private final AzureBlobSinkConnectorContext azureBlobSinkConnectorContext;
 
     private final Map<String, Long> startTimes;
     private final Map<String, Long> recordsCount;
@@ -52,7 +54,8 @@ public class TopicPartitionWriter {
                                 AzureBlobSinkConfig config,
                                 ErrantRecordReporter reporter,
                                 Partitioner partitioner,
-                                RecordWriterProvider recordWriterProvider) {
+                                RecordWriterProvider recordWriterProvider,
+                                AzureBlobSinkConnectorContext azureBlobSinkConnectorContext) {
 
         this.config = config;
         this.reporter = reporter;
@@ -60,9 +63,11 @@ public class TopicPartitionWriter {
         this.partitioner = partitioner;
         this.buffer = new LinkedList<>();
         this.dataSize = config.getFileSize();
+        this.topicPartition = topicPartition;
         this.flushSize = config.getFlushSize();
         this.recordWriterProvider = recordWriterProvider;
         this.rotationIntervalMs = config.getRotationIntervalMs();
+        this.azureBlobSinkConnectorContext = azureBlobSinkConnectorContext;
 
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
@@ -132,7 +137,9 @@ public class TopicPartitionWriter {
      */
     private RecordWriter instantiateNewWriter(SinkRecord record, String encodedPartition) {
         RecordWriter writer = recordWriterProvider.getRecordWriter(
-                config, partitioner.generateFullPath(record, encodedPartition, record.kafkaOffset())
+                config,
+                partitioner.generateFullPath(record, encodedPartition, record.kafkaOffset()),
+                topicPartition.topic()
         );
 
         writers.put(encodedPartition, writer);
@@ -271,6 +278,11 @@ public class TopicPartitionWriter {
         recordsCount.clear();
     }
 
+    /**
+     * Returns offset of last record successfully written.
+     *
+     * @return offset value
+     */
     public Long getLastSuccessfulOffset() {
         Long offset = lastSuccessfulOffset;
         lastSuccessfulOffset = null;
