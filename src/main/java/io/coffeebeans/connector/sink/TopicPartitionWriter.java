@@ -3,16 +3,12 @@ package io.coffeebeans.connector.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
-import io.coffeebeans.connector.sink.format.RecordWriterProvider;
-import io.coffeebeans.connector.sink.partitioner.Partitioner;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +25,8 @@ public class TopicPartitionWriter {
     private final long dataSize;
     private Long lastSuccessfulOffset;
     private final long rotationIntervalMs;
-    private final Partitioner partitioner;
     private final Queue<SinkRecord> buffer;
-    private final AzureBlobSinkConfig config;
-    private final TopicPartition topicPartition;
-    private final ErrantRecordReporter reporter;
-    private final RecordWriterProvider recordWriterProvider;
-    private final AzureBlobSinkConnectorContext azureBlobSinkConnectorContext;
+    private final AzureBlobSinkConnectorContext context;
 
     private final Map<String, Long> startTimes;
     private final Map<String, Long> recordsCount;
@@ -44,30 +35,18 @@ public class TopicPartitionWriter {
     /**
      * Constructor.
      *
-     * @param topicPartition Kafka topic partition
-     * @param config Connector config object
-     * @param reporter DLQ Error reporter
-     * @param partitioner Partitioner
-     * @param recordWriterProvider Record writer provider
+     * @param azureBlobSinkConnectorContext Context object
      */
-    public TopicPartitionWriter(TopicPartition topicPartition,
-                                AzureBlobSinkConfig config,
-                                ErrantRecordReporter reporter,
-                                Partitioner partitioner,
-                                RecordWriterProvider recordWriterProvider,
-                                AzureBlobSinkConnectorContext azureBlobSinkConnectorContext) {
+    public TopicPartitionWriter(AzureBlobSinkConnectorContext azureBlobSinkConnectorContext) {
 
-        this.config = config;
-        this.reporter = reporter;
+        this.context = azureBlobSinkConnectorContext;
+        AzureBlobSinkConfig config = azureBlobSinkConnectorContext.getConfig();
+
         this.lastSuccessfulOffset = null;
-        this.partitioner = partitioner;
         this.buffer = new LinkedList<>();
         this.dataSize = config.getFileSize();
-        this.topicPartition = topicPartition;
         this.flushSize = config.getFlushSize();
-        this.recordWriterProvider = recordWriterProvider;
         this.rotationIntervalMs = config.getRotationIntervalMs();
-        this.azureBlobSinkConnectorContext = azureBlobSinkConnectorContext;
 
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
@@ -94,7 +73,7 @@ public class TopicPartitionWriter {
 
         while (!buffer.isEmpty()) {
             SinkRecord record = buffer.poll();
-            String encodedPartition = partitioner.encodePartition(record);
+            String encodedPartition = context.encodePartition(record);
             rotateIfFlushOrDataSizeConditionMet(encodedPartition);
 
             RecordWriter writer = writers.get(encodedPartition);
@@ -117,12 +96,15 @@ public class TopicPartitionWriter {
                 lastSuccessfulOffset = record.kafkaOffset();
 
             } catch (Exception e) {
-                log.error("Failed to write record with error message: {}", e.getMessage());
+                log.error("Failed to write record with error message: {}",
+                        e.getMessage()
+                );
                 log.error("Failed to write record with offset: {}, encodedPartition: {}, sending to DLQ",
-                        record.kafkaOffset(), encodedPartition);
-                if (reporter != null) {
-                    reporter.report(record, e);
-                }
+                        record.kafkaOffset(),
+                        encodedPartition
+                );
+
+                context.sendToDeadLetterQueue(record, e);
             }
         }
         rotateIfRotateIntervalMsConditionMet(now);
@@ -136,10 +118,15 @@ public class TopicPartitionWriter {
      * @return Record writer to write the record
      */
     private RecordWriter instantiateNewWriter(SinkRecord record, String encodedPartition) {
-        RecordWriter writer = recordWriterProvider.getRecordWriter(
-                config,
-                partitioner.generateFullPath(record, encodedPartition, record.kafkaOffset()),
-                topicPartition.topic()
+
+        String outputFileName = context.generateFullPath(
+                record,
+                encodedPartition,
+                record.kafkaOffset()
+        );
+        RecordWriter writer = context.getRecordWriter(
+                record.topic(),
+                outputFileName
         );
 
         writers.put(encodedPartition, writer);
