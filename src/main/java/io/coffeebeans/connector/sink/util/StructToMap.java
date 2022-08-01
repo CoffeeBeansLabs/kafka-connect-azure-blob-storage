@@ -42,57 +42,58 @@ public class StructToMap {
         String schemaName = field.schema().name();
 
         switch (fieldType) {
-          case STRING: valueMap.put(fieldName, struct.getString(fieldName));
-                break;
-
-          case INT16: valueMap.put(fieldName, struct.getInt16(fieldName));
+            case STRING: valueMap.put(fieldName, struct.getString(fieldName));
             break;
 
-          case INT32: {
-              if (Date.LOGICAL_NAME.equals(fieldName) || Time.LOGICAL_NAME.equals(fieldName)) {
-                  valueMap.put(fieldName, struct.get(fieldName));
-              } else {
-                  valueMap.put(fieldName, struct.getInt32(fieldName));
-              }
-          }
+            case INT16: valueMap.put(fieldName, struct.getInt16(fieldName));
             break;
 
-          case INT64: {
-              if (Timestamp.LOGICAL_NAME.equals(fieldName)) {
-                  valueMap.put(fieldName, struct.get(fieldName));
-              } else {
-                  valueMap.put(fieldName, struct.getInt64(fieldName));
-              }
-          }
+            case INT32: {
+                if (Date.LOGICAL_NAME.equals(fieldName) || Time.LOGICAL_NAME.equals(fieldName)) {
+                    valueMap.put(fieldName, struct.get(fieldName));
+                } else {
+                    valueMap.put(fieldName, struct.getInt32(fieldName));
+                }
+            }
             break;
 
-          case FLOAT32: valueMap.put(fieldName, struct.getFloat32(fieldName));
+            case INT64: {
+                if (Timestamp.LOGICAL_NAME.equals(fieldName)) {
+                    valueMap.put(fieldName, struct.get(fieldName));
+                } else {
+                    valueMap.put(fieldName, struct.getInt64(fieldName));
+                }
+            }
             break;
 
-          case FLOAT64: valueMap.put(fieldName, struct.getFloat64(fieldName));
+            case FLOAT32: valueMap.put(fieldName, struct.getFloat32(fieldName));
             break;
 
-          case BOOLEAN: valueMap.put(fieldName, struct.getBoolean(fieldName));
+            case FLOAT64: valueMap.put(fieldName, struct.getFloat64(fieldName));
             break;
 
-          case ARRAY: {
-              List<Object> fieldArray = struct.getArray(fieldName);
-
-              if (fieldArray.get(0) instanceof Struct) {
-                  List<Object> jsonArray = new ArrayList<>();
-
-                  fieldArray.forEach(item -> jsonArray.add(toMap(struct.getStruct(fieldName))));
-                  valueMap.put(fieldName, jsonArray);
-              } else {
-                  valueMap.put(fieldName, fieldArray);
-              }
-          }
+            case BOOLEAN: valueMap.put(fieldName, struct.getBoolean(fieldName));
             break;
 
-          case STRUCT: valueMap.put(fieldName, toMap(struct));
+            case ARRAY: {
+                List<Object> fieldArray = struct.getArray(fieldName);
+
+                if (fieldArray.get(0) instanceof Struct) {
+                    List<Object> jsonArray = new ArrayList<>();
+
+                    fieldArray.forEach(item -> jsonArray.add(toMap(struct.getStruct(fieldName))));
+                    valueMap.put(fieldName, jsonArray);
+
+                } else {
+                    valueMap.put(fieldName, fieldArray);
+                }
+            }
             break;
 
-          default: valueMap.put(fieldName, struct.get(fieldName));
+            case STRUCT: valueMap.put(fieldName, toMap(struct));
+            break;
+
+            default: valueMap.put(fieldName, struct.get(fieldName));
         }
     }
 }
