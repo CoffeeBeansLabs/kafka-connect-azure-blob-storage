@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
+import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
@@ -17,8 +18,8 @@ public class ParquetOutputFile implements OutputFile {
 
     private final ParquetOutputStream outputStream;
 
-    public ParquetOutputFile(String blobName, int partSize) {
-        outputStream = new ParquetOutputStream(blobName, partSize);
+    public ParquetOutputFile(StorageManager storageManager, String blobName, int partSize) {
+        outputStream = new ParquetOutputStream(storageManager, blobName, partSize);
     }
 
     @Override
