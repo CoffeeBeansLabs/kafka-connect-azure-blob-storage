@@ -4,6 +4,7 @@ import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
+import io.coffeebeans.connector.sink.storage.StorageManager;
 import io.confluent.connect.avro.AvroData;
 
 /**
@@ -13,7 +14,6 @@ import io.confluent.connect.avro.AvroData;
 public class ParquetRecordWriterProvider implements RecordWriterProvider {
     private static final String EXTENSION = ".parquet";
 
-    private AvroData avroData;
     private SchemaStore schemaStore;
 
     public ParquetRecordWriterProvider(SchemaStore schemaStore) {
@@ -21,21 +21,29 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
     }
 
     /**
-     * It will initialize the {@link #avroData} in lazy-loading fashion
+     * It will initialize the in lazy-loading fashion
      * if not already initialized. It will concatenate the file name with
      * the extension of Parquet file format and create a new instance of
      * ParquetRecordWriter.
      *
-     * @param config Config object of the connector
      * @param fileName Blob name (Prefixed with the directory info.)
      * @return Record Writer to write parquet files
      */
-    public RecordWriter getRecordWriter(final AzureBlobSinkConfig config, final String fileName, String topic) {
-        if (avroData == null) {
-            avroData = new AvroData(20); // Lazy initialization
-        }
+    public RecordWriter getRecordWriter(AzureBlobSinkConfig config,
+                                        StorageManager storageManager,
+                                        final String fileName,
+                                        String topic) {
+
         String blobName = fileName + getExtension();
-        return new ParquetRecordWriter(config, schemaStore, avroData, blobName, topic);
+        int partSize = config.getPartSize();
+
+        return new ParquetRecordWriter(
+                storageManager,
+                schemaStore,
+                partSize,
+                blobName,
+                topic
+        );
     }
 
     /**
