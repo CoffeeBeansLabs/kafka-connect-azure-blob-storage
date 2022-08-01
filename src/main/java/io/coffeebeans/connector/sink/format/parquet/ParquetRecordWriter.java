@@ -1,9 +1,9 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
+import io.coffeebeans.connector.sink.storage.StorageManager;
 import io.confluent.connect.avro.AvroData;
 import java.io.IOException;
 import java.util.HashSet;
@@ -28,38 +28,41 @@ import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
+    private static final int AVRO_DATA_CACHE_SIZE = 20;
 
-    private String topic;
+    private final String topic;
+    private final int partSize;
     private Schema kafkaSchema;
     private ParquetWriter writer;
     private final String blobName;
     private final AvroData avroData;
-    private SchemaStore schemaStore;
+    private final SchemaStore schemaStore;
     private JsonAvroConverter converter;
     private ParquetOutputFile outputFile;
-    private final AzureBlobSinkConfig config;
+    private final StorageManager storageManager;
     private org.apache.avro.Schema avroSchema;
 
     /**
      * Constructor.
      *
-     * @param config Connector config object
-     * @param avroData Avro data containing configuration properties
      * @param blobName blob name (prefixed with directory info and suffixed with file extension)
      */
-    public ParquetRecordWriter(AzureBlobSinkConfig config,
+    public ParquetRecordWriter(StorageManager storageManager,
                                SchemaStore schemaStore,
-                               AvroData avroData,
+                               int partSize,
                                String blobName,
                                String topic) {
 
-        this.topic = topic;
-        this.config = config;
-        this.schemaStore = schemaStore;
-        this.avroData = avroData;
-        this.blobName = blobName;
         this.kafkaSchema = null;
         this.avroSchema = null;
+
+        this.topic = topic;
+        this.partSize = partSize;
+        this.blobName = blobName;
+        this.schemaStore = schemaStore;
+        this.storageManager = storageManager;
+
+        this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
     }
 
     /**
@@ -88,7 +91,11 @@ public class ParquetRecordWriter implements RecordWriter {
             kafkaSchema = sinkRecord.valueSchema();
             org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(kafkaSchema);
 
-            outputFile = new ParquetOutputFile(blobName, config.getPartSize());
+            outputFile = new ParquetOutputFile(
+                    this.storageManager,
+                    this.blobName,
+                    this.partSize
+            );
             AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(avroSchema)
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
@@ -117,7 +124,7 @@ public class ParquetRecordWriter implements RecordWriter {
     /**
      * To write a JSON String value, {@link AvroParquetWriter} needs an
      * Avro schema of the data. It will get the schema file path from
-     * the {@link #config} object and use {@link AvroSchemaStore#getSchema(String)}}
+     * the  object and use {@link AvroSchemaStore#getSchema(String)}}
      * to get the Avro schema.
      *
      * <p>It initializes the ParquetWriter, convert the JSON string to
@@ -132,7 +139,11 @@ public class ParquetRecordWriter implements RecordWriter {
 
             avroSchema = (org.apache.avro.Schema) schemaStore.getSchema(topic);
 
-            outputFile = new ParquetOutputFile(blobName, config.getPartSize());
+            outputFile = new ParquetOutputFile(
+                    this.storageManager,
+                    this.blobName,
+                    this.partSize
+            );
             AvroParquetWriter.Builder<GenericData.Record> builder =
                     AvroParquetWriter.<GenericData.Record>builder(outputFile)
                     .withSchema(avroSchema)
@@ -187,7 +198,7 @@ public class ParquetRecordWriter implements RecordWriter {
      */
     @Override
     public void commit() throws IOException {
-        outputFile.getOutputStream().setCommit(true);
+        outputFile.getOutputStream().setCommitFlag(true);
         if (writer != null) {
             writer.close();
         }
@@ -209,20 +220,21 @@ public class ParquetRecordWriter implements RecordWriter {
         }
         seenSchemas.add(schema);
         switch (schema.type()) {
-          case STRUCT:
-              for (Field field : schema.fields()) {
-                  if (schemaHasArrayOfOptionalItems(field.schema(), seenSchemas)) {
-                      return true;
-                  }
-              }
-              return false;
-          case MAP:
-              return schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
-          case ARRAY:
-              return schema.valueSchema().isOptional()
-                      || schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
-          default:
-              return false;
+            case STRUCT:
+                for (Field field : schema.fields()) {
+                    if (schemaHasArrayOfOptionalItems(field.schema(), seenSchemas)) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case MAP: return schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
+
+            case ARRAY:
+                return schema.valueSchema().isOptional()
+                        || schemaHasArrayOfOptionalItems(schema.valueSchema(), seenSchemas);
+
+            default: return false;
         }
     }
 
