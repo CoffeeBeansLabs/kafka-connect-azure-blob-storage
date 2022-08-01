@@ -170,14 +170,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String PART_SIZE_DOC = "The size of the buffer to store the data of processed records by the"
             + "writer and this will also be the size of part upload to the blob storage";
 
-
-    public static final String SCHEMA_URL_CONF = "schema.url";
-    public static final String SCHEMA_URL_DEFAULT = "/usr/share/java/kafka-connect-sample/schema.avsc";
-    public static final String SCHEMA_URL_DOC = "Avro schema file url for scenarios when the payload is a Json string or "
-            + "Json without embedded schema or schema registry. This schema will be used to process the record for "
-            + "various file formats like parquet etc.";
-
-
     /**
      * Amount of data written after which rotation should happen.
      */
@@ -189,14 +181,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
      *
-     * For example, if configured topics are: alpha, lambda
+     * <p>For example, if configured topics are: alpha, lambda
      * configuration for its schema can be done using:
      *      alpha.schema.url: url,
      *      lambda.schema.url: url
      *
-     * This configuration depends upon the file format.
+     * <p>This configuration depends upon the file format.
      *
-     * Note:
+     * <p>Note:
      * This configuration is not recommended / validated by the connect-runtime.
      */
     public static final String TOPIC_SCHEMA_URL_SUFFIX = ".schema.url";
@@ -218,7 +210,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int flushSize;
     private final long rotationIntervalMs;
     private final int partSize;
-    private final String schemaURL;
     private final long fileSize;
     private final String fileFormat;
 
@@ -248,7 +239,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.flushSize = this.getInt(FLUSH_SIZE_CONF);
         this.rotationIntervalMs = this.getLong(ROTATION_INTERVAL_MS_CONF);
         this.partSize = this.getInt(PART_SIZE_CONF);
-        this.schemaURL = this.getString(SCHEMA_URL_CONF);
         this.fileSize = this.getLong(FILE_SIZE_CONF);
         this.fileFormat = this.getString(FILE_FORMAT_CONF_KEY);
     }
@@ -404,12 +394,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         IMPORTANCE_LOW,
                         PART_SIZE_DOC
                 ).define(
-                        SCHEMA_URL_CONF,
-                        TYPE_STRING,
-                        SCHEMA_URL_DEFAULT,
-                        IMPORTANCE_LOW,
-                        SCHEMA_URL_DOC
-                ).define(
                         FILE_SIZE_CONF,
                         TYPE_LONG,
                         FILE_SIZE_DEFAULT,
@@ -463,10 +447,6 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public int getPartSize() {
         return this.partSize;
-    }
-
-    public String getSchemaURL() {
-        return this.schemaURL;
     }
 
     public long getFileSize() {
