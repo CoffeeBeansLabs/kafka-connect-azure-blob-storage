@@ -139,32 +139,32 @@ public class AvroSchemaBuilder {
     private String getFieldType(JsonNode jsonNode) {
         switch (jsonNode.getNodeType()) {
 
-          case STRING: return STRING;
+            case STRING: return STRING;
 
-          case NUMBER: {
-              if (jsonNode.isInt()) {
-                  return INT;
-              } else if (jsonNode.isLong()) {
-                  return LONG;
-              } else if (jsonNode.isFloat()) {
-                  return FLOAT;
-              } else {
-                  return DOUBLE;
-              }
-          }
+            case NUMBER: {
+                if (jsonNode.isInt()) {
+                    return INT;
+                } else if (jsonNode.isLong()) {
+                    return LONG;
+                } else if (jsonNode.isFloat()) {
+                    return FLOAT;
+                } else {
+                    return DOUBLE;
+                }
+            }
 
-          case BOOLEAN: return BOOLEAN;
+            case BOOLEAN: return BOOLEAN;
 
-          case ARRAY: return ARRAY;
+            case ARRAY: return ARRAY;
 
-          case OBJECT: return RECORD;
+            case OBJECT: return RECORD;
 
-          case NULL: return NULL;
+            case NULL: return NULL;
 
-          default: {
-              logger.error("Node type {} is not supported", jsonNode.getNodeType());
-              throw new RuntimeException("Node type not supported: " + jsonNode.getNodeType());
-          }
+            default: {
+                logger.error("Node type {} is not supported", jsonNode.getNodeType());
+                throw new RuntimeException("Node type not supported: " + jsonNode.getNodeType());
+            }
         }
     }
 
