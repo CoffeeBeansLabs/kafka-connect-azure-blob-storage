@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AvroSchemaStore implements SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(AvroSchemaStore.class);
-    private static AvroSchemaStore instance;
 
     private final Schema.Parser schemaParser;
     private final Map<String, Schema> schemaMap;
@@ -29,7 +28,7 @@ public class AvroSchemaStore implements SchemaStore {
     /**
      * Singleton.
      */
-    private AvroSchemaStore() {
+    public AvroSchemaStore() {
         schemaParser = new Schema.Parser();
         schemaMap = new HashMap<>();
     }
@@ -40,10 +39,7 @@ public class AvroSchemaStore implements SchemaStore {
      * @return Instance of AvroSchemaStore
      */
     public static AvroSchemaStore getSchemaStore() {
-        if (instance == null) {
-            instance = new AvroSchemaStore();
-        }
-        return instance;
+        return new AvroSchemaStore();
     }
 
     /**
@@ -64,16 +60,16 @@ public class AvroSchemaStore implements SchemaStore {
      * </blockquote>
      *
      * @param topic Topic as key for storing the schema w.r.t it
-     * @param schemaURL The URL from where the schema has to be downloaded
+     * @param schemaFileUrl The URL from where the schema has to be downloaded
      * @throws IOException Thrown if the provided URL is malformed or if it encounters any issue
      *      while downloading the schema.
      */
-    public void register(String topic, String schemaURL) throws IOException {
+    public void register(String topic, String schemaFileUrl) throws IOException {
         if (schemaMap.containsKey(topic)) {
             return;
         }
         try {
-            Schema schema = loadFromURL(schemaURL);
+            Schema schema = loadFromUrl(schemaFileUrl);
             schemaMap.put(topic, schema);
 
         } catch (IOException e) {
@@ -97,11 +93,11 @@ public class AvroSchemaStore implements SchemaStore {
      * @return Parsed Avro schema
      * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
-    public Schema loadFromURL(String url) throws IOException {
+    public Schema loadFromUrl(String url) throws IOException {
         log.info("Loading avro schema from url: {}", url);
         try {
-            URL schemaURL = new URL(url);
-            return loadFromURL(schemaURL);
+            URL schemaUrl = new URL(url);
+            return loadFromUrl(schemaUrl);
 
         } catch (MalformedURLException e) {
             log.error("Malformed URL: {}", url);
@@ -120,7 +116,7 @@ public class AvroSchemaStore implements SchemaStore {
      * @return Parsed Avro schema
      * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
-    public Schema loadFromURL(URL url) throws IOException {
+    public Schema loadFromUrl(URL url) throws IOException {
         log.info("Downloading avro schema from URL: {}", url);
         try (InputStream inputStream = getInputStream(url)) {
             return schemaParser.parse(inputStream);
@@ -161,5 +157,13 @@ public class AvroSchemaStore implements SchemaStore {
     public Schema getSchema(String topic) {
         return this.schemaMap
                 .get(topic);
+    }
+
+    /**
+     * Clears the map containing topic and respective schemas.
+     */
+    @Override
+    public void clear() {
+        schemaMap.clear();
     }
 }
