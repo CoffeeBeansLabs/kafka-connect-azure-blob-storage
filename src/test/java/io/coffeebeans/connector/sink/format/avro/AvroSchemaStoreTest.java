@@ -1,6 +1,7 @@
 package io.coffeebeans.connector.sink.format.avro;
 
 import io.coffeebeans.connector.sink.HttpUrlStreamHandler;
+import io.coffeebeans.connector.sink.format.SchemaStore;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,12 +23,17 @@ import org.mockito.Mockito;
 public class AvroSchemaStoreTest {
 
     private static HttpUrlStreamHandler httpUrlStreamHandler;
+    private static SchemaStore schemaStore;
 
-    private final String TOPIC = "test";
+    private static final String KAFKA_TOPIC = "test";
 
 
+    /**
+     * Mocking URLStreamHandlerFactory to return custom HTTP url stream handler.
+     * Custom HTTP URL Stream handler never calls the passed URL.
+     */
     @BeforeAll
-    public static void setupURLStreamHandlerFactory() {
+    public static void setupUrlStreamHandlerFactory() {
         URLStreamHandlerFactory urlStreamHandlerFactory = Mockito.mock(URLStreamHandlerFactory.class);
         URL.setURLStreamHandlerFactory(urlStreamHandlerFactory);
 
@@ -35,11 +41,15 @@ public class AvroSchemaStoreTest {
         Mockito.when(
                 urlStreamHandlerFactory.createURLStreamHandler("http")
         ).thenReturn(httpUrlStreamHandler);
+
+        // Assigning schema store
+        schemaStore = AvroSchemaStore.getSchemaStore();
     }
 
     @BeforeEach
     public void reset() {
         httpUrlStreamHandler.resetConnections();
+        schemaStore.clear();
     }
 
     /**
@@ -57,8 +67,7 @@ public class AvroSchemaStoreTest {
     @DisplayName("register method should load and save schema when given correct url")
     void register_givenCorrectSchemaUrl_shouldLoadSchema() throws IOException {
 
-        AvroSchemaStore avroSchemaStore = AvroSchemaStore.getSchemaStore();
-        String givenSchemaURL = "http://host/schema";
+        String givenSchemaUrl = "http://host/schema";
 
         String schemaFile = "avro-schema.avsc";
         InputStream expectedSchemaInputStream = getClass()
@@ -70,7 +79,7 @@ public class AvroSchemaStoreTest {
 
         // Mock URLConnection
         URLConnection urlConnection = Mockito.mock(URLConnection.class);
-        httpUrlStreamHandler.addConnection(new URL(givenSchemaURL), urlConnection);
+        httpUrlStreamHandler.addConnection(new URL(givenSchemaUrl), urlConnection);
 
         Mockito
             .when(urlConnection.getInputStream())
@@ -79,11 +88,11 @@ public class AvroSchemaStoreTest {
             );
 
         // Action
-        avroSchemaStore.register(TOPIC, givenSchemaURL);
+        schemaStore.register(KAFKA_TOPIC, givenSchemaUrl);
 
         // Assertion
         Schema expectedSchema = new Schema.Parser().parse(expectedSchemaString);
-        Schema actualSchema = avroSchemaStore.getSchema(TOPIC);
+        Schema actualSchema = (Schema) schemaStore.getSchema(KAFKA_TOPIC);
 
         Assertions.assertEquals(expectedSchema, actualSchema);
     }
@@ -93,13 +102,12 @@ public class AvroSchemaStoreTest {
      */
     @Test
     @DisplayName("register method should throw MalformedURLException if given malformed url")
-    void register_givenMalformedSchemaUrl_shouldThrowMalformedURLException() {
+    void register_givenMalformedSchemaUrl_shouldThrowMalformedUrlException() {
 
-        AvroSchemaStore avroSchemaStore = AvroSchemaStore.getSchemaStore();
-        String givenSchemaURL = "htp//host/schema";
+        String givenSchemaUrl = "htp//host/schema";
 
         Assertions.assertThrows(MalformedURLException.class,
-                () -> avroSchemaStore.register(TOPIC, givenSchemaURL)
+                () -> schemaStore.register(KAFKA_TOPIC, givenSchemaUrl)
         );
     }
 
@@ -111,16 +119,15 @@ public class AvroSchemaStoreTest {
      */
     @Test
     @DisplayName("register method should throw IOException if encounters any problem when downloading the schema")
-    void register_givenCorrectSchemaURL_shouldThrowIOException_whenEncountersAnyException_whileDownloadingSchema()
+    void register_givenCorrectSchemaUrl_shouldThrowException_whenEncountersAnyException_whileDownloadingSchema()
             throws IOException {
 
-        AvroSchemaStore avroSchemaStore = AvroSchemaStore.getSchemaStore();
-        String givenSchemaURL = "http://host/schema";
+        String givenSchemaUrl = "http://host/schema";
 
         // Mock URLConnection
         URLConnection urlConnection = Mockito.mock(URLConnection.class);
         httpUrlStreamHandler.addConnection(
-                new URL(givenSchemaURL),
+                new URL(givenSchemaUrl),
                 urlConnection
         );
 
@@ -130,7 +137,7 @@ public class AvroSchemaStoreTest {
 
         // Assertion
         Assertions.assertThrows(IOException.class,
-                () -> avroSchemaStore.register(TOPIC, givenSchemaURL)
+                () -> schemaStore.register(KAFKA_TOPIC, givenSchemaUrl)
         );
     }
 

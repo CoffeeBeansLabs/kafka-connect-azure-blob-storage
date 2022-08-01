@@ -1,11 +1,13 @@
 package io.coffeebeans.connector.sink.util;
 
+import java.io.IOException;
+import java.util.Properties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.util.Properties;
-
+/**
+ * Unit tests for Version.
+ */
 public class VersionTest {
 
     @Test

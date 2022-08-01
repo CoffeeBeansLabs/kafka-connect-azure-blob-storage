@@ -1,6 +1,8 @@
 package io.coffeebeans.connector.sink;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
@@ -16,7 +18,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 /**
  * Unit tests for AzureBlobSinkConnectorContext.
@@ -42,18 +43,18 @@ public class AzureBlobSinkConnectorContextTest {
             }
         };
 
-        String alphaTopicSchemaURLConfig = "alpha.schema.url";
-        String betaTopicSchemaURLConfig = "beta.schema.url";
-        String lambdaTopicSchemaURLConfig = "lambda.schema.url";
+        String alphaTopicSchemaUrlConfig = "alpha.schema.url";
+        String betaTopicSchemaUrlConfig = "beta.schema.url";
+        String lambdaTopicSchemaUrlConfig = "lambda.schema.url";
 
-        String alphaTopicSchemaURLValue = "http://alpha.host.com/schema";
-        String betaTopicSchemaURLValue = "http://beta.host.com/schema";
-        String lambdaTopicSchemaURLValue = "http://lambda.host.com/schema";
-        List<String> expectedSchemaURLs = new ArrayList<>() {
+        String alphaTopicSchemaUrlValue = "http://alpha.host.com/schema";
+        String betaTopicSchemaUrlValue = "http://beta.host.com/schema";
+        String lambdaTopicSchemaUrlValue = "http://lambda.host.com/schema";
+        List<String> expectedSchemaUrls = new ArrayList<>() {
             {
-                add(alphaTopicSchemaURLValue);
-                add(betaTopicSchemaURLValue);
-                add(lambdaTopicSchemaURLValue);
+                add(alphaTopicSchemaUrlValue);
+                add(betaTopicSchemaUrlValue);
+                add(lambdaTopicSchemaUrlValue);
             }
         };
 
@@ -61,39 +62,39 @@ public class AzureBlobSinkConnectorContextTest {
         String fileFormat = FileFormat.PARQUET.toString();
 
         configProps.put(topicConfig, topics);
-        configProps.put(alphaTopicSchemaURLConfig, alphaTopicSchemaURLValue);
-        configProps.put(betaTopicSchemaURLConfig, betaTopicSchemaURLValue);
-        configProps.put(lambdaTopicSchemaURLConfig, lambdaTopicSchemaURLValue);
+        configProps.put(alphaTopicSchemaUrlConfig, alphaTopicSchemaUrlValue);
+        configProps.put(betaTopicSchemaUrlConfig, betaTopicSchemaUrlValue);
+        configProps.put(lambdaTopicSchemaUrlConfig, lambdaTopicSchemaUrlValue);
         configProps.put(fileFormatConfig, fileFormat);
 
         // Mocking SchemaStore to check how many times the register method was called.
-        SchemaStore mockedSchemaStore = Mockito.mock(SchemaStore.class);
+        SchemaStore mockedSchemaStore = mock(SchemaStore.class);
 
         ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> schemaURLCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> schemaUrlCaptor = ArgumentCaptor.forClass(String.class);
 
 
         AzureBlobSinkConnectorContext context = AzureBlobSinkConnectorContext.builder(configProps)
-                .schemaStore(mockedSchemaStore)
+                .withSchemaStore(mockedSchemaStore)
                 .build();
 
-        Mockito.verify(mockedSchemaStore, times(3))
+        verify(mockedSchemaStore, times(3))
                 .register(
                         topicCaptor.capture(),
-                        schemaURLCaptor.capture()
+                        schemaUrlCaptor.capture()
                 );
 
         List<String> capturedTopics = topicCaptor.getAllValues();
-        List<String> capturedSchemaURLs = schemaURLCaptor.getAllValues();
+        List<String> capturedSchemaUrls = schemaUrlCaptor.getAllValues();
 
         Assertions.assertEquals(expectedTopics, capturedTopics);
-        Assertions.assertEquals(expectedSchemaURLs, capturedSchemaURLs);
+        Assertions.assertEquals(expectedSchemaUrls, capturedSchemaUrls);
     }
 
     @Test
     @DisplayName("Given config with multiple topics, parquet as file format, "
             + "but no schema url should throw schema not found exception")
-    void givenConfigProps_withMultipleTopics_withParquetFileFormat_butNotSchemaURL_shouldThrowSchemaNotFoundException() {
+    void givenConfig_withMultipleTopics_withParquetFileFormat_butNotSchemaUrl_shouldThrowSchemaNotFoundException() {
 
         // Adding topics, schema url for each topic and file format configuration to the config props.
         String topicConfig = SinkTask.TOPICS_CONFIG;
@@ -105,11 +106,11 @@ public class AzureBlobSinkConnectorContextTest {
         configProps.put(topicConfig, topics);
         configProps.put(fileFormatConfig, fileFormat);
 
-        SchemaStore mockedSchemaStore = Mockito.mock(SchemaStore.class);
+        SchemaStore mockedSchemaStore = mock(SchemaStore.class);
 
         Assertions.assertThrowsExactly(SchemaNotFoundException.class,
                 () -> AzureBlobSinkConnectorContext.builder(configProps)
-                        .schemaStore(mockedSchemaStore)
+                        .withSchemaStore(mockedSchemaStore)
                         .build(),
                 "Schema url not configured for topic: alpha"
         );
@@ -118,7 +119,7 @@ public class AzureBlobSinkConnectorContextTest {
     @Test
     @DisplayName("Given config with multiple topics, default file format, "
             + "but no schema url should not throw exception")
-    void givenConfigProps_withMultipleTopics_withDefaultFileFormat_butNotSchemaURL_shouldNotThrowException() {
+    void givenConfigProps_withMultipleTopics_withDefaultFileFormat_butNotSchemaUrl_shouldNotThrowException() {
 
         // Adding topics, schema url for each topic and file format configuration to the config props.
         String topicConfig = SinkTask.TOPICS_CONFIG;
@@ -130,10 +131,10 @@ public class AzureBlobSinkConnectorContextTest {
         configProps.put(topicConfig, topics);
         configProps.put(fileFormatConfig, fileFormat);
 
-        SchemaStore mockedSchemaStore = Mockito.mock(SchemaStore.class);
+        SchemaStore mockedSchemaStore = mock(SchemaStore.class);
 
         Assertions.assertDoesNotThrow(() -> AzureBlobSinkConnectorContext.builder(configProps)
-                        .schemaStore(mockedSchemaStore)
+                        .withSchemaStore(mockedSchemaStore)
                         .build()
         );
     }
