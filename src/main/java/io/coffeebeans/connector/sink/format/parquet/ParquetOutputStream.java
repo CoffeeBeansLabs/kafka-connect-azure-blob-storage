@@ -1,7 +1,6 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
-import io.coffeebeans.connector.sink.storage.Storage;
-import io.coffeebeans.connector.sink.storage.StorageFactory;
+import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -21,12 +20,12 @@ public class ParquetOutputStream extends PositionOutputStream {
     private static final Logger log = LoggerFactory.getLogger(ParquetOutputStream.class);
 
     private long position;
-    private boolean closed;
-    private boolean commit;
+    private boolean isClosed;
+    private boolean commitFlag;
     private final int partSize;
     private final String blobName;
     private final ByteBuffer buffer;
-    private final Storage azureStorage;
+    private final StorageManager storageManager;
 
     /**
      * Pass the blob name with complete path and the part size as arguments.
@@ -37,14 +36,14 @@ public class ParquetOutputStream extends PositionOutputStream {
      *                 information and suffixed with extension)
      * @param partSize Part size to be used to allocated size to byte buffer
      */
-    public ParquetOutputStream(String blobName, int partSize) {
+    public ParquetOutputStream(StorageManager storageManager, String blobName, int partSize) {
         this.position = 0L;
-        this.closed = false;
-        this.commit = false;
+        this.isClosed = false;
+        this.commitFlag = false;
         this.blobName = blobName;
         this.partSize = partSize;
         this.buffer = ByteBuffer.allocate(this.partSize);
-        this.azureStorage = StorageFactory.get();
+        this.storageManager = storageManager;
 
         log.info("Configured parquet output stream with part size: {}, for blob: {}", this.partSize, blobName);
     }
@@ -53,10 +52,10 @@ public class ParquetOutputStream extends PositionOutputStream {
      * Set the commit flag. The commit flag is checked while
      * {@link #close() close()} method is invoked.
      *
-     * @param commit boolean value to be set to commit flag
+     * @param isCommitted boolean value to be set to commit flag
      */
-    public void setCommit(boolean commit) {
-        this.commit = commit;
+    public void setCommitFlag(boolean isCommitted) {
+        this.commitFlag = isCommitted;
     }
 
     @Override
@@ -173,9 +172,9 @@ public class ParquetOutputStream extends PositionOutputStream {
     @Override
     public void close() throws IOException {
         log.info("Close operation invoked for blob: {}", blobName);
-        if (commit) {
+        if (commitFlag) {
             commit();
-            commit = false;
+            commitFlag = false;
         } else {
             internalClose();
         }
@@ -191,7 +190,7 @@ public class ParquetOutputStream extends PositionOutputStream {
      * @throws IOException if any I/O error occurs.
      */
     private void commit() throws IOException {
-        if (closed) {
+        if (isClosed) {
             log.warn("Commit operation invoked but the stream was closed, blob: {}", blobName);
             return;
         }
@@ -222,10 +221,10 @@ public class ParquetOutputStream extends PositionOutputStream {
      * @throws IOException If any I/O error occurs
      */
     private void internalClose() throws IOException {
-        if (closed) {
+        if (isClosed) {
             return;
         }
-        closed = true;
+        isClosed = true;
         super.close();
     }
 
@@ -261,7 +260,7 @@ public class ParquetOutputStream extends PositionOutputStream {
         log.info("uploading part for blob name: {}", blobName);
         try {
             byte[] slicedBuf = Arrays.copyOfRange(buffer.array(), 0, partSize);
-            this.azureStorage.append(this.blobName, slicedBuf);
+            this.storageManager.append(this.blobName, slicedBuf);
 
         } catch (Exception e) {
             log.error("Failed to upload part data to blob: {}, with exception: {}", blobName, e.getMessage());
