@@ -53,9 +53,9 @@ public class TimePartitioner extends DefaultPartitioner {
         log.info("Timestamp extractor strategy configured: {}", strategy);
 
         switch (strategy) {
-          case  RECORD: return new RecordTimestampExtractor(config);
-          case RECORD_FIELD: return new RecordFieldTimestampExtractor(config);
-          default: return new DefaultTimestampExtractor(config);
+            case  RECORD: return new RecordTimestampExtractor(config);
+            case RECORD_FIELD: return new RecordFieldTimestampExtractor(config);
+            default: return new DefaultTimestampExtractor(config);
         }
     }
 }

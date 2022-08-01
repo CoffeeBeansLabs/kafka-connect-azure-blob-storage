@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 /**
  * This class will handle the interaction with blob storage service.
  */
-public class AzureBlobStorage implements Storage {
-    private static final Logger logger = LoggerFactory.getLogger(Storage.class);
+public class AzureBlobStorageManager implements StorageManager {
+    private static final Logger logger = LoggerFactory.getLogger(StorageManager.class);
 
     private final BlobContainerClient containerClient;
 
@@ -26,7 +26,7 @@ public class AzureBlobStorage implements Storage {
      * @param connectionString Connection url string of the blob storage service
      * @param containerName Container name where data will be stored
      */
-    public AzureBlobStorage(String connectionString, String containerName) {
+    public AzureBlobStorageManager(String connectionString, String containerName) {
         this.containerClient = new BlobContainerClientBuilder()
                 .connectionString(connectionString)
                 .containerName(containerName)

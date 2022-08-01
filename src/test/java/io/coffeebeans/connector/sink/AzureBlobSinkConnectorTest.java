@@ -4,6 +4,9 @@ import org.apache.kafka.connect.connector.Connector;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for AzureBlobSinkConnector.
+ */
 public class AzureBlobSinkConnectorTest {
 
     @Test

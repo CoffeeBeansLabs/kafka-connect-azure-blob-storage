@@ -3,9 +3,10 @@ package io.coffeebeans.connector.sink.storage;
 /**
  * Initialize new AzureBlobStorage instance.
  */
+@Deprecated
 public class StorageFactory {
 
-    private static Storage storage;
+    private static StorageManager storageManager;
 
     /**
      * Initialize new AzureBlobStorage instance.
@@ -14,7 +15,7 @@ public class StorageFactory {
      * @param containerName Container name where data will be stored
      */
     public static void set(String connectionString, String containerName) {
-        storage = new AzureBlobStorage(connectionString, containerName);
+        storageManager = new AzureBlobStorageManager(connectionString, containerName);
     }
 
     /**
@@ -23,7 +24,7 @@ public class StorageFactory {
      *
      * @return Storage
      */
-    public static Storage get() {
-        return storage;
+    public static StorageManager get() {
+        return storageManager;
     }
 }

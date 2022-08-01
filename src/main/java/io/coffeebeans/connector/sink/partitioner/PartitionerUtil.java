@@ -64,19 +64,19 @@ public class PartitionerUtil {
         Schema.Type type = valueSchema.field(fieldName).schema().type();
 
         switch (type) {
-          case INT8:
-          case INT16:
-          case INT32:
-          case INT64:
-          case STRING:
-          case BOOLEAN: {
-              return fieldValue;
-          }
+            case INT8:
+            case INT16:
+            case INT32:
+            case INT64:
+            case STRING:
+            case BOOLEAN: {
+                return fieldValue;
+            }
 
-          default: {
-              logger.error("Type {} is not supported: ", type.getName());
-              throw new PartitionException("Error retrieving field value");
-          }
+            default: {
+                logger.error("Type {} is not supported: ", type.getName());
+                throw new PartitionException("Error retrieving field value");
+            }
         }
     }
 }

@@ -2,13 +2,15 @@ package io.coffeebeans.connector.sink.config.recommenders.partitioner.field;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Unit tests for FieldNameRecommender.
+ */
 public class FieldNameRecommenderTest {
 
     @Test
