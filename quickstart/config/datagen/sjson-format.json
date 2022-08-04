@@ -1,0 +1,13 @@
+{
+  "name": "datagen-json-string",
+  "config": {
+    "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    "kafka.topic": "datagen-credit-cards",
+    "quickstart": "credit_cards",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "max.interval": 1000,
+    "iterations": 1000,
+    "tasks.max": "1"
+  }
+}
