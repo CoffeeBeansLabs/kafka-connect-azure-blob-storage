@@ -1,0 +1,1 @@
+docker exec -it datagen confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.5.3
