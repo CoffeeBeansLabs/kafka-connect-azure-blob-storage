@@ -96,3 +96,32 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_PLUGIN_PATH: '/usr/share/java'
+
+  datagen:
+    image: 'confluentinc/cp-kafka-connect-base:7.0.1'
+    container_name: 'datagen'
+    networks:
+      - kafka-network
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+    ports:
+      - "8084:8083"
+    restart: always
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka:9092'
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: 'connect-datagen'
+      CONNECT_REST_ADVERTISED_HOST_NAME: 'datagen'
+      CONNECT_CONFIG_STORAGE_TOPIC: '_connect-datagen-config'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_TOPIC: '_connect-datagen-offsets'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_TOPIC: '_connect-datagen-status'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_KEY_CONVERTER: 'org.apache.kafka.connect.storage.StringConverter'
+      CONNECT_VALUE_CONVERTER: 'org.apache.kafka.connect.storage.StringConverter'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: 'org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR'
