@@ -2,6 +2,8 @@ package io.coffeebeans.connector.sink;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
+import io.coffeebeans.connector.sink.format.FileFormat;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ public class TopicPartitionWriter {
     private Long lastSuccessfulOffset;
     private final long rotationIntervalMs;
     private final Queue<SinkRecord> buffer;
+    private boolean isSchemaStoreConfigurationChecked;
     private final AzureBlobSinkConnectorContext context;
 
     private final Map<String, Long> startTimes;
@@ -46,6 +49,7 @@ public class TopicPartitionWriter {
         this.buffer = new LinkedList<>();
         this.dataSize = config.getFileSize();
         this.flushSize = config.getFlushSize();
+        this.isSchemaStoreConfigurationChecked = false;
         this.rotationIntervalMs = config.getRotationIntervalMs();
 
         this.writers = new HashMap<>();
@@ -84,6 +88,7 @@ public class TopicPartitionWriter {
             }
 
             try {
+                configureSchemaStore(context, record);
                 writer.write(record);
 
                 /*
@@ -275,5 +280,34 @@ public class TopicPartitionWriter {
         lastSuccessfulOffset = null;
 
         return offset;
+    }
+
+    private void configureSchemaStore(AzureBlobSinkConnectorContext context, SinkRecord record)
+            throws IOException, SchemaNotFoundException {
+
+        if (isSchemaStoreConfigurationChecked) {
+            return;
+        }
+        if (!isSchemaStoreRecommended(record, context.getConfig())) {
+            isSchemaStoreConfigurationChecked = true;
+            return;
+        }
+        context.configureSchemaStore();
+        isSchemaStoreConfigurationChecked = true;
+    }
+
+    private boolean isSchemaStoreRecommended(SinkRecord record, AzureBlobSinkConfig config) {
+
+        FileFormat fileFormat = FileFormat.valueOf(
+                config.getFileFormat()
+        );
+        if (!FileFormat.PARQUET.equals(fileFormat)) {
+            return false;
+        }
+
+        boolean isInstanceOfString = record.value() instanceof String;
+        boolean isInstanceOfMap = record.value() instanceof Map;
+
+        return isInstanceOfString || isInstanceOfMap;
     }
 }
