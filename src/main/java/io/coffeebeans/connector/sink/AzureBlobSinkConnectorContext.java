@@ -46,11 +46,8 @@ public class AzureBlobSinkConnectorContext {
      * Builder classes make testing simpler.
      *
      * @param builder Builder object
-     * @throws IOException IOException
-     * @throws SchemaNotFoundException SchemaNotFoundException
      */
-    private AzureBlobSinkConnectorContext(Builder builder) throws
-            IOException, SchemaNotFoundException {
+    private AzureBlobSinkConnectorContext(Builder builder) {
 
         this.config = builder.config;
         this.storageManager = builder.storageManager;
@@ -64,16 +61,6 @@ public class AzureBlobSinkConnectorContext {
         }
 
         this.configProps = builder.configProps;
-
-        if (isSchemaStoreRecommended(configProps)) {
-            try {
-                loadSchema(configProps, schemaStore);
-
-            } catch (IOException | SchemaNotFoundException e) {
-                log.error("Failed to initialize context: Error loading schema");
-                throw e;
-            }
-        }
     }
 
     /**
@@ -85,11 +72,23 @@ public class AzureBlobSinkConnectorContext {
      * @param configProps Configuration map
      * @return True if schema store usage is recommended or else false
      */
+    @Deprecated
     private boolean isSchemaStoreRecommended(Map<String, String> configProps) {
+
         FileFormat fileFormat = FileFormat.valueOf(
                 configProps.get(FILE_FORMAT_CONF_KEY)
         );
         return FileFormat.PARQUET.equals(fileFormat);
+    }
+
+    /**
+     * Get the user configured list of topics, split it and get the configured
+     * schema url for that topic.
+     *
+     * <p>Register that schema with the schema store.
+     */
+    public void configureSchemaStore() throws IOException, SchemaNotFoundException {
+        loadSchema(configProps, schemaStore);
     }
 
     /**
