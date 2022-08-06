@@ -5,6 +5,7 @@ import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
 import io.coffeebeans.connector.sink.format.FileFormat;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
+import io.coffeebeans.connector.sink.format.avro.AvroRecordWriterProvider;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
 import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
@@ -238,6 +239,7 @@ public class AzureBlobSinkTask extends SinkTask {
 
         switch (format) {
             case PARQUET: return getParquetRecordWriterProvider(fileFormat);
+            case AVRO: return getAvroRecordWriterProvider(fileFormat);
             default: return null;
         }
     }
@@ -256,7 +258,8 @@ public class AzureBlobSinkTask extends SinkTask {
         FileFormat format = FileFormat.valueOf(fileFormat);
 
         switch (format) {
-            case PARQUET: {
+            case PARQUET:
+            case AVRO: {
                 this.schemaStore = AvroSchemaStore.getSchemaStore();
                 return this.schemaStore;
             }
@@ -275,6 +278,12 @@ public class AzureBlobSinkTask extends SinkTask {
         SchemaStore schemaStore = getSchemaStore(fileFormat);
 
         return new ParquetRecordWriterProvider(schemaStore);
+    }
+
+    private AvroRecordWriterProvider getAvroRecordWriterProvider(String fileFormat) {
+        SchemaStore schemaStore = getSchemaStore(fileFormat);
+
+        return new AvroRecordWriterProvider(schemaStore);
     }
 
     /**
