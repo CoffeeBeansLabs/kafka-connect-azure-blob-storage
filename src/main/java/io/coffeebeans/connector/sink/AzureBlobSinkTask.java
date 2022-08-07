@@ -7,6 +7,7 @@ import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroRecordWriterProvider;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
+import io.coffeebeans.connector.sink.format.json.JsonRecordWriterProvider;
 import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
 import io.coffeebeans.connector.sink.partitioner.DefaultPartitioner;
 import io.coffeebeans.connector.sink.partitioner.PartitionStrategy;
@@ -240,6 +241,7 @@ public class AzureBlobSinkTask extends SinkTask {
         switch (format) {
             case PARQUET: return getParquetRecordWriterProvider(fileFormat);
             case AVRO: return getAvroRecordWriterProvider(fileFormat);
+            case JSON: return getJsonRecordWriterProvider(fileFormat);
             default: return null;
         }
     }
@@ -259,7 +261,8 @@ public class AzureBlobSinkTask extends SinkTask {
 
         switch (format) {
             case PARQUET:
-            case AVRO: {
+            case AVRO:
+            case JSON: {
                 this.schemaStore = AvroSchemaStore.getSchemaStore();
                 return this.schemaStore;
             }
@@ -284,6 +287,12 @@ public class AzureBlobSinkTask extends SinkTask {
         SchemaStore schemaStore = getSchemaStore(fileFormat);
 
         return new AvroRecordWriterProvider(schemaStore);
+    }
+
+    private JsonRecordWriterProvider getJsonRecordWriterProvider(String fileFormat) {
+        SchemaStore schemaStore = getSchemaStore(fileFormat);
+
+        return new JsonRecordWriterProvider(schemaStore);
     }
 
     /**
