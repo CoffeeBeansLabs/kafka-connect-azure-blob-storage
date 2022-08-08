@@ -1,6 +1,7 @@
 package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.config.NullValueBehavior;
 import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
 import io.coffeebeans.connector.sink.format.FileFormat;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkTaskContext;
@@ -39,8 +41,9 @@ import org.slf4j.LoggerFactory;
 public class AzureBlobSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(AzureBlobSinkTask.class);
 
-    private AzureBlobSinkConfig config;
     private SchemaStore schemaStore;
+    private boolean ignoreNullValues;
+    private AzureBlobSinkConfig config;
     private SinkTaskContext sinkTaskContext;
     private AzureBlobSinkConnectorContext azureBlobSinkConnectorContext;
     private Map<TopicPartition, TopicPartitionWriter> topicPartitionWriters;
@@ -93,6 +96,11 @@ public class AzureBlobSinkTask extends SinkTask {
         }
 
         topicPartitionWriters = new HashMap<>();
+
+        String nullValueBehavior = config.getNullValueBehavior();
+        ignoreNullValues = NullValueBehavior.IGNORE.toString()
+                .equals(nullValueBehavior);
+
         open(sinkTaskContext.assignment());
 
         log.info("Sink Task started successfully ....................");
@@ -117,6 +125,7 @@ public class AzureBlobSinkTask extends SinkTask {
         // Loop through each record and store it in the buffer.
         for (SinkRecord record : records) {
             if (record.value() == null) {
+                handleNullValues();
                 continue;
             }
             TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
@@ -313,5 +322,12 @@ public class AzureBlobSinkTask extends SinkTask {
      */
     public StorageManager getStorage(String connectionString, String containerName) {
         return new AzureBlobStorageManager(connectionString, containerName);
+    }
+
+    private void handleNullValues() {
+        if (ignoreNullValues) {
+            return;
+        }
+        throw new ConnectException("Received null value, stopping the execution");
     }
 }
