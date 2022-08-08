@@ -34,6 +34,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private static final Type TYPE_STRING = Type.STRING;
     private static final Type TYPE_LONG = Type.LONG;
     private static final Type TYPE_INT = Type.INT;
+    private static final Type TYPE_PASSWORD = Type.PASSWORD;
 
     // Configuration importance
     private static final Importance IMPORTANCE_LOW = Importance.LOW;
@@ -232,7 +233,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
      */
     public AzureBlobSinkConfig(ConfigDef configDef, Map<String, String> parsedConfig) {
         super(configDef, parsedConfig);
-        this.connectionString = this.getString(CONN_URL_CONF_KEY);
+        this.connectionString = this.getPassword(CONN_URL_CONF_KEY).value();
         this.containerName = this.getString(CONTAINER_NAME_CONF_KEY);
         this.topicsDir = this.getString(TOPICS_DIR_CONF_KEY);
         this.partitionStrategy = this.getString(PARTITION_STRATEGY_CONF_KEY);
@@ -272,7 +273,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         configDef
                 .define(
                         CONN_URL_CONF_KEY,
-                        TYPE_STRING,
+                        TYPE_PASSWORD,
                         NO_DEFAULT_VALUE,
                         CONN_URL_VALIDATOR,
                         IMPORTANCE_HIGH,
