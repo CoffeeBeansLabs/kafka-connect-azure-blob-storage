@@ -1,5 +1,5 @@
 {
-  "name": "sink-connector-quickstart",
+  "name": "quickstart",
   "config": {
     "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
     "topics": "datagen-users",
