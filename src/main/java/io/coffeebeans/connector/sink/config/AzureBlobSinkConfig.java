@@ -177,6 +177,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final long FILE_SIZE_DEFAULT = 190000000000L; // 190 GB
     public static final String FILE_SIZE_DOC = "Maximum size of the blob after which tbe file will be committed";
 
+    public static final String NULL_VALUE_BEHAVIOR_CONF = "behavior.on.null.values";
+    public static final String NULL_VALUE_BEHAVIOR_DEFAULT = "IGNORE";
+    public static final String NULL_VALUE_BEHAVIOR_DOC = "Action to perform when the connector receives null value";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -212,6 +216,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int partSize;
     private final long fileSize;
     private final String fileFormat;
+    private final String nullValueBehavior;
 
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
@@ -241,6 +246,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.partSize = this.getInt(PART_SIZE_CONF);
         this.fileSize = this.getLong(FILE_SIZE_CONF);
         this.fileFormat = this.getString(FILE_FORMAT_CONF_KEY);
+        this.nullValueBehavior = this.getString(NULL_VALUE_BEHAVIOR_CONF);
     }
 
 
@@ -398,7 +404,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_LONG,
                         FILE_SIZE_DEFAULT,
                         IMPORTANCE_LOW,
-                        FILE_SIZE_DOC);
+                        FILE_SIZE_DOC
+                ).define(
+                        NULL_VALUE_BEHAVIOR_CONF,
+                        TYPE_STRING,
+                        NULL_VALUE_BEHAVIOR_DEFAULT,
+                        IMPORTANCE_LOW,
+                        NULL_VALUE_BEHAVIOR_DOC);
     }
 
     public String getConnectionString() {
@@ -455,5 +467,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getFileFormat() {
         return this.fileFormat;
+    }
+
+    public String getNullValueBehavior() {
+        return this.nullValueBehavior;
     }
 }
