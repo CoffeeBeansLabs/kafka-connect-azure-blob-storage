@@ -5,6 +5,7 @@ import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 import static org.apache.kafka.common.config.ConfigDef.Type;
 
 import io.coffeebeans.connector.sink.config.recommenders.FileFormatRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.RetryTypeRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RolloverFileSizeRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.StrategyRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.field.FieldNameRecommender;
@@ -13,6 +14,9 @@ import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.Timest
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.TimezoneRecommender;
 import io.coffeebeans.connector.sink.config.validators.ConnectionUrlValidator;
 import io.coffeebeans.connector.sink.config.validators.ContainerNameValidator;
+import io.coffeebeans.connector.sink.config.validators.GreaterThanZeroValidator;
+import io.coffeebeans.connector.sink.config.validators.NonNegativeValidator;
+import io.coffeebeans.connector.sink.config.validators.RetryTypeValidator;
 import io.coffeebeans.connector.sink.config.validators.TopicsDirValueValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.PathFormatValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.TimezoneValidator;
@@ -182,6 +186,32 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String NULL_VALUE_BEHAVIOR_DEFAULT = "IGNORE";
     public static final String NULL_VALUE_BEHAVIOR_DOC = "Action to perform when the connector receives null value";
 
+    public static final String RETRY_TYPE_CONF = "azblob.retry.type";
+    public static final String RETRY_TYPE_DEFAULT = "EXPONENTIAL";
+    public static final String RETRY_TYPE_DOC = "Type of retry pattern to use";
+    public static final Recommender RETRY_TYPE_RECOMMENDER = new RetryTypeRecommender();
+    public static final Validator RETRY_TYPE_VALIDATOR = new RetryTypeValidator();
+
+    public static final String RETRIES_CONF = "azblob.retry.retries";
+    public static final int RETRIES_DEFAULT = 3;
+    public static final String RETRIES_DOC = "Maximum number of retry attempts";
+    public static final Validator RETRIES_VALIDATOR = new GreaterThanZeroValidator();
+
+    public static final String CONNECTION_TIMEOUT_MS_CONF = "azblob.connection.timeout.ms";
+    public static final long CONNECTION_TIMEOUT_MS_DEFAULT = 30_000L;
+    public static final String CONNECTION_TIMEOUT_MS_DOC = "Maximum time the client will try each http call";
+    public static final Validator CONNECTION_TIMEOUT_MS_VALIDATOR = new GreaterThanZeroValidator();
+
+    public static final String RETRY_BACKOFF_MS_CONF = "azblob.retry.backoff.ms";
+    public static final long RETRY_BACKOFF_MS_DEFAULT = 4_000L;
+    public static final String RETRY_BACKOFF_MS_DOC = "Min delay before an operation";
+    public static final Validator RETRY_BACKOFF_MS_VALIDATOR = new NonNegativeValidator();
+
+    public static final String RETRY_MAX_BACKOFF_MS_CONF = "azblob.retry.max.backoff.ms";
+    public static final long RETRY_MAX_BACKOFF_MS_DEFAULT = 120_000L;
+    public static final String RETRY_MAX_BACKOFF_MS_DOC = "Max delay before an operation";
+    public static final Validator RETRY_MAX_BACKOFF_MS_VALIDATOR = new GreaterThanZeroValidator();
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -218,7 +248,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final long fileSize;
     private final String fileFormat;
     private final String nullValueBehavior;
-
+    private final String retryType;
+    private final int maxRetries;
+    private final long connectionTimeoutMs;
+    private final long retryBackoffMs;
+    private final long retryMaxBackoffMs;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -248,6 +282,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.fileSize = this.getLong(FILE_SIZE_CONF);
         this.fileFormat = this.getString(FILE_FORMAT_CONF_KEY);
         this.nullValueBehavior = this.getString(NULL_VALUE_BEHAVIOR_CONF);
+        this.retryType = this.getString(RETRY_TYPE_CONF);
+        this.maxRetries = this.getInt(RETRIES_CONF);
+        this.connectionTimeoutMs = this.getLong(CONNECTION_TIMEOUT_MS_CONF);
+        this.retryBackoffMs = this.getLong(RETRY_BACKOFF_MS_CONF);
+        this.retryMaxBackoffMs = this.getLong(RETRY_MAX_BACKOFF_MS_CONF);
     }
 
 
@@ -411,7 +450,47 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_STRING,
                         NULL_VALUE_BEHAVIOR_DEFAULT,
                         IMPORTANCE_LOW,
-                        NULL_VALUE_BEHAVIOR_DOC);
+                        NULL_VALUE_BEHAVIOR_DOC
+                ).define(
+                        RETRY_TYPE_CONF,
+                        TYPE_STRING,
+                        RETRY_TYPE_DEFAULT,
+                        RETRY_TYPE_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        RETRY_TYPE_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        RETRY_TYPE_CONF,
+                        RETRY_TYPE_RECOMMENDER
+                ).define(
+                        RETRIES_CONF,
+                        TYPE_INT,
+                        RETRIES_DEFAULT,
+                        RETRIES_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        RETRIES_DOC
+                ).define(
+                        CONNECTION_TIMEOUT_MS_CONF,
+                        TYPE_LONG,
+                        CONNECTION_TIMEOUT_MS_DEFAULT,
+                        CONNECTION_TIMEOUT_MS_VALIDATOR,
+                        IMPORTANCE_MEDIUM,
+                        CONNECTION_TIMEOUT_MS_DOC
+                ).define(
+                        RETRY_BACKOFF_MS_CONF,
+                        TYPE_LONG,
+                        RETRY_BACKOFF_MS_DEFAULT,
+                        RETRY_BACKOFF_MS_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        RETRY_BACKOFF_MS_DOC
+                ).define(
+                        RETRY_MAX_BACKOFF_MS_CONF,
+                        TYPE_LONG,
+                        RETRY_MAX_BACKOFF_MS_DEFAULT,
+                        RETRY_MAX_BACKOFF_MS_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        RETRY_MAX_BACKOFF_MS_DOC);
     }
 
     public String getConnectionString() {
@@ -472,5 +551,25 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getNullValueBehavior() {
         return this.nullValueBehavior;
+    }
+
+    public String getRetryType() {
+        return this.retryType;
+    }
+
+    public int getMaxRetries() {
+        return this.maxRetries;
+    }
+
+    public long getConnectionTimeoutMs() {
+        return this.connectionTimeoutMs;
+    }
+
+    public long getRetryBackoffMs() {
+        return this.retryBackoffMs;
+    }
+
+    public long getRetryMaxBackoffMs() {
+        return this.retryMaxBackoffMs;
     }
 }
