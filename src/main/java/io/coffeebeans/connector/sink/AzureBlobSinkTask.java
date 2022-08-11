@@ -79,7 +79,7 @@ public class AzureBlobSinkTask extends SinkTask {
                 config.getConnectionString(),
                 config.getContainerName()
         );
-        storageManager.configure(new HashMap<>());
+        storageManager.configure(getRetryConfigMap(config));
 
         try {
             this.azureBlobSinkConnectorContext = AzureBlobSinkConnectorContext.builder(configProps)
@@ -330,5 +330,18 @@ public class AzureBlobSinkTask extends SinkTask {
             return;
         }
         throw new ConnectException("Received null value, stopping the execution");
+    }
+
+    private Map<String, Object> getRetryConfigMap(AzureBlobSinkConfig configProp) {
+
+        Map<String, Object> configMap = new HashMap<>();
+
+        configMap.put(AzureBlobSinkConfig.RETRY_TYPE_CONF, configProp.getRetryType());
+        configMap.put(AzureBlobSinkConfig.RETRIES_CONF, configProp.getMaxRetries());
+        configMap.put(AzureBlobSinkConfig.CONNECTION_TIMEOUT_MS_CONF, configProp.getConnectionTimeoutMs());
+        configMap.put(AzureBlobSinkConfig.RETRY_BACKOFF_MS_CONF, configProp.getRetryBackoffMs());
+        configMap.put(AzureBlobSinkConfig.RETRY_MAX_BACKOFF_MS_CONF, configProp.getRetryMaxBackoffMs());
+
+        return configMap;
     }
 }
