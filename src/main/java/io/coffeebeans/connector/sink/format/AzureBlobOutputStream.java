@@ -3,32 +3,54 @@ package io.coffeebeans.connector.sink.format;
 import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 import org.apache.parquet.io.PositionOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * To maintain a buffer of data bytes and
+ * write / flush / commit it to the blob
+ * storage when invoked to do so.
+ */
 public class AzureBlobOutputStream extends PositionOutputStream {
     private final Logger log = LoggerFactory.getLogger(AzureBlobOutputStream.class);
 
     private long position;
     private boolean isClosed;
+    private boolean shouldThrowException;
 
     private final int partSize;
     private final String blobName;
     private final ByteBuffer buffer;
+    private final List<String> base64BlockIds;
     private final StorageManager storageManager;
+    private final Base64.Encoder base64Encoder;
 
+    /**
+     * Construct a {@link AzureBlobOutputStream}.
+     *
+     * @param storageManager Storage manager to interact with blob storage
+     * @param blobName Name of the blob where data will be stored
+     * @param partSize Size of the buffer
+     */
     public AzureBlobOutputStream(StorageManager storageManager, String blobName, int partSize) {
         this.position = 0L;
         this.isClosed = false;
+        this.shouldThrowException = false;
 
         this.partSize = partSize;
         this.blobName = blobName;
         this.storageManager = storageManager;
 
         this.buffer = ByteBuffer.allocate(partSize);
+        this.base64BlockIds = new LinkedList<>();
+        this.base64Encoder = Base64.getEncoder();
 
         log.info("Configured output stream with part size: {}, for blob: {}", partSize, blobName);
     }
@@ -40,16 +62,19 @@ public class AzureBlobOutputStream extends PositionOutputStream {
 
     @Override
     public void write(int b) throws IOException {
+        checkIfExceptionHasToBeThrown();
+
         buffer.put((byte) b);
         if (!buffer.hasRemaining()) {
             log.debug("remaining buffer size: {} for blob: {}", buffer.remaining(), blobName);
-            uploadPart();
+            stageBlock();
         }
         position++;
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        checkIfExceptionHasToBeThrown();
 
         // Sanity check
         if (b == null) {
@@ -79,7 +104,7 @@ public class AzureBlobOutputStream extends PositionOutputStream {
             position += firstPart;
 
             // Uploading data
-            uploadPart();
+            stageBlock();
 
             // Processing the second part of data. It's a recursive operation, so it will handle large amount of data
             write(b, off + firstPart, len - firstPart);
@@ -99,6 +124,11 @@ public class AzureBlobOutputStream extends PositionOutputStream {
         internalClose();
     }
 
+    /**
+     * Internal close.
+     *
+     * @throws IOException thrown if encounters any error while closing the stream.
+     */
     public void internalClose() throws IOException {
         if (isClosed) {
             return;
@@ -107,7 +137,13 @@ public class AzureBlobOutputStream extends PositionOutputStream {
         super.close();
     }
 
-    public void commit() throws IOException {
+    /**
+     * Sends all the data to the output file and commits it.
+     *
+     * @param shouldBlockAsyncOperation Should it block the async upload request
+     * @throws IOException thrown if encounters any error while committing data
+     */
+    public void commit(boolean shouldBlockAsyncOperation) throws IOException {
         if (isClosed) {
             log.warn("Commit operation invoked but the stream was closed, blob: {}", blobName);
             return;
@@ -115,7 +151,7 @@ public class AzureBlobOutputStream extends PositionOutputStream {
         try {
             log.info("Commit operation invoked for blob: {}", blobName);
             if (buffer.hasRemaining()) {
-                uploadPart(buffer.position());
+                stageBlock(buffer.position(), true, shouldBlockAsyncOperation);
                 log.info("Data upload complete for blob: {}", blobName);
             }
         } catch (Exception e) {
@@ -154,5 +190,102 @@ public class AzureBlobOutputStream extends PositionOutputStream {
             log.error("Failed to upload part data to blob: {}, with exception: {}", blobName, e.getMessage());
             throw new IOException("Failed to upload part data to blob: " + blobName, e);
         }
+    }
+
+    private void stageBlock() throws IOException {
+        stageBlock(this.partSize, false, false);
+
+        /*
+        Clearing the buffer does not erase the existing data in the buffer
+        It just reset the pointer location to first index and overwrite the
+        existing byte from there.
+         */
+        buffer.clear();
+    }
+
+    private void stageBlock(final int partSize, boolean shouldCommit, boolean shouldBlock) throws IOException {
+        try {
+            /*
+            Adding block id to the list before the staging operation is complete
+            because we have to preserve the order, or it will create
+            corrupt or incorrect files.
+             */
+            String blockId = generateBase64RandomBlockId();
+            this.base64BlockIds.add(blockId);
+
+            log.info("Initiated staging block of id: {} for blob: {}", blockId, blobName);
+
+            byte[] slicedBuf = Arrays.copyOfRange(buffer.array(), 0, partSize);
+
+            /*
+            Blocking is important when connector is being deleted. It will
+            ensure that all the data is staged and committed before stopping
+            the connector.
+             */
+            if (shouldBlock) {
+                this.storageManager.stageBlockAsync(blobName, blockId, slicedBuf)
+                        .block();
+            }
+
+            this.storageManager.stageBlockAsync(blobName, blockId, slicedBuf)
+                    .subscribe(
+                            success -> log.info("Staging for block id: {} on blob: {} was successful",
+                                    blockId, blobName),
+                            error -> {
+                                /*
+                                Error is raised only after timeout and
+                                exhausting all the retries. If still it encounters
+                                error, there is something really wrong with the
+                                external system.
+
+                                Setting this flag to true so that,
+                                Exception can be thrown on the main thread.
+                                 */
+                                this.shouldThrowException = true;
+                            }
+                    );
+
+            /*
+            Commit will be invoked when closing the file.
+             */
+            if (!shouldCommit) {
+                return;
+            }
+
+            /*
+            Blocking is important when connector is being deleted. It will
+            ensure that all the data is staged and committed before stopping
+            the connector.
+             */
+            if (shouldBlock) {
+                this.storageManager.commitBlockIdsAsync(blobName, base64BlockIds, false)
+                        .block();
+            }
+
+            this.storageManager.commitBlockIdsAsync(blobName, base64BlockIds, false)
+                    .subscribe(
+                            success -> log.info("Commit successful for blob: {}", blobName),
+                            error -> log.info("Commit failed for blob: {}", blobName)
+                    );
+
+        } catch (Exception e) {
+            log.error("Failed staging block with error: {}", e.getMessage());
+            throw new IOException("Failed staging for blob: " + blobName, e);
+        }
+    }
+
+    private String generateBase64RandomBlockId() {
+        return base64Encoder.encodeToString(
+                UUID.randomUUID()
+                        .toString()
+                        .getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
+    private void checkIfExceptionHasToBeThrown() throws IOException {
+        if (!shouldThrowException) {
+            return;
+        }
+        throw new IOException("Failed staging one of the block for blob: {}" + blobName);
     }
 }

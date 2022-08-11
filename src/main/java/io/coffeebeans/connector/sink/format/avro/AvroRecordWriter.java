@@ -76,9 +76,9 @@ public class AvroRecordWriter implements RecordWriter {
     }
 
     @Override
-    public void commit() throws IOException {
+    public void commit(boolean ensureCommitted) throws IOException {
         dataFileWriter.flush();
-        outputStream.commit();
+        outputStream.commit(ensureCommitted);
         dataFileWriter.close();
     }
 

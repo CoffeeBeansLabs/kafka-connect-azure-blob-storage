@@ -197,7 +197,7 @@ public class ParquetRecordWriter implements RecordWriter {
      * @throws IOException If any I/O error occurs
      */
     @Override
-    public void commit() throws IOException {
+    public void commit(boolean ensureCommitted) throws IOException {
         outputFile.getOutputStream().setCommitFlag(true);
         if (writer != null) {
             writer.close();

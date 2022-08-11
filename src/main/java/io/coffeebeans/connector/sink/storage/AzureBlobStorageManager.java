@@ -363,28 +363,36 @@ public class AzureBlobStorageManager implements StorageManager {
 
     private Throwable handleErrorForCreateAppendBlob(Throwable throwable, String blobName) {
 
-        logger.error("CREATE: Failed to create blob with name: " + blobName);
+        logger.error("CREATE: Failed to create blob with name: "
+                + blobName + " with message: " + throwable.getMessage());
+
         return new BlobStorageException("CREATE: Failed to create blob with name: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForAppendBlob(Throwable throwable, String blobName) {
 
-        logger.error("APPEND: Failed to append block with name: " + blobName);
+        logger.error("APPEND: Failed to append block with name: "
+                + blobName + " with message: " + throwable.getMessage());
+
         return new BlobStorageException("APPEND: Failed to append block in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForStagingBlock(Throwable throwable, String blobName) {
 
-        logger.error("STAGING: Failed to stage block on blob with name: " + blobName);
+        logger.error("STAGING: Failed to stage block on blob with name: "
+                + blobName + " with message: " + throwable.getMessage());
+
         return new BlobStorageException("STAGING: Failed to stage block in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForCommittingBlock(Throwable throwable, String blobName) {
 
-        logger.error("COMMITTING: Failed to commit blocks on blob with name: " + blobName);
+        logger.error("COMMITTING: Failed to commit blocks on blob with name: "
+                + blobName + " with message: " + throwable.getMessage());
+
         return new BlobStorageException("COMMITTING: Failed to commit blocks in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }

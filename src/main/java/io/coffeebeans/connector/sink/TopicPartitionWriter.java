@@ -173,12 +173,7 @@ public class TopicPartitionWriter {
             }
 
             // Perform rotation, i.e. close the current writer and remove all data for this encodedPartition
-            try {
-                entry.getValue().commit();
-
-            } catch (IOException e) {
-                log.error("Failed to commit file with encodedPartition: {}, Removing the writer", encodedPartition);
-            }
+           commit(encodedPartition);
 
             iterator.remove();
             recordsCount.remove(encodedPartition);
@@ -200,7 +195,13 @@ public class TopicPartitionWriter {
             return;
         }
         try {
-            writer.commit();
+
+            /*
+            This method is called for partitioning.
+            It is safe to disable the ensureCommitted
+            flag.
+             */
+            writer.commit(false);
 
         } catch (IOException e) {
             log.error("Failed to commit file with encodedPartition: {}, Removing the writer", encodedPartition);
@@ -263,7 +264,13 @@ public class TopicPartitionWriter {
      */
     public void close() throws IOException {
         for (RecordWriter writer : writers.values()) {
-            writer.commit();
+
+            /*
+            This method is called when connector or
+            task is deleted. So ensureCommitted flag
+            has to be set.
+             */
+            writer.commit(true);
         }
         writers.clear();
         startTimes.clear();

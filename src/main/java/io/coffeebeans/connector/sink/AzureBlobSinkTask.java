@@ -79,6 +79,7 @@ public class AzureBlobSinkTask extends SinkTask {
                 config.getConnectionString(),
                 config.getContainerName()
         );
+        storageManager.configure(new HashMap<>());
 
         try {
             this.azureBlobSinkConnectorContext = AzureBlobSinkConnectorContext.builder(configProps)
