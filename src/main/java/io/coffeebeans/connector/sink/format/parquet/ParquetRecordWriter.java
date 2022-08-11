@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
@@ -7,6 +8,7 @@ import io.coffeebeans.connector.sink.storage.StorageManager;
 import io.confluent.connect.avro.AvroData;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -36,6 +38,7 @@ public class ParquetRecordWriter implements RecordWriter {
     private ParquetWriter writer;
     private final String blobName;
     private final AvroData avroData;
+    private final ObjectMapper mapper;
     private final SchemaStore schemaStore;
     private JsonAvroConverter converter;
     private ParquetOutputFile outputFile;
@@ -61,6 +64,7 @@ public class ParquetRecordWriter implements RecordWriter {
         this.blobName = blobName;
         this.schemaStore = schemaStore;
         this.storageManager = storageManager;
+        this.mapper = new ObjectMapper();
 
         this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
     }
@@ -75,20 +79,34 @@ public class ParquetRecordWriter implements RecordWriter {
      * It converts the value object to {@link GenericRecord} and write
      * using the ParquetWriter.
      *
-     * @param sinkRecord sink record to be processed
+     * @param kafkaRecord sink record to be processed
      * @throws IOException if any I/O error occur
      */
     @Override
-    public void write(SinkRecord sinkRecord) throws IOException {
-        if (sinkRecord.value() instanceof String) {
-            writeFromJsonString(sinkRecord.value());
+    public void write(SinkRecord kafkaRecord) throws IOException {
+        if (kafkaRecord.value() instanceof String) {
+            /*
+            For Json string values
+             */
+            write((String) kafkaRecord.value());
+            return;
+
+        } else if (kafkaRecord.value() instanceof Map) {
+            /*
+            For Json without embedded schema or schema registry
+             */
+            String jsonString = mapper
+                    .writeValueAsString(
+                            kafkaRecord.value()
+                    );
+            write(jsonString);
             return;
         }
 
         if (kafkaSchema == null || writer == null) {
             log.info("Opening parquet record writer for blob: {}", blobName);
 
-            kafkaSchema = sinkRecord.valueSchema();
+            kafkaSchema = kafkaRecord.valueSchema();
             org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(kafkaSchema);
 
             outputFile = new ParquetOutputFile(
@@ -117,7 +135,7 @@ public class ParquetRecordWriter implements RecordWriter {
             writer = builder.build();
         }
 
-        Object value = avroData.fromConnectData(kafkaSchema, sinkRecord.value());
+        Object value = avroData.fromConnectData(kafkaSchema, kafkaRecord.value());
         writer.write(value);
     }
 
@@ -133,7 +151,7 @@ public class ParquetRecordWriter implements RecordWriter {
      * @param value the value of the sink record to be processed
      * @throws IOException If I/O error occur
      */
-    private void writeFromJsonString(Object value) throws IOException {
+    private void write(String value) throws IOException {
         if (avroSchema == null || writer == null) {
             log.info("Opening parquet record writer for blob: {}", blobName);
 
@@ -153,7 +171,7 @@ public class ParquetRecordWriter implements RecordWriter {
 
             writer = builder.build();
         }
-        Object record = convertToGenericDataRecord((String) value);
+        Object record = convertToGenericDataRecord(value);
         writer.write(record);
     }
 
