@@ -86,9 +86,9 @@ public class JsonRecordWriter implements RecordWriter {
     }
 
     @Override
-    public void commit() throws IOException {
+    public void commit(boolean ensureCommitted) throws IOException {
         jsonGenerator.flush();
-        outputStream.commit();
+        outputStream.commit(ensureCommitted);
         outputStream.close();
     }
 

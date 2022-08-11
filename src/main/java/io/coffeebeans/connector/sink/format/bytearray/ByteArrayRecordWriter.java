@@ -60,8 +60,8 @@ public class ByteArrayRecordWriter implements RecordWriter {
     }
 
     @Override
-    public void commit() throws IOException {
-        this.outputStream.commit();
+    public void commit(boolean ensureCommitted) throws IOException {
+        this.outputStream.commit(ensureCommitted);
         this.outputStream.close();
     }
 
