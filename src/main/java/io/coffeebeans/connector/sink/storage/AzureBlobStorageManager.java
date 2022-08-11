@@ -14,6 +14,7 @@ import com.azure.storage.blob.specialized.AppendBlobClient;
 import com.azure.storage.blob.specialized.BlockBlobAsyncClient;
 import com.azure.storage.common.Utility;
 import com.azure.storage.common.policy.RetryPolicyType;
+import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.exception.BlobStorageException;
 import io.coffeebeans.connector.sink.exception.UnsupportedException;
 import java.io.ByteArrayInputStream;
@@ -69,11 +70,11 @@ public class AzureBlobStorageManager implements StorageManager {
     @Override
     public void configure(Map<String, Object> config) {
 
-        this.retries = (int) config.getOrDefault("azblob.retry.retries", 3);
-        this.retryBackoffMs = (long) config.getOrDefault("azblob.retry.backoff.ms", 4000L);
-        this.retryMaxBackoffMs = (long) config.getOrDefault("azblob.retry.max.backoff.ms", 120000L);
-        this.connectionTimeoutMs = (long) config.getOrDefault("azblob.connection.timeout.ms", 30000L);
-        this.retryType = (String) config.getOrDefault("azblob.retry.type", "EXPONENTIAL");
+        this.retries = (int) config.get(AzureBlobSinkConfig.RETRIES_CONF);
+        this.retryBackoffMs = (long) config.get(AzureBlobSinkConfig.RETRY_BACKOFF_MS_CONF);
+        this.retryMaxBackoffMs = (long) config.get(AzureBlobSinkConfig.RETRY_MAX_BACKOFF_MS_CONF);
+        this.connectionTimeoutMs = (long) config.get(AzureBlobSinkConfig.CONNECTION_TIMEOUT_MS_CONF);
+        this.retryType = (String) config.get(AzureBlobSinkConfig.RETRY_TYPE_CONF);
     }
 
     /**
