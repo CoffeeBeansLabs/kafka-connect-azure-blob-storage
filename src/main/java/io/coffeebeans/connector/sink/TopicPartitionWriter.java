@@ -173,7 +173,7 @@ public class TopicPartitionWriter {
             }
 
             // Perform rotation, i.e. close the current writer and remove all data for this encodedPartition
-           commit(encodedPartition);
+            commit(encodedPartition);
 
             iterator.remove();
             recordsCount.remove(encodedPartition);
@@ -303,17 +303,42 @@ public class TopicPartitionWriter {
         isSchemaStoreConfigurationChecked = true;
     }
 
-    private boolean isSchemaStoreRecommended(SinkRecord record, AzureBlobSinkConfig config) {
+    /**
+     * The {@link io.coffeebeans.connector.sink.format.SchemaStore} is only required for.<br>
+     * following file formats: <br>
+     * <ul>
+     *     <li>{@link FileFormat#PARQUET Parquet}</li>
+     *     <li>{@link FileFormat#AVRO Avro}</li>
+     * </ul>
+     *
+     * <p>Additionally, it is only required for following values: <br>
+     * <ul>
+     *     <li>Json string (Instance of {@link String})</li>
+     *     <li>Json without embedded schema or schema registry (Instance of {@link Map})</li>
+     * </ul>
+     *
+     * @param kafkaRecord Kafka record to process
+     * @param config Connector configuration
+     * @return True if {@link io.coffeebeans.connector.sink.format.SchemaStore} is recommended else false.
+     */
+    private boolean isSchemaStoreRecommended(SinkRecord kafkaRecord, AzureBlobSinkConfig config) {
+        String fileFormat = config.getFileFormat();
 
-        FileFormat fileFormat = FileFormat.valueOf(
-                config.getFileFormat()
-        );
-        if (!FileFormat.PARQUET.equals(fileFormat)) {
+        /*
+        Check for supported file formats
+         */
+        boolean isParquetFormat = FileFormat.PARQUET.toString().equalsIgnoreCase(fileFormat);
+        boolean isAvroFormat = FileFormat.AVRO.toString().equalsIgnoreCase(fileFormat);
+
+        if (!isParquetFormat && !isAvroFormat) {
             return false;
         }
 
-        boolean isInstanceOfString = record.value() instanceof String;
-        boolean isInstanceOfMap = record.value() instanceof Map;
+        /*
+        Check for supported values types
+         */
+        boolean isInstanceOfString = kafkaRecord.value() instanceof String;
+        boolean isInstanceOfMap = kafkaRecord.value() instanceof Map;
 
         return isInstanceOfString || isInstanceOfMap;
     }
