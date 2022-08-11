@@ -5,7 +5,7 @@ import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.storage.StorageManager;
-import io.confluent.connect.avro.AvroData;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
 /**
  * ParquetRecordWriterProvider is responsible for creating
@@ -14,7 +14,8 @@ import io.confluent.connect.avro.AvroData;
 public class ParquetRecordWriterProvider implements RecordWriterProvider {
     private static final String EXTENSION = ".parquet";
 
-    private SchemaStore schemaStore;
+    private final SchemaStore schemaStore;
+    private CompressionCodecName compressionCodec;
 
     public ParquetRecordWriterProvider(SchemaStore schemaStore) {
         this.schemaStore = schemaStore;
@@ -34,7 +35,16 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
                                         final String fileName,
                                         String topic) {
 
-        String blobName = fileName + getExtension();
+        if (this.compressionCodec == null) {
+            this.compressionCodec = "none".equalsIgnoreCase(config.getParquetCompressionCodec())
+                    ? CompressionCodecName.fromConf(null)
+                    : CompressionCodecName.fromConf(config.getParquetCompressionCodec());
+        }
+
+        String blobName = fileName
+                + this.compressionCodec.getExtension()
+                + getExtension();
+
         int partSize = config.getPartSize();
 
         return new ParquetRecordWriter(
@@ -42,7 +52,8 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
                 schemaStore,
                 partSize,
                 blobName,
-                topic
+                topic,
+                compressionCodec
         );
     }
 

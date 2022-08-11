@@ -7,6 +7,7 @@ import static org.apache.kafka.common.config.ConfigDef.Type;
 import io.coffeebeans.connector.sink.config.recommenders.FileFormatRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RetryTypeRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RolloverFileSizeRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.format.ParquetCodecRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.StrategyRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.field.FieldNameRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.time.PathFormatRecommender;
@@ -18,6 +19,7 @@ import io.coffeebeans.connector.sink.config.validators.GreaterThanZeroValidator;
 import io.coffeebeans.connector.sink.config.validators.NonNegativeValidator;
 import io.coffeebeans.connector.sink.config.validators.RetryTypeValidator;
 import io.coffeebeans.connector.sink.config.validators.TopicsDirValueValidator;
+import io.coffeebeans.connector.sink.config.validators.format.ParquetCodecValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.PathFormatValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.TimezoneValidator;
 import io.coffeebeans.connector.sink.format.FileFormat;
@@ -212,6 +214,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String RETRY_MAX_BACKOFF_MS_DOC = "Max delay before an operation";
     public static final Validator RETRY_MAX_BACKOFF_MS_VALIDATOR = new GreaterThanZeroValidator();
 
+    public static final String PARQUET_CODEC_CONF = "parquet.codec";
+    public static final String PARQUET_CODEC_DEFAULT = "none";
+    public static final String PARQUET_CODEC_DOC = "Compression codec for parquet files";
+    public static final Recommender PARQUET_CODEC_RECOMMENDER = new ParquetCodecRecommender();
+    public static final Validator PARQUET_CODEC_VALIDATOR = new ParquetCodecValidator();
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -253,6 +261,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final long connectionTimeoutMs;
     private final long retryBackoffMs;
     private final long retryMaxBackoffMs;
+    private final String parquetCompressionCodec;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -287,6 +296,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.connectionTimeoutMs = this.getLong(CONNECTION_TIMEOUT_MS_CONF);
         this.retryBackoffMs = this.getLong(RETRY_BACKOFF_MS_CONF);
         this.retryMaxBackoffMs = this.getLong(RETRY_MAX_BACKOFF_MS_CONF);
+        this.parquetCompressionCodec = this.getString(PARQUET_CODEC_CONF);
     }
 
 
@@ -490,7 +500,19 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         RETRY_MAX_BACKOFF_MS_DEFAULT,
                         RETRY_MAX_BACKOFF_MS_VALIDATOR,
                         IMPORTANCE_LOW,
-                        RETRY_MAX_BACKOFF_MS_DOC);
+                        RETRY_MAX_BACKOFF_MS_DOC
+                ).define(
+                        PARQUET_CODEC_CONF,
+                        TYPE_STRING,
+                        PARQUET_CODEC_DEFAULT,
+                        PARQUET_CODEC_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        PARQUET_CODEC_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        PARQUET_CODEC_CONF,
+                        PARQUET_CODEC_RECOMMENDER);
     }
 
     public String getConnectionString() {
@@ -571,5 +593,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public long getRetryMaxBackoffMs() {
         return this.retryMaxBackoffMs;
+    }
+
+    public String getParquetCompressionCodec() {
+        return this.parquetCompressionCodec;
     }
 }

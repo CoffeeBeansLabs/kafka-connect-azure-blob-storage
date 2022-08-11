@@ -19,6 +19,7 @@ import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.avro.AvroWriteSupport;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
@@ -44,6 +45,7 @@ public class ParquetRecordWriter implements RecordWriter {
     private ParquetOutputFile outputFile;
     private final StorageManager storageManager;
     private org.apache.avro.Schema avroSchema;
+    private final CompressionCodecName compressionCodec;
 
     /**
      * Constructor.
@@ -54,7 +56,8 @@ public class ParquetRecordWriter implements RecordWriter {
                                SchemaStore schemaStore,
                                int partSize,
                                String blobName,
-                               String topic) {
+                               String topic,
+                               CompressionCodecName codec) {
 
         this.kafkaSchema = null;
         this.avroSchema = null;
@@ -65,6 +68,7 @@ public class ParquetRecordWriter implements RecordWriter {
         this.schemaStore = schemaStore;
         this.storageManager = storageManager;
         this.mapper = new ObjectMapper();
+        this.compressionCodec = codec;
 
         this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
     }
@@ -118,6 +122,7 @@ public class ParquetRecordWriter implements RecordWriter {
                     .withSchema(avroSchema)
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
                     .withDictionaryEncoding(true)
+                    .withCompressionCodec(compressionCodec)
                     .withPageSize(PAGE_SIZE);
 
             if (schemaHasArrayOfOptionalItems(kafkaSchema, /*seenSchemas=*/null)) {
@@ -164,10 +169,11 @@ public class ParquetRecordWriter implements RecordWriter {
             );
             AvroParquetWriter.Builder<GenericData.Record> builder =
                     AvroParquetWriter.<GenericData.Record>builder(outputFile)
-                    .withSchema(avroSchema)
-                    .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
-                    .withDictionaryEncoding(false)
-                    .withPageSize(PAGE_SIZE);
+                            .withSchema(avroSchema)
+                            .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
+                            .withDictionaryEncoding(false)
+                            .withCompressionCodec(compressionCodec)
+                            .withPageSize(PAGE_SIZE);
 
             writer = builder.build();
         }
