@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * It's a singleton class to store the topic and its respective Avro schema.
+ * It stores the topic and its respective Avro schema.
  * It can download the schema data from URL and store it after parsing it.
  * <br>
  * It's possible to have separate schema for each partition but that is
@@ -26,7 +26,7 @@ public class AvroSchemaStore implements SchemaStore {
     private final Map<String, Schema> schemaMap;
 
     /**
-     * Singleton.
+     * Constructs a {@link AvroSchemaStore}
      */
     public AvroSchemaStore() {
         schemaParser = new Schema.Parser();
@@ -34,7 +34,7 @@ public class AvroSchemaStore implements SchemaStore {
     }
 
     /**
-     * Initializes (if not did already) the AvroSchemaStore instance and return it.
+     * Initializes the AvroSchemaStore instance and return it.
      *
      * @return Instance of AvroSchemaStore
      */
