@@ -7,6 +7,7 @@ import static org.apache.kafka.common.config.ConfigDef.Type;
 import io.coffeebeans.connector.sink.config.recommenders.FileFormatRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RetryTypeRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.RolloverFileSizeRecommender;
+import io.coffeebeans.connector.sink.config.recommenders.format.AvroCodecRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.format.ParquetCodecRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.StrategyRecommender;
 import io.coffeebeans.connector.sink.config.recommenders.partitioner.field.FieldNameRecommender;
@@ -19,6 +20,7 @@ import io.coffeebeans.connector.sink.config.validators.GreaterThanZeroValidator;
 import io.coffeebeans.connector.sink.config.validators.NonNegativeValidator;
 import io.coffeebeans.connector.sink.config.validators.RetryTypeValidator;
 import io.coffeebeans.connector.sink.config.validators.TopicsDirValueValidator;
+import io.coffeebeans.connector.sink.config.validators.format.AvroCodecValidator;
 import io.coffeebeans.connector.sink.config.validators.format.ParquetCodecValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.PathFormatValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.TimezoneValidator;
@@ -215,10 +217,16 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Validator RETRY_MAX_BACKOFF_MS_VALIDATOR = new GreaterThanZeroValidator();
 
     public static final String PARQUET_CODEC_CONF = "parquet.codec";
-    public static final String PARQUET_CODEC_DEFAULT = "none";
+    public static final String PARQUET_CODEC_DEFAULT = "uncompressed";
     public static final String PARQUET_CODEC_DOC = "Compression codec for parquet files";
     public static final Recommender PARQUET_CODEC_RECOMMENDER = new ParquetCodecRecommender();
     public static final Validator PARQUET_CODEC_VALIDATOR = new ParquetCodecValidator();
+
+    public static final String AVRO_CODEC_CONF = "avro.codec";
+    public static final String AVRO_CODEC_DEFAULT = "null";
+    public static final String AVRO_CODEC_DOC = "Compression codec for avro files";
+    public static final Recommender AVRO_CODEC_RECOMMENDER = new AvroCodecRecommender();
+    public static final Validator AVRO_CODEC_VALIDATOR = new AvroCodecValidator();
 
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
@@ -262,6 +270,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final long retryBackoffMs;
     private final long retryMaxBackoffMs;
     private final String parquetCompressionCodec;
+    private final String avroCompressionCodec;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -297,6 +306,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.retryBackoffMs = this.getLong(RETRY_BACKOFF_MS_CONF);
         this.retryMaxBackoffMs = this.getLong(RETRY_MAX_BACKOFF_MS_CONF);
         this.parquetCompressionCodec = this.getString(PARQUET_CODEC_CONF);
+        this.avroCompressionCodec = this.getString(AVRO_CODEC_CONF);
     }
 
 
@@ -512,7 +522,19 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         -1,
                         ConfigDef.Width.NONE,
                         PARQUET_CODEC_CONF,
-                        PARQUET_CODEC_RECOMMENDER);
+                        PARQUET_CODEC_RECOMMENDER
+                ).define(
+                        AVRO_CODEC_CONF,
+                        TYPE_STRING,
+                        AVRO_CODEC_DEFAULT,
+                        AVRO_CODEC_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        AVRO_CODEC_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        AVRO_CODEC_CONF,
+                        AVRO_CODEC_RECOMMENDER);
     }
 
     public String getConnectionString() {
@@ -597,5 +619,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getParquetCompressionCodec() {
         return this.parquetCompressionCodec;
+    }
+
+    public String getAvroCompressionCodec() {
+        return this.avroCompressionCodec;
     }
 }
