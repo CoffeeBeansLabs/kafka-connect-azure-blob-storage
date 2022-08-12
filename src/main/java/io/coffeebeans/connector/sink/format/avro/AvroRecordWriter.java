@@ -10,6 +10,7 @@ import io.confluent.kafka.serializers.NonRecordContainer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.kafka.connect.data.Schema;
@@ -35,6 +36,7 @@ public class AvroRecordWriter implements RecordWriter {
     private final String kafkaTopic;
     private final ObjectMapper mapper;
     private final SchemaStore schemaStore;
+    private final CodecFactory codecFactory;
     private final StorageManager storageManager;
     private org.apache.avro.Schema avroValueSchema;
     private final JsonAvroConverter jsonAvroConverter;
@@ -52,7 +54,8 @@ public class AvroRecordWriter implements RecordWriter {
                             SchemaStore schemaStore,
                             int partSize,
                             String blobName,
-                            String kafkaTopic) {
+                            String kafkaTopic,
+                            CodecFactory codecFactory) {
 
         this.partSize = partSize;
         this.blobName = blobName;
@@ -62,6 +65,7 @@ public class AvroRecordWriter implements RecordWriter {
         this.storageManager = storageManager;
         this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
         this.jsonAvroConverter = new JsonAvroConverter();
+        this.codecFactory = codecFactory;
 
         this.dataFileWriter = new DataFileWriter<>(new GenericDatumWriter<>());
     }
@@ -99,6 +103,7 @@ public class AvroRecordWriter implements RecordWriter {
                     blobName,
                     partSize
             );
+            dataFileWriter.setCodec(codecFactory);
             dataFileWriter.create(avroValueSchema, outputStream);
         }
         Object value = avroData
@@ -122,6 +127,7 @@ public class AvroRecordWriter implements RecordWriter {
                     blobName,
                     partSize
             );
+            dataFileWriter.setCodec(codecFactory);
             dataFileWriter.create(avroValueSchema, outputStream);
         }
         Object record = jsonAvroConverter
