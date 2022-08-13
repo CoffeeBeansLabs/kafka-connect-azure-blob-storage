@@ -14,13 +14,15 @@ public class DefaultPartitioner implements Partitioner {
     protected static final Logger log = LoggerFactory.getLogger(Partitioner.class);
 
     private static final String KAFKA_PARTITION_PROPERTY = "partition";
-    public static final String FOLDER_DELIMITER = "/";
     public static final String FILE_DELIMITER = "+";
 
     protected String prefix;
+    public String directoryDelim;
 
     public DefaultPartitioner(AzureBlobSinkConfig config) {
+
         this.prefix = config.getTopicsDir();
+        this.directoryDelim = config.getDirectoryDelim();
     }
 
     /**
@@ -50,7 +52,7 @@ public class DefaultPartitioner implements Partitioner {
      */
     @Override
     public String generateFullPath(SinkRecord sinkRecord, long startingOffset) throws JsonProcessingException {
-        return generateFolderPath(sinkRecord) + FOLDER_DELIMITER
+        return generateFolderPath(sinkRecord) + directoryDelim
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
                 + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
@@ -69,7 +71,7 @@ public class DefaultPartitioner implements Partitioner {
      */
     @Override
     public String generateFullPath(SinkRecord sinkRecord, String encodedPartition, long startingOffset) {
-        return generateFolderPath(sinkRecord, encodedPartition) + FOLDER_DELIMITER
+        return generateFolderPath(sinkRecord, encodedPartition) + directoryDelim
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
                 + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
@@ -86,10 +88,10 @@ public class DefaultPartitioner implements Partitioner {
      */
     @Override
     public String generateFolderPath(SinkRecord sinkRecord) throws JsonProcessingException {
-        return prefix + FOLDER_DELIMITER // <prefix>/
+        return prefix + directoryDelim // <prefix>/
 
                 // <kafkaTopic>/
-                + sinkRecord.topic() + FOLDER_DELIMITER
+                + sinkRecord.topic() + directoryDelim
 
                 // <encodedPartition>
                 + encodePartition(sinkRecord);
@@ -107,10 +109,10 @@ public class DefaultPartitioner implements Partitioner {
      */
     @Override
     public String generateFolderPath(SinkRecord sinkRecord, String encodedPartition) {
-        return prefix + FOLDER_DELIMITER // <prefix>/
+        return prefix + directoryDelim // <prefix>/
 
                 // <kafkaTopic>/
-                + sinkRecord.topic() + FOLDER_DELIMITER
+                + sinkRecord.topic() + directoryDelim
 
                 // <encodedPartition>
                 + encodedPartition;
