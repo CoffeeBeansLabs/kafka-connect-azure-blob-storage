@@ -228,6 +228,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final Recommender AVRO_CODEC_RECOMMENDER = new AvroCodecRecommender();
     public static final Validator AVRO_CODEC_VALIDATOR = new AvroCodecValidator();
 
+    public static final String SCHEMAS_CACHE_SIZE_CONF = "schemas.cache.config";
+    public static final int SCHEMAS_CACHE_SIZE_DEFAULT = 1000;
+    public static final String SCHEMAS_CACHE_SIZE_DOC = "Size of schema cache for Avro Converter";
+    public static final Validator SCHEMAS_CACHE_SIZE_VALIDATOR = new GreaterThanZeroValidator();
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -271,6 +276,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final long retryMaxBackoffMs;
     private final String parquetCompressionCodec;
     private final String avroCompressionCodec;
+    private final int schemaCacheSize;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -307,6 +313,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.retryMaxBackoffMs = this.getLong(RETRY_MAX_BACKOFF_MS_CONF);
         this.parquetCompressionCodec = this.getString(PARQUET_CODEC_CONF);
         this.avroCompressionCodec = this.getString(AVRO_CODEC_CONF);
+        this.schemaCacheSize = this.getInt(SCHEMAS_CACHE_SIZE_CONF);
     }
 
 
@@ -534,7 +541,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         -1,
                         ConfigDef.Width.NONE,
                         AVRO_CODEC_CONF,
-                        AVRO_CODEC_RECOMMENDER);
+                        AVRO_CODEC_RECOMMENDER
+                ).define(
+                        SCHEMAS_CACHE_SIZE_CONF,
+                        TYPE_INT,
+                        SCHEMAS_CACHE_SIZE_DEFAULT,
+                        SCHEMAS_CACHE_SIZE_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        SCHEMAS_CACHE_SIZE_DOC);
     }
 
     public String getConnectionString() {
@@ -623,5 +637,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getAvroCompressionCodec() {
         return this.avroCompressionCodec;
+    }
+
+    public int getSchemaCacheSize() {
+        return this.schemaCacheSize;
     }
 }
