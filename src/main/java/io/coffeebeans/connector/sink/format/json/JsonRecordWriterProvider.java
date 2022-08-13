@@ -3,41 +3,71 @@ package io.coffeebeans.connector.sink.format.json;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
-import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * {@link JsonRecordWriterProvider} is used to get instance of
+ * {@link JsonRecordWriter}.
+ */
 public class JsonRecordWriterProvider implements RecordWriterProvider {
     private final Logger log = LoggerFactory.getLogger(JsonRecordWriterProvider.class);
     private final String EXTENSION = ".json";
 
-    private final SchemaStore schemaStore;
+    private int partSize;
+    private int schemasCacheSize;
+    private final StorageManager storageManager;
 
-    public JsonRecordWriterProvider(SchemaStore schemaStore) {
-        this.schemaStore = schemaStore;
+    /**
+     * Constructs {@link JsonRecordWriterProvider}.
+     *
+     * @param storageManager Storage manager to interact with Azure blob storage
+     */
+    public JsonRecordWriterProvider(StorageManager storageManager) {
+        this.storageManager = storageManager;
     }
 
+    /**
+     * Configures {@link JsonRecordWriterProvider} based on the<br>
+     * connector configuration.
+     *
+     * @param config Connector configuration
+     */
     @Override
-    public RecordWriter getRecordWriter(AzureBlobSinkConfig config,
-                                        StorageManager storageManager,
-                                        String fileName,
-                                        String kafkaTopic) {
+    public void configure(AzureBlobSinkConfig config) {
 
-        String blobName = fileName + EXTENSION;
+        this.partSize = config.getPartSize();
+        this.schemasCacheSize = config.getSchemaCacheSize();
+    }
+
+    /**
+     * Instantiates and returns a new instance of {@link JsonRecordWriter}.
+     *
+     * @param blobName Blob name
+     * @param kafkaTopic Kafka topic
+     * @return Instance of Record writer
+     */
+    @Override
+    public RecordWriter getRecordWriter(String blobName, String kafkaTopic) {
+
+        String blobNameWithExtension = blobName + EXTENSION;
 
         try {
-            return new JsonRecordWriter(
-                    storageManager,
-                    schemaStore,
-                    config.getPartSize(),
-                    blobName,
-                    kafkaTopic
-            );
+            return new JsonRecordWriter(storageManager, partSize, blobNameWithExtension, schemasCacheSize);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Extension of the JSON files.
+     *
+     * @return Extension
+     */
+    public String getExtension() {
+        return EXTENSION;
     }
 }

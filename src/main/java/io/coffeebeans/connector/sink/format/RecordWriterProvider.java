@@ -1,7 +1,6 @@
 package io.coffeebeans.connector.sink.format;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.storage.StorageManager;
 
 /**
  * RecordWriterProvider is responsible for initializing and
@@ -9,8 +8,7 @@ import io.coffeebeans.connector.sink.storage.StorageManager;
  */
 public interface RecordWriterProvider {
 
-    RecordWriter getRecordWriter(AzureBlobSinkConfig config,
-                                 StorageManager storageManager,
-                                 String fileName,
-                                 String topic);
+    void configure(AzureBlobSinkConfig config);
+
+    RecordWriter getRecordWriter(String blobName, String kafkaTopic);
 }

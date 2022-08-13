@@ -44,6 +44,7 @@ public class AzureBlobSinkTask extends SinkTask {
     private SchemaStore schemaStore;
     private boolean ignoreNullValues;
     private AzureBlobSinkConfig config;
+    private StorageManager storageManager;
     private SinkTaskContext sinkTaskContext;
     private AzureBlobSinkConnectorContext azureBlobSinkConnectorContext;
     private Map<TopicPartition, TopicPartitionWriter> topicPartitionWriters;
@@ -71,15 +72,16 @@ public class AzureBlobSinkTask extends SinkTask {
 
         config = new AzureBlobSinkConfig(configProps);
         schemaStore = getSchemaStore(config.getFileFormat());
-
-        Partitioner partitioner = getPartitioner(config.getPartitionStrategy());
-        RecordWriterProvider recordWriterProvider = getRecordWriterProvider(config.getFileFormat());
-
-        StorageManager storageManager = getStorage(
+        this.storageManager = getStorage(
                 config.getConnectionString(),
                 config.getContainerName()
         );
         storageManager.configure(getRetryConfigMap(config));
+
+        Partitioner partitioner = getPartitioner(config.getPartitionStrategy());
+
+        RecordWriterProvider recordWriterProvider = getRecordWriterProvider(config.getFileFormat());
+        recordWriterProvider.configure(config);
 
         try {
             this.azureBlobSinkConnectorContext = AzureBlobSinkConnectorContext.builder(configProps)
@@ -250,10 +252,10 @@ public class AzureBlobSinkTask extends SinkTask {
         FileFormat format = FileFormat.valueOf(fileFormat);
 
         switch (format) {
-            case PARQUET: return getParquetRecordWriterProvider(fileFormat);
-            case AVRO: return getAvroRecordWriterProvider(fileFormat);
-            case JSON: return getJsonRecordWriterProvider(fileFormat);
-            case BYTEARRAY: return getByteArrayRecordWriterProvider(fileFormat);
+            case PARQUET: return new ParquetRecordWriterProvider(storageManager, schemaStore);
+            case AVRO: return new AvroRecordWriterProvider(storageManager, schemaStore);
+            case JSON: return new JsonRecordWriterProvider(storageManager);
+            case BYTEARRAY: return new ByteArrayRecordWriterProvider(storageManager);
             default: return null;
         }
     }
@@ -265,53 +267,16 @@ public class AzureBlobSinkTask extends SinkTask {
      * @return SchemaStore
      */
     public SchemaStore getSchemaStore(String fileFormat) {
-        if (this.schemaStore != null) {
-            return this.schemaStore;
-        }
-
         FileFormat format = FileFormat.valueOf(fileFormat);
 
         switch (format) {
             case PARQUET:
             case AVRO:
             case JSON:
-            case BYTEARRAY: {
-                this.schemaStore = AvroSchemaStore.getSchemaStore();
-                return this.schemaStore;
-            }
+            case BYTEARRAY:
+                return AvroSchemaStore.getSchemaStore();
             default: return null;
         }
-    }
-
-    /**
-     * Returns a new instance of ParquetRecordWriterProvider.
-     * FileFormat is used to get the schema store.
-     *
-     * @param fileFormat User configured file format e.g. PARQUET
-     * @return RecordWriterProvider
-     */
-    private ParquetRecordWriterProvider getParquetRecordWriterProvider(String fileFormat) {
-        SchemaStore schemaStore = getSchemaStore(fileFormat);
-
-        return new ParquetRecordWriterProvider(schemaStore);
-    }
-
-    private AvroRecordWriterProvider getAvroRecordWriterProvider(String fileFormat) {
-        SchemaStore schemaStore = getSchemaStore(fileFormat);
-
-        return new AvroRecordWriterProvider(schemaStore);
-    }
-
-    private JsonRecordWriterProvider getJsonRecordWriterProvider(String fileFormat) {
-        SchemaStore schemaStore = getSchemaStore(fileFormat);
-
-        return new JsonRecordWriterProvider(schemaStore);
-    }
-
-    private ByteArrayRecordWriterProvider getByteArrayRecordWriterProvider(String fileFormat) {
-        SchemaStore schemaStore = getSchemaStore(fileFormat);
-
-        return new ByteArrayRecordWriterProvider(schemaStore);
     }
 
     /**
