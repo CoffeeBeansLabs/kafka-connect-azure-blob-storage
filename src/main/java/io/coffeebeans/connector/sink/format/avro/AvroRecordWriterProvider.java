@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.format.avro;
 
+import static io.confluent.connect.avro.AvroDataConfig.ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG;
 import static io.confluent.connect.avro.AvroDataConfig.SCHEMAS_CACHE_SIZE_CONFIG;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
@@ -95,6 +96,14 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
      *             {@link AzureBlobSinkConfig#SCHEMAS_CACHE_SIZE_CONF schemas.cache.size}
      *         </td>
      *     </tr>
+     *     <tr>
+     *         <td style="padding: 0 15px">
+     *             {@link AvroDataConfig#ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG}
+     *         </td>
+     *         <td style="padding: 0 15px">
+     *             {@link AzureBlobSinkConfig#ENHANCED_AVRO_SCHEMA_SUPPORT_CONF enhanced.avro.schema.support}
+     *         </td>
+     *     </tr>
      * </table>
      * <br>
      *
@@ -104,6 +113,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
 
         Map<String, Object> props = new HashMap<>();
         props.put(SCHEMAS_CACHE_SIZE_CONFIG, config.getSchemaCacheSize());
+        props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.getEnhancedAvroSchemaSupport());
 
         this.avroData = new AvroData(
                 new AvroDataConfig(props)
