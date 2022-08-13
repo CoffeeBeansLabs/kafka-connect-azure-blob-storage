@@ -191,16 +191,17 @@ public class AzureBlobSinkConnectorContext {
     }
 
     /**
-     * Get a new record writer to write the sink records to the output file from the record writer provider.
+     * Get a new instance of {@link RecordWriter} to write sink records<br>
+     * to Blob storage in the configured file format.
      *
-     * @param kafkaTopic Kafka topic name, used to retrieve schema for specific topic
+     * @param kafkaTopic Kafka topic name
      * @param outputFileName Name of the output file where records are written
-     * @return RecordWriter for writing sink records to the output file
+     * @return RecordWriter for writing sink records to the blob storage
      */
     public RecordWriter getRecordWriter(String kafkaTopic, String outputFileName) {
 
         return this.recordWriterProvider
-                .getRecordWriter(config, storageManager, outputFileName, kafkaTopic);
+                .getRecordWriter(outputFileName, kafkaTopic);
     }
 
     /**

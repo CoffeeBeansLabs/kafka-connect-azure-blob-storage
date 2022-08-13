@@ -31,7 +31,6 @@ import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
-    private static final int AVRO_DATA_CACHE_SIZE = 20;
 
     private final String topic;
     private final int partSize;
@@ -57,7 +56,8 @@ public class ParquetRecordWriter implements RecordWriter {
                                int partSize,
                                String blobName,
                                String topic,
-                               CompressionCodecName codec) {
+                               CompressionCodecName codec,
+                               AvroData avroData) {
 
         this.kafkaSchema = null;
         this.avroSchema = null;
@@ -65,12 +65,12 @@ public class ParquetRecordWriter implements RecordWriter {
         this.topic = topic;
         this.partSize = partSize;
         this.blobName = blobName;
+        this.avroData = avroData;
         this.schemaStore = schemaStore;
         this.storageManager = storageManager;
-        this.mapper = new ObjectMapper();
         this.compressionCodec = codec;
 
-        this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
+        this.mapper = new ObjectMapper();
     }
 
     /**

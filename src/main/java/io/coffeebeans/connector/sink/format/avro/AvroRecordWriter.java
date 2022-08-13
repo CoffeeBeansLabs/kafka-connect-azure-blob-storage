@@ -23,8 +23,7 @@ import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
  * To write data in avro file format from struct, json string or map.
  */
 public class AvroRecordWriter implements RecordWriter {
-    private final Logger log = LoggerFactory.getLogger(AvroRecordWriter.class);
-    private static final int AVRO_DATA_CACHE_SIZE = 20;
+    private static final Logger log = LoggerFactory.getLogger(AvroRecordWriter.class);
 
     private Schema kafkaValueSchema;
     private AzureBlobOutputStream outputStream;
@@ -55,18 +54,19 @@ public class AvroRecordWriter implements RecordWriter {
                             int partSize,
                             String blobName,
                             String kafkaTopic,
-                            CodecFactory codecFactory) {
+                            CodecFactory codecFactory,
+                            AvroData avroData) {
 
         this.partSize = partSize;
         this.blobName = blobName;
+        this.avroData = avroData;
         this.kafkaTopic = kafkaTopic;
         this.schemaStore = schemaStore;
-        this.mapper = new ObjectMapper();
-        this.storageManager = storageManager;
-        this.avroData = new AvroData(AVRO_DATA_CACHE_SIZE);
-        this.jsonAvroConverter = new JsonAvroConverter();
         this.codecFactory = codecFactory;
+        this.storageManager = storageManager;
 
+        this.mapper = new ObjectMapper();
+        this.jsonAvroConverter = new JsonAvroConverter();
         this.dataFileWriter = new DataFileWriter<>(new GenericDatumWriter<>());
     }
 
