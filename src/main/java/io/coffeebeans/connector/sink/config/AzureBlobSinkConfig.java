@@ -244,6 +244,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String CONNECT_META_DATA_DOC = "Allow the Connect converter to "
             + "add its metadata to the output schema";
 
+    public static final String FORMAT_BYTEARRAY_EXTENSION_CONF = "format.bytearray.extension";
+    public static final String FORMAT_BYTEARRAY_EXTENSION_DEFAULT = ".bin";
+    public static final String FORMAT_BYTEARRAY_EXTENSION_DOC = "Extension for output binary files";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -290,6 +294,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final int schemaCacheSize;
     private final boolean enhancedAvroSchemaSupport;
     private final boolean connectMetaData;
+    private final String binaryFileExtension;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -329,6 +334,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.schemaCacheSize = this.getInt(SCHEMAS_CACHE_SIZE_CONF);
         this.enhancedAvroSchemaSupport = this.getBoolean(ENHANCED_AVRO_SCHEMA_SUPPORT_CONF);
         this.connectMetaData = this.getBoolean(CONNECT_META_DATA_CONF);
+        this.binaryFileExtension = this.getString(FORMAT_BYTEARRAY_EXTENSION_CONF);
     }
 
 
@@ -575,7 +581,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         TYPE_BOOLEAN,
                         CONNECT_META_DATA_DEFAULT,
                         IMPORTANCE_LOW,
-                        CONNECT_META_DATA_DOC);
+                        CONNECT_META_DATA_DOC
+                ).define(
+                        FORMAT_BYTEARRAY_EXTENSION_CONF,
+                        TYPE_STRING,
+                        FORMAT_BYTEARRAY_EXTENSION_DEFAULT,
+                        NON_EMPTY_STRING_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        FORMAT_BYTEARRAY_EXTENSION_DOC);
     }
 
     public String getConnectionString() {
@@ -676,5 +689,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public boolean getConnectMetaData() {
         return this.connectMetaData;
+    }
+
+    public String getBinaryFileExtension() {
+        return this.binaryFileExtension;
     }
 }
