@@ -1,8 +1,5 @@
 package io.coffeebeans.connector.sink.format.avro;
 
-import static io.confluent.connect.avro.AvroDataConfig.ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG;
-import static io.confluent.connect.avro.AvroDataConfig.SCHEMAS_CACHE_SIZE_CONFIG;
-
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
@@ -15,6 +12,8 @@ import java.util.Map;
 import org.apache.avro.file.CodecFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.confluent.connect.avro.AvroDataConfig.*;
 
 /**
  * {@link AvroRecordWriterProvider} is used to get instance of
@@ -104,6 +103,14 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
      *             {@link AzureBlobSinkConfig#ENHANCED_AVRO_SCHEMA_SUPPORT_CONF enhanced.avro.schema.support}
      *         </td>
      *     </tr>
+     *     <tr>
+     *         <td style="padding: 0 15px">
+     *             {@link AvroDataConfig#CONNECT_META_DATA_CONFIG CONNECT_META_DATA_CONFIG}
+     *         </td>
+     *         <td style="padding: 0 15px">
+     *             {@link AzureBlobSinkConfig#CONNECT_META_DATA_CONF connect.meta.data}
+     *         </td>
+     *     </tr>
      * </table>
      * <br>
      *
@@ -114,6 +121,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
         Map<String, Object> props = new HashMap<>();
         props.put(SCHEMAS_CACHE_SIZE_CONFIG, config.getSchemaCacheSize());
         props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.getEnhancedAvroSchemaSupport());
+        props.put(CONNECT_META_DATA_CONFIG, config.getConnectMetaData());
 
         this.avroData = new AvroData(
                 new AvroDataConfig(props)

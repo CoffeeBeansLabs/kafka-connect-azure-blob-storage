@@ -239,6 +239,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String ENHANCED_AVRO_SCHEMA_SUPPORT_DOC = "Enhanced avro schema support. "
             + "Enum symbol preservation and Package Name awareness";
 
+    public static final String CONNECT_META_DATA_CONF = "connect.meta.data";
+    public static final boolean CONNECT_META_DATA_DEFAULT = true;
+    public static final String CONNECT_META_DATA_DOC = "Allow the Connect converter to "
+            + "add its metadata to the output schema";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -284,6 +289,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String avroCompressionCodec;
     private final int schemaCacheSize;
     private final boolean enhancedAvroSchemaSupport;
+    private final boolean connectMetaData;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -322,6 +328,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.avroCompressionCodec = this.getString(AVRO_CODEC_CONF);
         this.schemaCacheSize = this.getInt(SCHEMAS_CACHE_SIZE_CONF);
         this.enhancedAvroSchemaSupport = this.getBoolean(ENHANCED_AVRO_SCHEMA_SUPPORT_CONF);
+        this.connectMetaData = this.getBoolean(CONNECT_META_DATA_CONF);
     }
 
 
@@ -563,7 +570,12 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         ENHANCED_AVRO_SCHEMA_SUPPORT_DEFAULT,
                         IMPORTANCE_LOW,
                         ENHANCED_AVRO_SCHEMA_SUPPORT_DOC
-                );
+                ).define(
+                        CONNECT_META_DATA_CONF,
+                        TYPE_BOOLEAN,
+                        CONNECT_META_DATA_DEFAULT,
+                        IMPORTANCE_LOW,
+                        CONNECT_META_DATA_DOC);
     }
 
     public String getConnectionString() {
@@ -660,5 +672,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public boolean getEnhancedAvroSchemaSupport() {
         return this.enhancedAvroSchemaSupport;
+    }
+
+    public boolean getConnectMetaData() {
+        return this.connectMetaData;
     }
 }
