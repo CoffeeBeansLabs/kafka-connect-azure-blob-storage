@@ -248,6 +248,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String FORMAT_BYTEARRAY_EXTENSION_DEFAULT = ".bin";
     public static final String FORMAT_BYTEARRAY_EXTENSION_DOC = "Extension for output binary files";
 
+    public static final String DIRECTORY_DELIM_CONF = "directory.delim";
+    public static final String DIRECTORY_DELIM_DEFAULT = "/";
+    public static final String DIRECTORY_DELIM_DOC = "Directory delimiter";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -295,6 +299,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final boolean enhancedAvroSchemaSupport;
     private final boolean connectMetaData;
     private final String binaryFileExtension;
+    private final String directoryDelim;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -335,6 +340,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.enhancedAvroSchemaSupport = this.getBoolean(ENHANCED_AVRO_SCHEMA_SUPPORT_CONF);
         this.connectMetaData = this.getBoolean(CONNECT_META_DATA_CONF);
         this.binaryFileExtension = this.getString(FORMAT_BYTEARRAY_EXTENSION_CONF);
+        this.directoryDelim = this.getString(DIRECTORY_DELIM_CONF);
     }
 
 
@@ -588,7 +594,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         FORMAT_BYTEARRAY_EXTENSION_DEFAULT,
                         NON_EMPTY_STRING_VALIDATOR,
                         IMPORTANCE_LOW,
-                        FORMAT_BYTEARRAY_EXTENSION_DOC);
+                        FORMAT_BYTEARRAY_EXTENSION_DOC
+                ).define(
+                        DIRECTORY_DELIM_CONF,
+                        TYPE_STRING,
+                        DIRECTORY_DELIM_DEFAULT,
+                        NON_EMPTY_STRING_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        DIRECTORY_DELIM_DOC);
     }
 
     public String getConnectionString() {
@@ -693,5 +706,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getBinaryFileExtension() {
         return this.binaryFileExtension;
+    }
+
+    public String getDirectoryDelim() {
+        return this.directoryDelim;
     }
 }
