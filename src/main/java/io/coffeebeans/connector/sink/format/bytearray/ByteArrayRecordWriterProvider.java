@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
  */
 public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
     private final Logger log = LoggerFactory.getLogger(ByteArrayRecordWriterProvider.class);
-    private final String EXTENSION = ".bin";
 
     private int partSize;
+    private String extension;
     private final StorageManager storageManager;
 
     /**
@@ -37,6 +37,7 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
     public void configure(AzureBlobSinkConfig config) {
 
         this.partSize = config.getPartSize();
+        this.extension = config.getBinaryFileExtension();
     }
 
     /**
@@ -50,7 +51,7 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
     public RecordWriter getRecordWriter(String blobName,
                                         String kafkaTopic) {
 
-        String blobNameWithExtension = blobName + EXTENSION;
+        String blobNameWithExtension = blobName + extension;
 
         return new ByteArrayRecordWriter(storageManager, partSize, blobNameWithExtension, kafkaTopic);
     }
@@ -61,6 +62,6 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
      * @return extension
      */
     public String getExtension() {
-        return EXTENSION;
+        return extension;
     }
 }
