@@ -43,6 +43,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private static final Type TYPE_LONG = Type.LONG;
     private static final Type TYPE_INT = Type.INT;
     private static final Type TYPE_PASSWORD = Type.PASSWORD;
+    private static final Type TYPE_BOOLEAN = Type.BOOLEAN;
 
     // Configuration importance
     private static final Importance IMPORTANCE_LOW = Importance.LOW;
@@ -233,6 +234,11 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String SCHEMAS_CACHE_SIZE_DOC = "Size of schema cache for Avro Converter";
     public static final Validator SCHEMAS_CACHE_SIZE_VALIDATOR = new GreaterThanZeroValidator();
 
+    public static final String ENHANCED_AVRO_SCHEMA_SUPPORT_CONF = "enhanced.avro.schema.support";
+    public static final boolean ENHANCED_AVRO_SCHEMA_SUPPORT_DEFAULT = false;
+    public static final String ENHANCED_AVRO_SCHEMA_SUPPORT_DOC = "Enhanced avro schema support. "
+            + "Enum symbol preservation and Package Name awareness";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -277,6 +283,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String parquetCompressionCodec;
     private final String avroCompressionCodec;
     private final int schemaCacheSize;
+    private final boolean enhancedAvroSchemaSupport;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -314,6 +321,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.parquetCompressionCodec = this.getString(PARQUET_CODEC_CONF);
         this.avroCompressionCodec = this.getString(AVRO_CODEC_CONF);
         this.schemaCacheSize = this.getInt(SCHEMAS_CACHE_SIZE_CONF);
+        this.enhancedAvroSchemaSupport = this.getBoolean(ENHANCED_AVRO_SCHEMA_SUPPORT_CONF);
     }
 
 
@@ -548,7 +556,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         SCHEMAS_CACHE_SIZE_DEFAULT,
                         SCHEMAS_CACHE_SIZE_VALIDATOR,
                         IMPORTANCE_LOW,
-                        SCHEMAS_CACHE_SIZE_DOC);
+                        SCHEMAS_CACHE_SIZE_DOC
+                ).define(
+                        ENHANCED_AVRO_SCHEMA_SUPPORT_CONF,
+                        TYPE_BOOLEAN,
+                        ENHANCED_AVRO_SCHEMA_SUPPORT_DEFAULT,
+                        IMPORTANCE_LOW,
+                        ENHANCED_AVRO_SCHEMA_SUPPORT_DOC
+                );
     }
 
     public String getConnectionString() {
@@ -641,5 +656,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public int getSchemaCacheSize() {
         return this.schemaCacheSize;
+    }
+
+    public boolean getEnhancedAvroSchemaSupport() {
+        return this.enhancedAvroSchemaSupport;
     }
 }
