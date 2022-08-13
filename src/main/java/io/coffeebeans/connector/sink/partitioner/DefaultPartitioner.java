@@ -12,16 +12,16 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultPartitioner implements Partitioner {
     protected static final Logger log = LoggerFactory.getLogger(Partitioner.class);
-
     private static final String KAFKA_PARTITION_PROPERTY = "partition";
-    public static final String FILE_DELIMITER = "+";
 
     protected String prefix;
+    public String fileDelim;
     public String directoryDelim;
 
     public DefaultPartitioner(AzureBlobSinkConfig config) {
 
         this.prefix = config.getTopicsDir();
+        this.fileDelim = config.getFileDelim();
         this.directoryDelim = config.getDirectoryDelim();
     }
 
@@ -55,7 +55,7 @@ public class DefaultPartitioner implements Partitioner {
         return generateFolderPath(sinkRecord) + directoryDelim
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+                + sinkRecord.topic() + fileDelim + sinkRecord.kafkaPartition() + fileDelim + startingOffset;
     }
 
     /**
@@ -74,7 +74,7 @@ public class DefaultPartitioner implements Partitioner {
         return generateFolderPath(sinkRecord, encodedPartition) + directoryDelim
 
                 // <kafkaTopic> + <kafkaPartition> + <startOffset> + <uniqueTaskIdentifier>
-                + sinkRecord.topic() + FILE_DELIMITER + sinkRecord.kafkaPartition() + FILE_DELIMITER + startingOffset;
+                + sinkRecord.topic() + fileDelim + sinkRecord.kafkaPartition() + fileDelim + startingOffset;
     }
 
     /**

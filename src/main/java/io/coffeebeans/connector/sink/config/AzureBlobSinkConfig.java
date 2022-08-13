@@ -252,6 +252,10 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String DIRECTORY_DELIM_DEFAULT = "/";
     public static final String DIRECTORY_DELIM_DOC = "Directory delimiter";
 
+    public static final String FILE_DELIM_CONF = "file.delim";
+    public static final String FILE_DELIM_DEFAULT = "+";
+    public static final String FILE_DELIM_DOC= "File delimiter";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -300,6 +304,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final boolean connectMetaData;
     private final String binaryFileExtension;
     private final String directoryDelim;
+    private final String fileDelim;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -341,6 +346,7 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.connectMetaData = this.getBoolean(CONNECT_META_DATA_CONF);
         this.binaryFileExtension = this.getString(FORMAT_BYTEARRAY_EXTENSION_CONF);
         this.directoryDelim = this.getString(DIRECTORY_DELIM_CONF);
+        this.fileDelim = this.getString(FILE_DELIM_CONF);
     }
 
 
@@ -601,7 +607,14 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         DIRECTORY_DELIM_DEFAULT,
                         NON_EMPTY_STRING_VALIDATOR,
                         IMPORTANCE_LOW,
-                        DIRECTORY_DELIM_DOC);
+                        DIRECTORY_DELIM_DOC
+                ).define(
+                        FILE_DELIM_CONF,
+                        TYPE_STRING,
+                        FILE_DELIM_DEFAULT,
+                        NON_EMPTY_STRING_VALIDATOR,
+                        IMPORTANCE_LOW,
+                        FILE_DELIM_DOC);
     }
 
     public String getConnectionString() {
@@ -710,5 +723,9 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getDirectoryDelim() {
         return this.directoryDelim;
+    }
+
+    public String getFileDelim() {
+        return this.fileDelim;
     }
 }
