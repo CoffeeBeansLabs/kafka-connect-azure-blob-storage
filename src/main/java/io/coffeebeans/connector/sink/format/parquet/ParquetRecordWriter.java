@@ -25,15 +25,14 @@ import org.slf4j.LoggerFactory;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 
 /**
- * ParquetRecordWriter is used to write Parquet files.
- * It can process Kafka Struct, JSON String and value Map.
+ *  Writes data from {@link SinkRecord#value()} to blob storage in Parquet file format.
  */
 public class ParquetRecordWriter implements RecordWriter {
     private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriter.class);
     private static final int PAGE_SIZE = 64 * 1024;
 
     private final String topic;
-    private final int partSize;
+    private final int blockSize;
     private Schema kafkaSchema;
     private ParquetWriter writer;
     private final String blobName;
@@ -47,23 +46,29 @@ public class ParquetRecordWriter implements RecordWriter {
     private final CompressionCodecName compressionCodec;
 
     /**
-     * Constructor.
+     * Constructs {@link ParquetRecordWriter}.
      *
-     * @param blobName blob name (prefixed with directory info and suffixed with file extension)
+     * @param storageManager Storage manager to interact with Azure blob storage
+     * @param schemaStore Schema store to retrieve avro schemas for JSON string / JSON without schema
+     * @param blockSize Block size
+     * @param blobName Blob name
+     * @param kafkaTopic Kafka topic
+     * @param codec Compression codec
+     * @param avroData AvroData
      */
     public ParquetRecordWriter(StorageManager storageManager,
                                SchemaStore schemaStore,
-                               int partSize,
+                               int blockSize,
                                String blobName,
-                               String topic,
+                               String kafkaTopic,
                                CompressionCodecName codec,
                                AvroData avroData) {
 
         this.kafkaSchema = null;
         this.avroSchema = null;
 
-        this.topic = topic;
-        this.partSize = partSize;
+        this.topic = kafkaTopic;
+        this.blockSize = blockSize;
         this.blobName = blobName;
         this.avroData = avroData;
         this.schemaStore = schemaStore;
@@ -108,7 +113,7 @@ public class ParquetRecordWriter implements RecordWriter {
         }
 
         if (kafkaSchema == null || writer == null) {
-            log.info("Opening parquet record writer for blob: {}", blobName);
+            log.debug("Opening parquet record writer for blob: {}", blobName);
 
             kafkaSchema = kafkaRecord.valueSchema();
             org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(kafkaSchema);
@@ -116,7 +121,7 @@ public class ParquetRecordWriter implements RecordWriter {
             outputFile = new ParquetOutputFile(
                     this.storageManager,
                     this.blobName,
-                    this.partSize
+                    this.blockSize
             );
             AvroParquetWriter.Builder<GenericRecord> builder = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(avroSchema)
@@ -158,14 +163,14 @@ public class ParquetRecordWriter implements RecordWriter {
      */
     private void write(String value) throws IOException {
         if (avroSchema == null || writer == null) {
-            log.info("Opening parquet record writer for blob: {}", blobName);
+            log.debug("Opening parquet record writer for blob: {}", blobName);
 
             avroSchema = (org.apache.avro.Schema) schemaStore.getSchema(topic);
 
             outputFile = new ParquetOutputFile(
                     this.storageManager,
                     this.blobName,
-                    this.partSize
+                    this.blockSize
             );
             AvroParquetWriter.Builder<GenericData.Record> builder =
                     AvroParquetWriter.<GenericData.Record>builder(outputFile)
@@ -188,15 +193,10 @@ public class ParquetRecordWriter implements RecordWriter {
      * @return GenericData.Record
      */
     private GenericData.Record convertToGenericDataRecord(String jsonString) {
-        try {
-            if (converter == null) {
-                converter = new JsonAvroConverter(); // Lazy Initialization
-            }
-            return converter.convertToGenericDataRecord(jsonString.getBytes(), avroSchema);
-        } catch (Exception e) {
-            log.error("Failed to process record {}, with exception: {}", jsonString, e.getMessage());
-            throw e;
+        if (converter == null) {
+            converter = new JsonAvroConverter(); // Lazy Initialization
         }
+        return converter.convertToGenericDataRecord(jsonString.getBytes(), avroSchema);
     }
 
     /**

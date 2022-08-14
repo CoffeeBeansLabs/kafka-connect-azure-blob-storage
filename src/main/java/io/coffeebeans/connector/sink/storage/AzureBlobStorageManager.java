@@ -16,7 +16,7 @@ import com.azure.storage.common.Utility;
 import com.azure.storage.common.policy.RetryPolicyType;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.exception.BlobStorageException;
-import io.coffeebeans.connector.sink.exception.UnsupportedException;
+import io.coffeebeans.connector.sink.exception.UnsupportedOperationException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -38,7 +38,7 @@ import reactor.util.retry.RetryBackoffSpec;
  * This class will handle the interaction with blob storage service.
  */
 public class AzureBlobStorageManager implements StorageManager {
-    private static final Logger logger = LoggerFactory.getLogger(StorageManager.class);
+    private static final Logger log = LoggerFactory.getLogger(StorageManager.class);
 
     private final BlobContainerClient containerClient;
     private final BlobContainerAsyncClient containerAsyncClient;
@@ -50,9 +50,9 @@ public class AzureBlobStorageManager implements StorageManager {
     private String retryType;
 
     /**
-     * Constructor.
+     * Constructs {@link AzureBlobStorageManager}.
      *
-     * @param connectionString Connection url string of the blob storage service
+     * @param connectionString Connection string of the blob storage service
      * @param containerName Container name where data will be stored
      */
     public AzureBlobStorageManager(String connectionString, String containerName) {
@@ -110,7 +110,7 @@ public class AzureBlobStorageManager implements StorageManager {
                     new AppendBlobRequestConditions(), null, Context.NONE);
 
         } catch (Exception e) {
-            logger.error("Error while performing append operation, exception: {}", e.getMessage());
+            log.error("Error while performing append operation, exception: {}", e.getMessage());
             throw e;
         }
     }
@@ -184,7 +184,7 @@ public class AzureBlobStorageManager implements StorageManager {
      */
     @Override
     public void upload(String blobName, long maxBlobSize, byte[] data) {
-        throw new UnsupportedException("Uploading to block blob is not yet supported");
+        throw new UnsupportedOperationException("Uploading to block blob is not yet supported");
     }
 
     /**
@@ -321,7 +321,7 @@ public class AzureBlobStorageManager implements StorageManager {
             appendBlobClient.createWithResponse(appendBlobCreateOptions, null, Context.NONE);
 
         } catch (Exception e) {
-            logger.error("Error creating append blob with exception: {}", e.getMessage());
+            log.error("Error creating append blob with exception: {}", e.getMessage());
             throw e;
         }
     }
@@ -341,7 +341,7 @@ public class AzureBlobStorageManager implements StorageManager {
 
             return Retry.fixedDelay(this.retries, Duration.ofMillis(this.retryBackoffMs))
                     .doAfterRetry(retrySignal ->
-                            logger.warn("CREATE: Retrying at " + LocalTime.now()
+                            log.warn("CREATE: Retrying at " + LocalTime.now()
                                     + ", attempt: " + retrySignal.totalRetries())
                     )
                     .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
@@ -354,7 +354,7 @@ public class AzureBlobStorageManager implements StorageManager {
                 .maxBackoff(Duration.ofMillis(this.retryMaxBackoffMs))
                 .jitter(0.5d)
                 .doAfterRetry(retrySignal ->
-                        logger.warn("CREATE: Retrying at " + LocalTime.now()
+                        log.warn("CREATE: Retrying at " + LocalTime.now()
                                 + ", attempt: " + retrySignal.totalRetries())
                 )
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) ->
@@ -363,37 +363,21 @@ public class AzureBlobStorageManager implements StorageManager {
     }
 
     private Throwable handleErrorForCreateAppendBlob(Throwable throwable, String blobName) {
-
-        logger.error("CREATE: Failed to create blob with name: "
-                + blobName + " with message: " + throwable.getMessage());
-
         return new BlobStorageException("CREATE: Failed to create blob with name: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForAppendBlob(Throwable throwable, String blobName) {
-
-        logger.error("APPEND: Failed to append block with name: "
-                + blobName + " with message: " + throwable.getMessage());
-
         return new BlobStorageException("APPEND: Failed to append block in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForStagingBlock(Throwable throwable, String blobName) {
-
-        logger.error("STAGING: Failed to stage block on blob with name: "
-                + blobName + " with message: " + throwable.getMessage());
-
         return new BlobStorageException("STAGING: Failed to stage block in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }
 
     private Throwable handleErrorForCommittingBlock(Throwable throwable, String blobName) {
-
-        logger.error("COMMITTING: Failed to commit blocks on blob with name: "
-                + blobName + " with message: " + throwable.getMessage());
-
         return new BlobStorageException("COMMITTING: Failed to commit blocks in blob: "
                 + blobName + " with error message: " + throwable.getMessage());
     }

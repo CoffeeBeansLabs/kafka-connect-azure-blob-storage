@@ -1,5 +1,9 @@
 package io.coffeebeans.connector.sink.format.parquet;
 
+import static io.confluent.connect.avro.AvroDataConfig.CONNECT_META_DATA_CONFIG;
+import static io.confluent.connect.avro.AvroDataConfig.ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG;
+import static io.confluent.connect.avro.AvroDataConfig.SCHEMAS_CACHE_SIZE_CONFIG;
+
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
@@ -13,8 +17,6 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.confluent.connect.avro.AvroDataConfig.*;
-
 /**
  * {@link ParquetRecordWriterProvider} is used to get instance of
  * {@link ParquetRecordWriter}.
@@ -23,7 +25,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
     private static final Logger log = LoggerFactory.getLogger(ParquetRecordWriterProvider.class);
     private static final String EXTENSION = ".parquet";
 
-    private int partSize;
+    private int blockSize;
     private AvroData avroData;
     private final SchemaStore schemaStore;
     private final StorageManager storageManager;
@@ -49,7 +51,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
     @Override
     public void configure(AzureBlobSinkConfig config) {
 
-        this.partSize = config.getPartSize();
+        this.blockSize = config.getBlockSize();
 
         configureAvroData(config);
         configureCompressionCodec(config);
@@ -71,7 +73,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
         return new ParquetRecordWriter(
                 storageManager,
                 schemaStore,
-                partSize,
+                blockSize,
                 blobNameWithExtension,
                 kafkaTopic,
                 compressionCodec,
@@ -92,7 +94,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
      *             {@link AvroDataConfig#SCHEMAS_CACHE_SIZE_CONFIG SCHEMAS_CACHE_SIZE_CONFIG}
      *         </td>
      *         <td style="padding: 0 15px">
-     *             {@link AzureBlobSinkConfig#SCHEMAS_CACHE_SIZE_CONF schemas.cache.size}
+     *             {@link AzureBlobSinkConfig#SCHEMA_CACHE_SIZE_CONF schemas.cache.size}
      *         </td>
      *     </tr>
      *     <tr>
@@ -120,14 +122,14 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
 
         Map<String, Object> props = new HashMap<>();
         props.put(SCHEMAS_CACHE_SIZE_CONFIG, config.getSchemaCacheSize());
-        props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.getEnhancedAvroSchemaSupport());
-        props.put(CONNECT_META_DATA_CONFIG, config.getConnectMetaData());
+        props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.isEnhancedSchemaSupportEnabled());
+        props.put(CONNECT_META_DATA_CONFIG, config.isConnectMetaDataEnabled());
 
         this.avroData = new AvroData(
                 new AvroDataConfig(props)
         );
 
-        log.info("Configured schema cache size: {}", config.getSchemaCacheSize());
+        log.debug("Configured schema cache size: {}", config.getSchemaCacheSize());
     }
 
     /**
@@ -144,7 +146,7 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider {
                 config.getParquetCompressionCodec()
         );
 
-        log.info("Configured compression codec: {}", config.getParquetCompressionCodec());
+        log.debug("Configured compression codec: {}", config.getParquetCompressionCodec());
     }
 
     /**

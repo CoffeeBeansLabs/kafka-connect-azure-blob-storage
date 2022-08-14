@@ -18,6 +18,11 @@ public class DefaultPartitioner implements Partitioner {
     public String fileDelim;
     public String directoryDelim;
 
+    /**
+     * Constructs {@link DefaultPartitioner}.
+     *
+     * @param config Connector configuration
+     */
     public DefaultPartitioner(AzureBlobSinkConfig config) {
 
         this.prefix = config.getTopicsDir();
@@ -28,8 +33,12 @@ public class DefaultPartitioner implements Partitioner {
     /**
      * Generate an encoded partition based on prefix, kafka topic,
      * kafka partition and starting offset.
+     * <pre>
+     *     <code>
      *
-     * <p>partition=&lt;kafkaPartition&gt;
+     *          partition=&lt;kafkaPartition&gt;
+     *     </code>
+     * </pre>
      *
      * @param sinkRecord The record to be stored
      * @return encoded partition string
@@ -42,9 +51,14 @@ public class DefaultPartitioner implements Partitioner {
 
     /**
      * Generate full blob file path including folder path with encodedPartition.
+     * <pre>
+     *     <code>
      *
-     * <p>&lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;/&lt;kafkaTopic&gt;
-     * +&lt;kafkaPartition&gt;+&lt;startOffset&gt;
+     * &lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;/&lt;kafkaTopic&gt;
+     *         +&lt;kafkaPartition&gt;+&lt;startOffset&gt;
+     *     </code>
+     * </pre>
+     *
      *
      * @param sinkRecord sink record to be stored
      * @param startingOffset kafka starting offset
@@ -60,9 +74,13 @@ public class DefaultPartitioner implements Partitioner {
 
     /**
      * Generate full blob file path including folder path with encodedPartition.
+     * <pre>
+     *     <code>
      *
-     * <p>&lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;/&lt;kafkaTopic&gt;
-     * +&lt;kafkaPartition&gt;+&lt;startOffset&gt;
+     * &lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;/&lt;kafkaTopic&gt;
+     *          +&lt;kafkaPartition&gt;+&lt;startOffset&gt;
+     *     </code>
+     * </pre>
      *
      * @param sinkRecord sink record to be stored
      * @param encodedPartition encoded partition
@@ -81,7 +99,12 @@ public class DefaultPartitioner implements Partitioner {
      * It generates only the folder path and does not include the file name.
      * The folder path includes encoded partition
      *
-     * <p>&lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;
+     * <pre>
+     *     <code>
+     *
+     *         &lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;
+     *     </code>
+     * </pre>
      *
      * @param sinkRecord       record to be processed
      * @return Folder path
@@ -100,8 +123,12 @@ public class DefaultPartitioner implements Partitioner {
     /**
      * It generates only the folder path and does not include the file name.
      * The folder path includes encoded partition
+     * <pre>
+     *     <code>
      *
-     * <p>&lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;
+     *         &lt;prefix&gt;/&lt;kafkaTopic&gt;/&lt;encodedPartition&gt;
+     *     </code>
+     * </pre>
      *
      * @param sinkRecord       record to be processed
      * @param encodedPartition encoded partition

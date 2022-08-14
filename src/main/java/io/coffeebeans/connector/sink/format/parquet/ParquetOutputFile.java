@@ -6,11 +6,11 @@ import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 
 /**
- * This will be used by the ParquetWriter to create
- * PositionOutputStream and flush the data from in-memory
+ * Used by {@link ParquetRecordWriter} to create<br>
+ * PositionOutputStream and flush the data from in-memory<br>
  * store to some sink.
  *
- * <p>This implementation of OutputFile will create instance
+ * <p>This implementation of {@link OutputFile} will create instance<br>
  * of {@link ParquetOutputStream} to store data in sink.
  */
 public class ParquetOutputFile implements OutputFile {
@@ -18,8 +18,15 @@ public class ParquetOutputFile implements OutputFile {
 
     private final ParquetOutputStream outputStream;
 
-    public ParquetOutputFile(StorageManager storageManager, String blobName, int partSize) {
-        outputStream = new ParquetOutputStream(storageManager, blobName, partSize);
+    /**
+     * Constructs {@link ParquetOutputFile}.
+     *
+     * @param storageManager Storage manager to interact with Azure blob storage
+     * @param blobName Blob name
+     * @param blockSize Block size
+     */
+    public ParquetOutputFile(StorageManager storageManager, String blobName, int blockSize) {
+        outputStream = new ParquetOutputStream(storageManager, blobName, blockSize);
     }
 
     @Override
@@ -42,6 +49,11 @@ public class ParquetOutputFile implements OutputFile {
         return DEFAULT_BLOCK_SIZE;
     }
 
+    /**
+     * Returns {@link ParquetOutputStream}.
+     *
+     * @return OutputStream
+     */
     public ParquetOutputStream getOutputStream() {
         return this.outputStream;
     }

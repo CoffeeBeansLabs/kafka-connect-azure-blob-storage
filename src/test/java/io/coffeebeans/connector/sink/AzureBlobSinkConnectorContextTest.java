@@ -3,7 +3,7 @@ package io.coffeebeans.connector.sink;
 import static org.mockito.Mockito.mock;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.format.Format;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +28,8 @@ public class AzureBlobSinkConnectorContextTest {
         String topicConfig = SinkTask.TOPICS_CONFIG;
         String topics = "alpha, beta, lambda";
 
-        String fileFormatConfig = AzureBlobSinkConfig.FILE_FORMAT_CONF_KEY;
-        String fileFormat = FileFormat.NONE.toString();
+        String fileFormatConfig = AzureBlobSinkConfig.FORMAT_CONF;
+        String fileFormat = Format.NONE.toString();
 
         configProps.put(topicConfig, topics);
         configProps.put(fileFormatConfig, fileFormat);

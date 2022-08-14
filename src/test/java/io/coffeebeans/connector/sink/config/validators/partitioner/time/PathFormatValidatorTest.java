@@ -17,7 +17,7 @@ public class PathFormatValidatorTest {
     @DisplayName("Should throw exception when the pathFormat value passed is invalid")
     public void shouldThrowExceptionWhenInvalidPathFormatIsPassed() {
         Assertions.assertThrows(ConfigException.class, () -> new PathFormatValidator().ensureValid(
-                AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY, invalidPathFormat)
+                AzureBlobSinkConfig.PATH_FORMAT_CONF, invalidPathFormat)
         );
     }
 
@@ -25,7 +25,7 @@ public class PathFormatValidatorTest {
     @DisplayName("Should not throw any exception when the pathFormat value passed is valid")
     public void shouldNotThrowExceptionWhenValidPathFormatIsPassed() {
         Assertions.assertDoesNotThrow(() -> new PathFormatValidator().ensureValid(
-                AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_PATH_FORMAT_CONF_KEY, validPathFormat)
+                AzureBlobSinkConfig.PATH_FORMAT_CONF, validPathFormat)
         );
     }
 }

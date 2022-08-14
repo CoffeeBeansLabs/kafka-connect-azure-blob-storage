@@ -33,11 +33,13 @@ public class RecordTimestampExtractor extends DefaultTimestampExtractor {
         // Get the timestamp when the kafka record was produced
         Long timestamp = sinkRecord.timestamp();
 
-        ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of(timezone));
+        ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(
+                Instant.ofEpochMilli(timestamp), ZoneId.of(timezone)
+        );
 
         // Format the zoned date & time
         String formattedTimestamp = formatter.format(zonedDateTime);
-        logger.debug("Formatted date & time: {}", formattedTimestamp);
+        log.debug("Formatted date & time: {}", formattedTimestamp);
 
         return formattedTimestamp;
     }

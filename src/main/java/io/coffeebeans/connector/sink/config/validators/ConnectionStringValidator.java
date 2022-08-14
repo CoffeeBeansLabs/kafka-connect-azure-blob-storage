@@ -6,19 +6,21 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.types.Password;
 
 /**
- * This class will validate Connection URL String provided by the user as configuration parameter.
+ * {@link org.apache.kafka.common.config.ConfigDef.Validator} for
+ * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#CONNECTION_STRING_CONF azblob.connection.string}
+ * configuration.
  */
-public class ConnectionUrlValidator implements ConfigDef.Validator {
+public class ConnectionStringValidator implements ConfigDef.Validator {
 
     /**
-     * Ensure the provided connection string is not null, empty, blank and malformed.
+     * Validates connection string.
      *
-     * @param configurationKey Configuration key
-     * @param configurationValue Connection String
+     * @param name name of the configuration
+     * @param value value
      */
     @Override
-    public void ensureValid(String configurationKey, Object configurationValue) {
-        String connectionString = ((Password) configurationValue).value();
+    public void ensureValid(String name, Object value) {
+        String connectionString = ((Password) value).value();
 
         try {
 
@@ -28,7 +30,7 @@ public class ConnectionUrlValidator implements ConfigDef.Validator {
                     .buildClient();
 
         } catch (IllegalArgumentException e) {
-            throw new ConfigException("Invalid connection string: ", connectionString);
+            throw new ConfigException(name, value, "Invalid connection string");
         }
     }
 }

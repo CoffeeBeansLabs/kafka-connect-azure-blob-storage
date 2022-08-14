@@ -5,24 +5,27 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
 /**
- * Validator for Path Format.
+ * {@link org.apache.kafka.common.config.ConfigDef.Validator} for
+ * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#PATH_FORMAT_CONF path.format} configuration.
  */
 public class PathFormatValidator implements ConfigDef.Validator {
 
     /**
-     * Ensure the provided pathFormat value is valid.
+     * Validates pattern.
      *
-     * @param pathFormatKey pathFormat configuration key
-     * @param pathFormatConfigValue pathFormat configuration value
+     * @param name name of the configuration
+     * @param value value
      */
     @Override
-    public void ensureValid(String pathFormatKey, Object pathFormatConfigValue) {
-        String pathFormatValue = (String) pathFormatConfigValue;
+    public void ensureValid(String name, Object value) {
+
+        String pathFormatValue = (String) value;
 
         try {
             DateTimeFormatter.ofPattern(pathFormatValue);
+
         } catch (IllegalArgumentException exception) {
-            throw new ConfigException("Invalid path.format : ", pathFormatValue);
+            throw new ConfigException(name, value, "Invalid pattern");
         }
     }
 }

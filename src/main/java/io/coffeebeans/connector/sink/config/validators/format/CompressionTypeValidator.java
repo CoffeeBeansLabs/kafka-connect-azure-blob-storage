@@ -2,13 +2,15 @@ package io.coffeebeans.connector.sink.config.validators.format;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.CompressionType;
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.format.Format;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.utils.Utils;
 
 /**
  * {@link org.apache.kafka.common.config.ConfigDef.Validator} and
@@ -18,29 +20,41 @@ import org.apache.kafka.common.config.ConfigException;
  */
 public class CompressionTypeValidator implements ConfigDef.Validator, ConfigDef.Recommender {
 
+    private static final List<String> COMPRESSION_TYPES;
+    private static final String ALLOWED_TYPES;
+
+    static {
+        /*
+        Iterate through the CompressionType and add it to the list.
+         */
+
+        CompressionType[] types = CompressionType.values();
+
+        COMPRESSION_TYPES = Stream.of(types)
+                .map(CompressionType::name)
+                .collect(Collectors.toList());
+
+        ALLOWED_TYPES = Utils.join(COMPRESSION_TYPES, ", ");
+    }
+
     /**
      * The valid values for the configuration given the current configuration values.
      *
      * @param name         The name of the configuration
      * @param parsedConfig The parsed configuration values
      * @return The list of valid values. To function properly, the returned objects should have the type
-     * defined for the configuration using the recommender.
+     *      defined for the configuration using the recommender.
      */
     @Override
     public List<Object> validValues(String name, Map<String, Object> parsedConfig) {
-
-        CompressionType[] types = CompressionType.values();
-
-        return Stream.of(types)
-                .map(CompressionType::name)
-                .collect(Collectors.toList());
+        return Collections.singletonList(COMPRESSION_TYPES);
     }
 
     /**
      * Set the visibility of the configuration given the current configuration values.
      * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#COMPRESSION_TYPE_CONF az.compression.type}
      * is only valid when
-     * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#FILE_FORMAT_CONF_KEY file.format}
+     * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#FORMAT_CONF file.format}
      * is either JSON or BYTEARRAY.
      *
      * @param name         The name of the configuration
@@ -51,13 +65,13 @@ public class CompressionTypeValidator implements ConfigDef.Validator, ConfigDef.
     public boolean visible(String name, Map<String, Object> parsedConfig) {
 
         String fileFormat = (String) parsedConfig.get(
-                AzureBlobSinkConfig.FILE_FORMAT_CONF_KEY
+                AzureBlobSinkConfig.FORMAT_CONF
         );
-        boolean isJson = FileFormat.JSON
+        boolean isJson = Format.JSON
                 .toString()
                 .equalsIgnoreCase(fileFormat);
 
-        boolean isByteArray = FileFormat.BYTEARRAY
+        boolean isByteArray = Format.BYTEARRAY
                 .toString()
                 .equalsIgnoreCase(fileFormat);
 
@@ -74,13 +88,13 @@ public class CompressionTypeValidator implements ConfigDef.Validator, ConfigDef.
     @Override
     public void ensureValid(String name, Object value) throws ConfigException {
 
-        String compressionType = (String) value;
+        String configuredType = (String) value;
 
-        for (CompressionType type : CompressionType.values()) {
-            if (type.toString().equalsIgnoreCase(compressionType)) {
+        for (String codec : COMPRESSION_TYPES) {
+            if (codec.equalsIgnoreCase(configuredType)) {
                 return;
             }
         }
-        throw new ConfigException(name, value, "Check list of supported of compression types");
+        throw new ConfigException(name, value, "String must be one of (case-insensitive): " + ALLOWED_TYPES);
     }
 }

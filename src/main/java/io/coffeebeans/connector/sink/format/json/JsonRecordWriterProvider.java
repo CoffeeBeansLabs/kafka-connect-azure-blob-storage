@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
  * {@link JsonRecordWriter}.
  */
 public class JsonRecordWriterProvider implements RecordWriterProvider {
-    private final Logger log = LoggerFactory.getLogger(JsonRecordWriterProvider.class);
-    private final String EXTENSION = ".json";
+    private static final Logger log = LoggerFactory.getLogger(JsonRecordWriterProvider.class);
+    private static final String EXTENSION = ".json";
 
     private int partSize;
     private int schemasCacheSize;
@@ -41,7 +41,7 @@ public class JsonRecordWriterProvider implements RecordWriterProvider {
     @Override
     public void configure(AzureBlobSinkConfig config) {
 
-        this.partSize = config.getPartSize();
+        this.partSize = config.getBlockSize();
         this.schemasCacheSize = config.getSchemaCacheSize();
         this.compressionLevel = config.getCompressionLevel();
 
@@ -74,9 +74,19 @@ public class JsonRecordWriterProvider implements RecordWriterProvider {
         }
     }
 
+    /**
+     * Configures the {@link CompressionType}.<br>
+     * It configures it based on the {@link AzureBlobSinkConfig#COMPRESSION_TYPE_CONF az.compression.type}<br>
+     * property configured by the user.
+     * <br>
+     *
+     * @param compressionType Connector configuration
+     */
     private void configureCompressionType(String compressionType) {
         this.compressionType = CompressionType
                 .forName(compressionType);
+
+        log.debug("Configured compression of type: {}", compressionType);
     }
 
     /**

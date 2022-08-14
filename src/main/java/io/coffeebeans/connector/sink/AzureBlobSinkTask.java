@@ -2,8 +2,8 @@ package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.config.NullValueBehavior;
-import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.exception.SchemaParseException;
+import io.coffeebeans.connector.sink.format.Format;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroRecordWriterProvider;
@@ -18,7 +18,6 @@ import io.coffeebeans.connector.sink.partitioner.field.FieldPartitioner;
 import io.coffeebeans.connector.sink.partitioner.time.TimePartitioner;
 import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
 import io.coffeebeans.connector.sink.storage.StorageManager;
-import io.coffeebeans.connector.sink.util.Version;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,7 +70,7 @@ public class AzureBlobSinkTask extends SinkTask {
         log.info("Starting Sink Task ....................");
 
         config = new AzureBlobSinkConfig(configProps);
-        schemaStore = getSchemaStore(config.getFileFormat());
+        schemaStore = getSchemaStore(config.getFormat());
         this.storageManager = getStorage(
                 config.getConnectionString(),
                 config.getContainerName()
@@ -80,7 +79,7 @@ public class AzureBlobSinkTask extends SinkTask {
 
         Partitioner partitioner = getPartitioner(config.getPartitionStrategy());
 
-        RecordWriterProvider recordWriterProvider = getRecordWriterProvider(config.getFileFormat());
+        RecordWriterProvider recordWriterProvider = getRecordWriterProvider(config.getFormat());
         recordWriterProvider.configure(config);
 
         try {
@@ -93,7 +92,7 @@ public class AzureBlobSinkTask extends SinkTask {
                     .withRecordWriterProvider(recordWriterProvider)
                     .build();
 
-        } catch (IOException | SchemaNotFoundException e) {
+        } catch (IOException | SchemaParseException e) {
             log.error("Failed to start the connector: Error loading schema");
             throw new RuntimeException("Failed to start connector");
         }
@@ -249,7 +248,7 @@ public class AzureBlobSinkTask extends SinkTask {
      * @return RecordWriterProvider
      */
     public RecordWriterProvider getRecordWriterProvider(String fileFormat) {
-        FileFormat format = FileFormat.valueOf(fileFormat);
+        Format format = Format.valueOf(fileFormat);
 
         switch (format) {
             case PARQUET: return new ParquetRecordWriterProvider(storageManager, schemaStore);
@@ -267,7 +266,7 @@ public class AzureBlobSinkTask extends SinkTask {
      * @return SchemaStore
      */
     public SchemaStore getSchemaStore(String fileFormat) {
-        FileFormat format = FileFormat.valueOf(fileFormat);
+        Format format = Format.valueOf(fileFormat);
 
         switch (format) {
             case PARQUET:

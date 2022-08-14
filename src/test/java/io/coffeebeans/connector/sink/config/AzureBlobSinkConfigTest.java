@@ -37,23 +37,23 @@ public class AzureBlobSinkConfigTest {
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(this.configProps),
                 "Missing required configuration \""
-                        + AzureBlobSinkConfig.CONN_URL_CONF_KEY + "\" which has no default value."
+                        + AzureBlobSinkConfig.CONNECTION_STRING_CONF + "\" which has no default value."
         );
 
         // Add connection string for next unit test.
-        this.configProps.put(AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONN_STR_VALUE);
+        this.configProps.put(AzureBlobSinkConfig.CONNECTION_STRING_CONF, CONN_STR_VALUE);
     }
 
     @Test
     @Order(2)
     @DisplayName("Should fail if field name is not configured for FIELD based partition strategy")
     public void shouldFailIfFieldNameNotProvidedInFieldPartitionStrategy() {
-        this.configProps.put(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF_KEY, PartitionStrategy.FIELD.toString());
+        this.configProps.put(AzureBlobSinkConfig.PARTITION_STRATEGY_CONF, PartitionStrategy.FIELD.toString());
 
         Assertions.assertThrowsExactly(ConfigException.class,
                 () -> new AzureBlobSinkConfig(this.configProps),
                 "Missing required configuration \""
-                        + AzureBlobSinkConfig.PARTITION_STRATEGY_FIELD_NAME_CONF_KEY + "\" which has no default value."
+                        + AzureBlobSinkConfig.PARTITION_FIELD_NAME_CONF + "\" which has no default value."
         );
     }
 }

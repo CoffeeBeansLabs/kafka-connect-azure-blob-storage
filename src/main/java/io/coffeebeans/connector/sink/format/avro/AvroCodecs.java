@@ -1,6 +1,9 @@
 package io.coffeebeans.connector.sink.format.avro;
 
-public enum SupportedAvroCodecs {
+/**
+ * Supported compression codecs for Avro record writer.
+ */
+public enum AvroCodecs {
     NULL,
     BZIP2,
     SNAPPY,

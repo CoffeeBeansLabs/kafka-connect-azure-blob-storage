@@ -1,7 +1,6 @@
 package io.coffeebeans.connector.sink;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.util.Version;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

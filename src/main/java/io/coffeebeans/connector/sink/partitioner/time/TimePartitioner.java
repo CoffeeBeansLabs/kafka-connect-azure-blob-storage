@@ -49,8 +49,9 @@ public class TimePartitioner extends DefaultPartitioner {
      * @return TimestampExtractor
      */
     private TimestampExtractor getTimestampExtractor(String timestampExtractor, AzureBlobSinkConfig config) {
+
         TimestampExtractorStrategy strategy = TimestampExtractorStrategy.valueOf(timestampExtractor);
-        log.info("Timestamp extractor strategy configured: {}", strategy);
+        log.debug("Timestamp extractor strategy configured: {}", strategy);
 
         switch (strategy) {
             case  RECORD: return new RecordTimestampExtractor(config);

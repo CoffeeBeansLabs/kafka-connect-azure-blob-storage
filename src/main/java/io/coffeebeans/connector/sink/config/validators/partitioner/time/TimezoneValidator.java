@@ -7,24 +7,26 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
 /**
- * Validator for Timezone config property.
+ * {@link org.apache.kafka.common.config.ConfigDef.Validator} for
+ * {@link io.coffeebeans.connector.sink.config.AzureBlobSinkConfig#TIMEZONE_CONF timezone} configuration.
  */
 public class TimezoneValidator implements ConfigDef.Validator {
 
     /**
-     * I will check if the timezone value passed is valid, if not I will throw an exception.
+     * Validated timezone value.
      *
-     * @param timezoneConfKey Timezone configuration key
-     * @param timezoneConfValue Timezone configuration value
+     * @param name name of configuration
+     * @param value value
      */
     @Override
-    public void ensureValid(String timezoneConfKey, Object timezoneConfValue) {
-        String timezoneValue = (String) timezoneConfValue;
+    public void ensureValid(String name, Object value) {
+        String timezoneValue = (String) value;
 
         try {
-            ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(timezoneValue));
+            ZonedDateTime.now(ZoneId.of(timezoneValue));
+
         } catch (DateTimeException exception) {
-            throw new ConfigException("Invalid timezone: ", timezoneValue);
+            throw new ConfigException(name, value, "Invalid timezone");
         }
     }
 }

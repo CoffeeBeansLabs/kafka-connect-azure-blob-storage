@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 
 /**
- * To write data in avro file format from struct, json string or map.
+ * Writes data from {@link SinkRecord#value()} to blob storage in Avro format.
  */
 public class AvroRecordWriter implements RecordWriter {
     private static final Logger log = LoggerFactory.getLogger(AvroRecordWriter.class);
@@ -29,7 +29,7 @@ public class AvroRecordWriter implements RecordWriter {
     private AzureBlobOutputStream outputStream;
     private final DataFileWriter<Object> dataFileWriter;
 
-    private final int partSize;
+    private final int blockSize;
     private final String blobName;
     private final AvroData avroData;
     private final String kafkaTopic;
@@ -45,19 +45,19 @@ public class AvroRecordWriter implements RecordWriter {
      *
      * @param storageManager Storage manager to interact with Azure blob storage
      * @param schemaStore Schema store to retrieve schemas for json string or json without schema
-     * @param partSize Part size or buffer size
+     * @param blockSize Part size or buffer size
      * @param blobName Name of the blob
      * @param kafkaTopic Kafka topic name
      */
     public AvroRecordWriter(StorageManager storageManager,
                             SchemaStore schemaStore,
-                            int partSize,
+                            int blockSize,
                             String blobName,
                             String kafkaTopic,
                             CodecFactory codecFactory,
                             AvroData avroData) {
 
-        this.partSize = partSize;
+        this.blockSize = blockSize;
         this.blobName = blobName;
         this.avroData = avroData;
         this.kafkaTopic = kafkaTopic;
@@ -92,7 +92,7 @@ public class AvroRecordWriter implements RecordWriter {
         }
 
         if (kafkaValueSchema == null) {
-            log.info("Opening Avro record writer for blob: {}", blobName);
+            log.debug("Opening Avro record writer for blob: {}", blobName);
 
             kafkaValueSchema = kafkaRecord.valueSchema();
             avroValueSchema = avroData
@@ -101,7 +101,7 @@ public class AvroRecordWriter implements RecordWriter {
             outputStream = new AzureBlobOutputStream(
                     storageManager,
                     blobName,
-                    partSize
+                    blockSize
             );
             dataFileWriter.setCodec(codecFactory);
             dataFileWriter.create(avroValueSchema, outputStream);
@@ -117,7 +117,7 @@ public class AvroRecordWriter implements RecordWriter {
 
     private void write(String value) throws IOException {
         if (avroValueSchema == null) {
-            log.info("Opening Avro record writer for blob: {}", blobName);
+            log.debug("Opening Avro record writer for blob: {}", blobName);
 
             avroValueSchema = (org.apache.avro.Schema) schemaStore
                     .getSchema(kafkaTopic);
@@ -125,7 +125,7 @@ public class AvroRecordWriter implements RecordWriter {
             outputStream = new AzureBlobOutputStream(
                     storageManager,
                     blobName,
-                    partSize
+                    blockSize
             );
             dataFileWriter.setCodec(codecFactory);
             dataFileWriter.create(avroValueSchema, outputStream);

@@ -24,9 +24,8 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
     public RecordFieldTimestampExtractor(AzureBlobSinkConfig config) {
         super(config);
 
-        // TODO: create separate field name config for record-field timestamp extractor
-        this.fieldName = config.getFieldName();
-        logger.info("Field name configured to extract timestamp: {}", fieldName);
+        this.fieldName = config.getTimestampField();
+        log.debug("Field name configured to extract timestamp: {}", fieldName);
     }
 
     /**
@@ -41,11 +40,13 @@ public class RecordFieldTimestampExtractor extends DefaultTimestampExtractor {
         // Extract timestamp from the field value
         long timestamp = ((Number) PartitionerUtil.getFieldValue(sinkRecord, fieldName)).longValue();
 
-        ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of(timezone));
+        ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(
+                Instant.ofEpochMilli(timestamp), ZoneId.of(timezone)
+        );
 
         // Format the zoned date & time
         String formattedTimestamp = formatter.format(zonedDateTime);
-        logger.debug("Formatted date & time: {}", formattedTimestamp);
+        log.debug("Formatted date & time: {}", formattedTimestamp);
 
         return formattedTimestamp;
     }

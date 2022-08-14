@@ -1,14 +1,12 @@
 package io.coffeebeans.connector.sink;
 
-import static io.coffeebeans.connector.sink.config.AzureBlobSinkConfig.FILE_FORMAT_CONF_KEY;
 import static io.coffeebeans.connector.sink.config.AzureBlobSinkConfig.TOPIC_SCHEMA_URL_SUFFIX;
 import static org.apache.kafka.connect.sink.SinkTask.TOPICS_CONFIG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Splitter;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.exception.SchemaParseException;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
@@ -64,30 +62,12 @@ public class AzureBlobSinkConnectorContext {
     }
 
     /**
-     * Check if using schema store recommended.
-     * It will check the file format specified by the user. As of now we are
-     * only using schema store for writing parquet files, so it will recommend
-     * using schema store only if the file format is parquet.
-     *
-     * @param configProps Configuration map
-     * @return True if schema store usage is recommended or else false
-     */
-    @Deprecated
-    private boolean isSchemaStoreRecommended(Map<String, String> configProps) {
-
-        FileFormat fileFormat = FileFormat.valueOf(
-                configProps.get(FILE_FORMAT_CONF_KEY)
-        );
-        return FileFormat.PARQUET.equals(fileFormat);
-    }
-
-    /**
      * Get the user configured list of topics, split it and get the configured
      * schema url for that topic.
      *
      * <p>Register that schema with the schema store.
      */
-    public void configureSchemaStore() throws IOException, SchemaNotFoundException {
+    public void configureSchemaStore() throws IOException, SchemaParseException {
         loadSchema(configProps, schemaStore);
     }
 
@@ -100,7 +80,7 @@ public class AzureBlobSinkConnectorContext {
      * @param schemaStore Schema store where schema will be registered
      */
     private void loadSchema(Map<String, String> configProps, SchemaStore schemaStore)
-            throws IOException, SchemaNotFoundException {
+            throws IOException, SchemaParseException {
 
         String topics = configProps.get(TOPICS_CONFIG);
 
@@ -111,7 +91,7 @@ public class AzureBlobSinkConnectorContext {
 
         for (String topic : topicList) {
             String schemaUrl = getSchemaUrl(configProps, topic)
-                    .orElseThrow(() -> new SchemaNotFoundException("Schema url not configured for topic: " + topic));
+                    .orElseThrow(() -> new SchemaParseException("Schema url not configured for topic: " + topic));
 
             loadSchema(schemaStore, topic, schemaUrl);
         }
@@ -344,9 +324,9 @@ public class AzureBlobSinkConnectorContext {
          *
          * @return AzureBlobSinkConnectorContext context object
          * @throws IOException If something went wrong while parsing schema
-         * @throws SchemaNotFoundException If something went wrong while parsing schema
+         * @throws SchemaParseException If something went wrong while parsing schema
          */
-        public AzureBlobSinkConnectorContext build() throws IOException, SchemaNotFoundException {
+        public AzureBlobSinkConnectorContext build() throws IOException, SchemaParseException {
             return new AzureBlobSinkConnectorContext(this);
         }
     }

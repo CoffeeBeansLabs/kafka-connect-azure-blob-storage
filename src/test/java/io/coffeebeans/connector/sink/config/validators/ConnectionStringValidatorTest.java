@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for ConnectionUrlValidator.
+ * Unit tests for ConnectionStringValidator.
  */
-public class ConnectionUrlValidatorTest {
+public class ConnectionStringValidatorTest {
     private static final String CONNECTION_URL_NULL = null;
     private static final String CONNECTION_URL_EMPTY = "";
     private static final String CONNECTION_URL_BLANK = "     ";
@@ -21,31 +21,31 @@ public class ConnectionUrlValidatorTest {
     @Test
     public void shouldThrowExceptionWithNullConnectionUrl() {
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new ConnectionUrlValidator().ensureValid(
-                        AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_URL_NULL
+                () -> new ConnectionStringValidator().ensureValid(
+                        AzureBlobSinkConfig.CONNECTION_STRING_CONF, CONNECTION_URL_NULL
         ), "Invalid connection string: ");
     }
 
     @Test
     public void shouldThrowExceptionWithEmptyConnectionUrl() {
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new ConnectionUrlValidator().ensureValid(
-                        AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_URL_EMPTY
+                () -> new ConnectionStringValidator().ensureValid(
+                        AzureBlobSinkConfig.CONNECTION_STRING_CONF, CONNECTION_URL_EMPTY
         ), "Invalid connection string: ");
     }
 
     @Test
     public void shouldThrowExceptionWithBlankConnectionUrl() {
         Assertions.assertThrowsExactly(ConfigException.class,
-                () -> new ConnectionUrlValidator().ensureValid(
-                        AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_URL_BLANK
+                () -> new ConnectionStringValidator().ensureValid(
+                        AzureBlobSinkConfig.CONNECTION_STRING_CONF, CONNECTION_URL_BLANK
         ), "Invalid connection string: ");
     }
 
     @Test
     public void shouldNotThrowExceptionWithValidConnectionUrl() {
-        Assertions.assertDoesNotThrow(() -> new ConnectionUrlValidator().ensureValid(
-                AzureBlobSinkConfig.CONN_URL_CONF_KEY, CONNECTION_URL_VALID
+        Assertions.assertDoesNotThrow(() -> new ConnectionStringValidator().ensureValid(
+                AzureBlobSinkConfig.CONNECTION_STRING_CONF, CONNECTION_URL_VALID
         ));
     }
 }

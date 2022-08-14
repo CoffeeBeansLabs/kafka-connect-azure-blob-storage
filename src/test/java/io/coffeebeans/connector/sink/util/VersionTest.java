@@ -2,6 +2,8 @@ package io.coffeebeans.connector.sink.util;
 
 import java.io.IOException;
 import java.util.Properties;
+
+import io.coffeebeans.connector.sink.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

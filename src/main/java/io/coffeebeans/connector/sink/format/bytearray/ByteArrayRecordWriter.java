@@ -14,9 +14,12 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Writes data from {@link SinkRecord#value()} to blob storage in byte array format.
+ */
 public class ByteArrayRecordWriter implements RecordWriter {
-    private final Logger log = LoggerFactory.getLogger(ByteArrayRecordWriter.class);
-    private final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator()
+    private static final Logger log = LoggerFactory.getLogger(ByteArrayRecordWriter.class);
+    private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator()
             .getBytes(StandardCharsets.UTF_8);
 
     private final String kafkaTopic;
@@ -24,16 +27,26 @@ public class ByteArrayRecordWriter implements RecordWriter {
     private final ByteArrayConverter byteArrayConverter;
     private final OutputStream outputStreamCompressionWrapper;
 
+    /**
+     * Constructs {@link ByteArrayRecordWriter}.
+     *
+     * @param storageManager Storage manager to interact with Azure blob storage
+     * @param compressionType Compression type
+     * @param compressionLevel Level of compression
+     * @param blockSize Block size
+     * @param blobName Blob name
+     * @param kafkaTopic Kafka topic
+     */
     public ByteArrayRecordWriter(StorageManager storageManager,
                                  CompressionType compressionType,
                                  int compressionLevel,
-                                 int partSize,
+                                 int blockSize,
                                  String blobName,
                                  String kafkaTopic) {
 
         this.kafkaTopic = kafkaTopic;
 
-        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, partSize)
+        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, blockSize)
                 .setCompressionLevel(compressionLevel)
                 .setCompressionType(compressionType);
 
@@ -43,6 +56,8 @@ public class ByteArrayRecordWriter implements RecordWriter {
         Map<String, String> configProp = new HashMap<>();
         this.byteArrayConverter = new ByteArrayConverter();
         this.byteArrayConverter.configure(configProp, false);
+
+        log.debug("Opened ByteArray record writer for blob name: {}", blobName);
     }
 
     @Override

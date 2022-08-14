@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink.util;
+package io.coffeebeans.connector.sink;
 
 import java.util.Properties;
 import org.slf4j.Logger;

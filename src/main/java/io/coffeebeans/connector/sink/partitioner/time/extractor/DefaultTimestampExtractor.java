@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * This class will format the date and time based on the provided path format and system timestamp.
  */
 public class DefaultTimestampExtractor implements TimestampExtractor {
-    protected static final Logger logger = LoggerFactory.getLogger(TimestampExtractor.class);
+    protected static final Logger log = LoggerFactory.getLogger(TimestampExtractor.class);
 
     protected String timezone;
     protected String pathFormat;
@@ -30,7 +30,7 @@ public class DefaultTimestampExtractor implements TimestampExtractor {
 
         // Initialize the formatter
         this.formatter = DateTimeFormatter.ofPattern(pathFormat);
-        logger.info("Time partitioner path format configured: {}", pathFormat);
+        log.debug("Time partitioner path format configured: {}", pathFormat);
     }
 
     /**
@@ -41,11 +41,14 @@ public class DefaultTimestampExtractor implements TimestampExtractor {
      */
     @Override
     public String getFormattedTimestamp(SinkRecord sinkRecord) throws JsonProcessingException {
-        ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of(timezone));
+
+        ZonedDateTime zonedDateTime = ZonedDateTime.now(
+                ZoneId.of(timezone)
+        );
 
         // Format the zoned date & time
         String formattedTimestamp = formatter.format(zonedDateTime);
-        logger.debug("Formatted date & time: {}", formattedTimestamp);
+        log.debug("Formatted date & time: {}", formattedTimestamp);
 
         return formattedTimestamp;
     }

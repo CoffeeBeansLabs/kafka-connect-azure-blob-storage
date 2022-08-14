@@ -7,19 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Used by ParquetWriter to flush the data from in-memory store to some sink
- * (e.g. Files). This is an implementation of PositionOutputStream which will
- * maintain a buffer. When the buffer is full it will upload the data to
- * the Azure Blob Storage service.
- * <br><br>
- * As of now it performs APPEND operation on a blob.
+ * Used by {@link ParquetRecordWriter} to flush the data from in-memory store to some sink
+ * (e.g. Files).
  */
 public class ParquetOutputStream extends AzureBlobOutputStream {
     private static final Logger log = LoggerFactory.getLogger(ParquetOutputStream.class);
 
     private boolean commitFlag;
     private final String blobName;
-    private boolean ensureCommittedFlag;
 
     ParquetOutputStream(StorageManager storageManager, String blobName, int partSize) {
         super(storageManager, blobName, partSize);
@@ -41,19 +36,22 @@ public class ParquetOutputStream extends AzureBlobOutputStream {
      */
     @Override
     public void close() throws IOException {
-        log.info("Close operation invoked for blob: {}", blobName);
+        log.debug("Close operation invoked for blob: {}", blobName);
+
         if (commitFlag) {
             super.commit();
             commitFlag = false;
+
         } else {
             super.internalClose();
         }
     }
 
-    public void setEnsureCommittedFlag(boolean ensureCommittedFlag) {
-        this.ensureCommittedFlag = ensureCommittedFlag;
-    }
-
+    /**
+     * Set commit flag.
+     *
+     * @param isCommitted Flag
+     */
     public void setCommitFlag(boolean isCommitted) {
         this.commitFlag = isCommitted;
     }

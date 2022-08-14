@@ -1,5 +1,6 @@
 package io.coffeebeans.connector.sink.format.avro;
 
+import io.coffeebeans.connector.sink.exception.SchemaParseException;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -13,11 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * It stores the topic and its respective Avro schema.
+ * Stores the topic and its respective Avro schema.<br>
  * It can download the schema data from URL and store it after parsing it.
- * <br>
- * It's possible to have separate schema for each partition but that is
- * not supported currently.
  */
 public class AvroSchemaStore implements SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(AvroSchemaStore.class);
@@ -26,7 +24,7 @@ public class AvroSchemaStore implements SchemaStore {
     private final Map<String, Schema> schemaMap;
 
     /**
-     * Constructs a {@link AvroSchemaStore}
+     * Constructs a {@link AvroSchemaStore}.
      */
     public AvroSchemaStore() {
         schemaParser = new Schema.Parser();
@@ -61,10 +59,10 @@ public class AvroSchemaStore implements SchemaStore {
      *
      * @param topic Topic as key for storing the schema w.r.t it
      * @param schemaFileUrl The URL from where the schema has to be downloaded
-     * @throws IOException Thrown if the provided URL is malformed or if it encounters any issue
-     *      while downloading the schema.
+     * @throws SchemaParseException Thrown if encounters any error while downloading and parsing
+     *      the schema file.
      */
-    public void register(String topic, String schemaFileUrl) throws IOException {
+    public void register(String topic, String schemaFileUrl) {
         if (schemaMap.containsKey(topic)) {
             return;
         }
@@ -73,8 +71,8 @@ public class AvroSchemaStore implements SchemaStore {
             schemaMap.put(topic, schema);
 
         } catch (IOException e) {
-            log.info("Failed to register schema for topic: {}", topic);
-            throw e;
+            log.error("Failed to register schema for topic: {} from {}", topic, schemaFileUrl);
+            throw new SchemaParseException("Error registering schema", e);
         }
     }
 
@@ -94,17 +92,12 @@ public class AvroSchemaStore implements SchemaStore {
      * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
     public Schema loadFromUrl(String url) throws IOException {
-        log.info("Loading avro schema from url: {}", url);
         try {
             URL schemaUrl = new URL(url);
             return loadFromUrl(schemaUrl);
 
         } catch (MalformedURLException e) {
             log.error("Malformed URL: {}", url);
-            throw e;
-
-        } catch (IOException e) {
-            log.error("Error reading data from URL: {}", url);
             throw e;
         }
     }
@@ -117,14 +110,9 @@ public class AvroSchemaStore implements SchemaStore {
      * @throws IOException Is thrown if it encounters any issue while fetching the data from the given url
      */
     public Schema loadFromUrl(URL url) throws IOException {
-        log.info("Downloading avro schema from URL: {}", url);
-        try (InputStream inputStream = getInputStream(url)) {
-            return schemaParser.parse(inputStream);
 
-        } catch (IOException e) {
-            log.error("Failed to download schema from URL: {}", url);
-            throw e;
-        }
+        InputStream inputStream = getInputStream(url);
+        return schemaParser.parse(inputStream);
     }
 
     /**
@@ -136,20 +124,13 @@ public class AvroSchemaStore implements SchemaStore {
      * @throws IOException thrown if encounters an exception while opening the input stream
      */
     private InputStream getInputStream(URL url) throws IOException {
-        try {
-            // BufferedInputStream is much better in terms of performance.
-            return new BufferedInputStream(url.openStream());
 
-        } catch (IOException e) {
-            log.error("Error opening stream on the provided url: {} ", url);
-            log.error("Failed with exception: {}", e.getMessage());
-
-            throw e;
-        }
+        // BufferedInputStream is much better in terms of performance.
+        return new BufferedInputStream(url.openStream());
     }
 
     /**
-     * Get the schema for the given topic.
+     * Get schema for the topic.
      *
      * @param topic kafka topic
      * @return Stored Avro schema

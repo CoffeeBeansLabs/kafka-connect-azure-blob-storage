@@ -13,30 +13,35 @@ public class FieldPartitioner extends DefaultPartitioner {
     private final String fieldName;
 
     /**
-     * Constructor.
+     * Constructs {@link FieldPartitioner}.
      *
-     * @param config AzureBlobSinkConfig config class object
+     * @param config Connector configuration
      */
     public FieldPartitioner(AzureBlobSinkConfig config) {
         super(config);
 
         fieldName = config.getFieldName();
-        log.info("Field name configured: {}", fieldName);
+        log.debug("Field name configured: {}", fieldName);
     }
 
     /**
-     * Generate the encoded partition string by extracting the value of the
-     * specified field.
+     * Generate the encoded partition string<br>
+     * by extracting the value of the<br>
+     * specified field.<br>
+     * <pre>
+     *     <code>
      *
-     * <p>&lt;fieldName&gt;=&lt;fieldValue&gt;
+     *          &lt;fieldName&gt;=&lt;fieldValue&gt;
+     *     </code>
+     * </pre>
      *
      * @param sinkRecord The sink record to be stored
      * @return Encoded partition string
      */
     @Override
     public String encodePartition(SinkRecord sinkRecord) throws JsonProcessingException {
-        String fieldValue = PartitionerUtil.getFieldValueAsString(sinkRecord, fieldName);
 
+        String fieldValue = PartitionerUtil.getFieldValueAsString(sinkRecord, fieldName);
         return fieldName + "=" + fieldValue;
     }
 }

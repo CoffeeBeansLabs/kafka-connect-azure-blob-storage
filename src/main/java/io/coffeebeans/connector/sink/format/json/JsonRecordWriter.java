@@ -17,10 +17,13 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Write data from {@link SinkRecord#value()} to blob storage in JSON format.
+ */
 public class JsonRecordWriter implements RecordWriter {
-    private final Logger log = LoggerFactory.getLogger(JsonRecordWriter.class);
-    private final String LINE_SEPARATOR = System.lineSeparator();
-    private final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator()
+    private static final Logger log = LoggerFactory.getLogger(JsonRecordWriter.class);
+    private static final String LINE_SEPARATOR = System.lineSeparator();
+    private static final byte[] LINE_SEPARATOR_BYTES = System.lineSeparator()
             .getBytes(StandardCharsets.UTF_8);
 
     private final JsonConverter jsonConverter;
@@ -28,16 +31,28 @@ public class JsonRecordWriter implements RecordWriter {
     private final AzureBlobOutputStream outputStream;
     private final OutputStream outputStreamCompressionWrapper;
 
+    /**
+     * Constructs {@link JsonRecordWriter}.
+     *
+     * @param storageManager Storage manager to interact with Azure blob storage.
+     * @param compressionType Compression type
+     * @param compressionLevel Level of compression
+     * @param blockSize Block size
+     * @param blobName Blob name
+     * @param schemasCacheSize Schema cache size
+     * @throws IOException Throws if encounters any error while opening record
+     *      writer or while writing the record.
+     */
     public JsonRecordWriter(StorageManager storageManager,
                             CompressionType compressionType,
                             int compressionLevel,
-                            int partSize,
+                            int blockSize,
                             String blobName,
                             int schemasCacheSize) throws IOException {
 
         this.jsonConverter = new JsonConverter();
 
-        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, partSize)
+        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, blockSize)
                 .setCompressionLevel(compressionLevel)
                 .setCompressionType(compressionType);
 
@@ -56,6 +71,7 @@ public class JsonRecordWriter implements RecordWriter {
             }
         };
         this.jsonConverter.configure(converterConfig, false);
+        log.debug("Opened JSON record writer for blob name: {}", blobName);
     }
 
     @Override

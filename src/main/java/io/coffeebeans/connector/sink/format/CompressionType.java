@@ -9,6 +9,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.apache.kafka.connect.errors.ConnectException;
 
+/**
+ * Supported compression types for JSON and Binary format.
+ */
 public enum CompressionType {
 
     NONE("none", ""),

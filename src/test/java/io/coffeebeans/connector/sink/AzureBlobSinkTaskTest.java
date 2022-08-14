@@ -1,6 +1,6 @@
 package io.coffeebeans.connector.sink;
 
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.format.Format;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.format.SchemaStore;
 import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
@@ -28,7 +28,7 @@ public class AzureBlobSinkTaskTest {
     @DisplayName("Given Parquet file format, getRecordWriterProvider should return ParquetRecordWriter instance")
     void getRecordWriterProvider_givenParquetFileFormat_shouldReturnParquetRecordWriter() {
 
-        String fileFormat = FileFormat.PARQUET.toString();
+        String fileFormat = Format.PARQUET.toString();
         AzureBlobSinkTask azureBlobSinkTask = new AzureBlobSinkTask();
 
         RecordWriterProvider recordWriterProvider = azureBlobSinkTask.getRecordWriterProvider(fileFormat);
@@ -40,7 +40,7 @@ public class AzureBlobSinkTaskTest {
     @DisplayName("Given Parquet file format, getSchemaStore should return AvroSchemaStore instance")
     void getSchemaStore_givenParquetFileFormat_shouldReturnAvroSchemaStore() {
 
-        String fileFormat = FileFormat.PARQUET.toString();
+        String fileFormat = Format.PARQUET.toString();
         AzureBlobSinkTask azureBlobSinkTask = new AzureBlobSinkTask();
 
         SchemaStore schemaStore = azureBlobSinkTask.getSchemaStore(fileFormat);

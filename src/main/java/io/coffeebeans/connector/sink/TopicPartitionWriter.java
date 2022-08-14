@@ -2,8 +2,8 @@ package io.coffeebeans.connector.sink;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.exception.SchemaNotFoundException;
-import io.coffeebeans.connector.sink.format.FileFormat;
+import io.coffeebeans.connector.sink.exception.SchemaParseException;
+import io.coffeebeans.connector.sink.format.Format;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,7 +24,6 @@ public class TopicPartitionWriter {
     private static final Logger log = LoggerFactory.getLogger(TopicPartitionWriter.class);
 
     private final int flushSize;
-    private final long dataSize;
     private Long lastSuccessfulOffset;
     private final long rotationIntervalMs;
     private final Queue<SinkRecord> buffer;
@@ -47,10 +46,9 @@ public class TopicPartitionWriter {
 
         this.lastSuccessfulOffset = null;
         this.buffer = new LinkedList<>();
-        this.dataSize = config.getFileSize();
         this.flushSize = config.getFlushSize();
         this.isSchemaStoreConfigurationChecked = false;
-        this.rotationIntervalMs = config.getRotationIntervalMs();
+        this.rotationIntervalMs = config.getRotateIntervalMs();
 
         this.writers = new HashMap<>();
         this.startTimes = new HashMap<>();
@@ -78,7 +76,7 @@ public class TopicPartitionWriter {
         while (!buffer.isEmpty()) {
             SinkRecord record = buffer.poll();
             String encodedPartition = context.encodePartition(record);
-            rotateIfFlushOrDataSizeConditionMet(encodedPartition);
+            rotateIfFlushConditionMet(encodedPartition);
 
             RecordWriter writer = writers.get(encodedPartition);
 
@@ -140,12 +138,12 @@ public class TopicPartitionWriter {
     }
 
     /**
-     * If the flush size or data size condition is met then rotation will be done.
+     * If the flush size condition is met then rotation will be done.
      *
      * @param encodedPartition encoded partition
      */
-    private void rotateIfFlushOrDataSizeConditionMet(String encodedPartition) {
-        if (isFlushSizeConditionMet(encodedPartition) || isDataSizeConditionMet(encodedPartition)) {
+    private void rotateIfFlushConditionMet(String encodedPartition) {
+        if (isFlushSizeConditionMet(encodedPartition)) {
             commit(encodedPartition);
         }
     }
@@ -209,20 +207,6 @@ public class TopicPartitionWriter {
         writers.remove(encodedPartition);
         startTimes.remove(encodedPartition);
         recordsCount.remove(encodedPartition);
-    }
-
-    /**
-     * If the data size condition is met or not. Data size is the
-     * amount of data a RecordWriter should write after
-     * which the rotation should happen.
-     *
-     * <p>Useful in scenarios when the sink has a max limit on file size.
-     *
-     * @param encodedPartition encoded partition
-     * @return Whether the data size condition is met or not
-     */
-    private boolean isDataSizeConditionMet(String encodedPartition) {
-        return writers.get(encodedPartition) != null && writers.get(encodedPartition).getDataSize() >= dataSize;
     }
 
     /**
@@ -290,7 +274,7 @@ public class TopicPartitionWriter {
     }
 
     private void configureSchemaStore(AzureBlobSinkConnectorContext context, SinkRecord record)
-            throws IOException, SchemaNotFoundException {
+            throws IOException, SchemaParseException {
 
         if (isSchemaStoreConfigurationChecked) {
             return;
@@ -307,8 +291,8 @@ public class TopicPartitionWriter {
      * The {@link io.coffeebeans.connector.sink.format.SchemaStore} is only required for.<br>
      * following file formats: <br>
      * <ul>
-     *     <li>{@link FileFormat#PARQUET Parquet}</li>
-     *     <li>{@link FileFormat#AVRO Avro}</li>
+     *     <li>{@link Format#PARQUET Parquet}</li>
+     *     <li>{@link Format#AVRO Avro}</li>
      * </ul>
      *
      * <p>Additionally, it is only required for following values: <br>
@@ -322,13 +306,13 @@ public class TopicPartitionWriter {
      * @return True if {@link io.coffeebeans.connector.sink.format.SchemaStore} is recommended else false.
      */
     private boolean isSchemaStoreRecommended(SinkRecord kafkaRecord, AzureBlobSinkConfig config) {
-        String fileFormat = config.getFileFormat();
+        String fileFormat = config.getFormat();
 
         /*
         Check for supported file formats
          */
-        boolean isParquetFormat = FileFormat.PARQUET.toString().equalsIgnoreCase(fileFormat);
-        boolean isAvroFormat = FileFormat.AVRO.toString().equalsIgnoreCase(fileFormat);
+        boolean isParquetFormat = Format.PARQUET.toString().equalsIgnoreCase(fileFormat);
+        boolean isAvroFormat = Format.AVRO.toString().equalsIgnoreCase(fileFormat);
 
         if (!isParquetFormat && !isAvroFormat) {
             return false;

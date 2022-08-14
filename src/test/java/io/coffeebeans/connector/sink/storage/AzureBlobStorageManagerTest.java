@@ -30,7 +30,7 @@ import com.azure.storage.blob.specialized.AppendBlobAsyncClient;
 import com.azure.storage.blob.specialized.AppendBlobClient;
 import com.azure.storage.blob.specialized.BlockBlobAsyncClient;
 import io.coffeebeans.connector.sink.exception.BlobStorageException;
-import io.coffeebeans.connector.sink.exception.UnsupportedException;
+import io.coffeebeans.connector.sink.exception.UnsupportedOperationException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -502,7 +502,7 @@ public class AzureBlobStorageManagerTest {
      * <p><b>Expectations: </b><br>
      * <ul>
      *     <li>{@link AzureBlobStorageManager#upload(String, byte[])} should
-     *     throw {@link UnsupportedException}</li>
+     *     throw {@link UnsupportedOperationException}</li>
      * </ul>
      */
     @Test
@@ -512,7 +512,7 @@ public class AzureBlobStorageManagerTest {
         String blobName = "test-blob";
         byte[] data = {0, 1, 2, 3};
 
-        assertThrows(UnsupportedException.class,
+        assertThrows(UnsupportedOperationException.class,
                 () -> azureBlobStorageManager.upload(blobName, data));
     }
 
@@ -522,7 +522,7 @@ public class AzureBlobStorageManagerTest {
      * <p><b>Expectations: </b><br>
      * <ul>
      *     <li>{@link AzureBlobStorageManager#upload(String, long, byte[])} should
-     *     throw {@link UnsupportedException}</li>
+     *     throw {@link UnsupportedOperationException}</li>
      * </ul>
      */
     @Test
@@ -534,7 +534,7 @@ public class AzureBlobStorageManagerTest {
         byte[] data = {0, 1, 2, 3};
         long maxBlobSize = 100L;
 
-        assertThrows(UnsupportedException.class,
+        assertThrows(UnsupportedOperationException.class,
                 () -> azureBlobStorageManager.upload(blobName, maxBlobSize, data));
     }
 

@@ -1,5 +1,9 @@
 package io.coffeebeans.connector.sink.format.avro;
 
+import static io.confluent.connect.avro.AvroDataConfig.CONNECT_META_DATA_CONFIG;
+import static io.confluent.connect.avro.AvroDataConfig.ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG;
+import static io.confluent.connect.avro.AvroDataConfig.SCHEMAS_CACHE_SIZE_CONFIG;
+
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
@@ -13,7 +17,6 @@ import org.apache.avro.file.CodecFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.confluent.connect.avro.AvroDataConfig.*;
 
 /**
  * {@link AvroRecordWriterProvider} is used to get instance of
@@ -23,7 +26,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
     private static final Logger log = LoggerFactory.getLogger(AvroRecordWriterProvider.class);
     private static final String EXTENSION = ".avro";
 
-    private int partSize;
+    private int blockSize;
     private AvroData avroData;
     private CodecFactory codecFactory;
     private final SchemaStore schemaStore;
@@ -50,7 +53,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
     @Override
     public void configure(AzureBlobSinkConfig config) {
 
-        this.partSize = config.getPartSize();
+        this.blockSize = config.getBlockSize();
 
         configureAvroData(config);
         configureCodecFactory(config);
@@ -71,7 +74,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
         return new AvroRecordWriter(
                 storageManager,
                 schemaStore,
-                partSize,
+                blockSize,
                 blobNameWithExtension,
                 kafkaTopic,
                 codecFactory,
@@ -92,7 +95,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
      *             {@link AvroDataConfig#SCHEMAS_CACHE_SIZE_CONFIG SCHEMAS_CACHE_SIZE_CONFIG}
      *         </td>
      *         <td style="padding: 0 15px">
-     *             {@link AzureBlobSinkConfig#SCHEMAS_CACHE_SIZE_CONF schemas.cache.size}
+     *             {@link AzureBlobSinkConfig#SCHEMA_CACHE_SIZE_CONF schemas.cache.size}
      *         </td>
      *     </tr>
      *     <tr>
@@ -120,14 +123,14 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
 
         Map<String, Object> props = new HashMap<>();
         props.put(SCHEMAS_CACHE_SIZE_CONFIG, config.getSchemaCacheSize());
-        props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.getEnhancedAvroSchemaSupport());
-        props.put(CONNECT_META_DATA_CONFIG, config.getConnectMetaData());
+        props.put(ENHANCED_AVRO_SCHEMA_SUPPORT_CONFIG, config.isEnhancedSchemaSupportEnabled());
+        props.put(CONNECT_META_DATA_CONFIG, config.isConnectMetaDataEnabled());
 
         this.avroData = new AvroData(
                 new AvroDataConfig(props)
         );
 
-        log.info("Configured schema cache size: {}", config.getSchemaCacheSize());
+        log.debug("Configured schema cache size: {}", config.getSchemaCacheSize());
     }
 
     /**
@@ -143,7 +146,7 @@ public class AvroRecordWriterProvider implements RecordWriterProvider {
         this.codecFactory = CodecFactory.fromString(
                 config.getAvroCompressionCodec()
         );
-        log.info("Configured Avro compression codec: {}", config.getAvroCompressionCodec());
+        log.debug("Configured Avro compression codec: {}", config.getAvroCompressionCodec());
     }
 
     /**

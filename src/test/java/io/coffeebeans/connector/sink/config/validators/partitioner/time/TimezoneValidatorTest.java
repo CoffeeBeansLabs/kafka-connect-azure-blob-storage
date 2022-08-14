@@ -18,7 +18,7 @@ public class TimezoneValidatorTest {
     public void shouldThrowExceptionWhenInvalidTimezonePassed() {
 
         Assertions.assertThrows(ConfigException.class, () -> new TimezoneValidator().ensureValid(
-                AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY, invalidTimezone)
+                AzureBlobSinkConfig.TIMEZONE_CONF, invalidTimezone)
         );
     }
 
@@ -27,7 +27,7 @@ public class TimezoneValidatorTest {
     public void shouldNotThrowExceptionWhenValidTimezonePassed() {
 
         Assertions.assertDoesNotThrow(() -> new TimezoneValidator().ensureValid(
-                AzureBlobSinkConfig.PARTITION_STRATEGY_TIME_TIMEZONE_CONF_KEY, validTimezone)
+                AzureBlobSinkConfig.TIMEZONE_CONF, validTimezone)
         );
     }
 }
