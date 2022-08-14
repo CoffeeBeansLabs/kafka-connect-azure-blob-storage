@@ -201,7 +201,7 @@ public class TopicPartitionWriter {
             It is safe to disable the ensureCommitted
             flag.
              */
-            writer.commit(false);
+            writer.commit();
 
         } catch (IOException e) {
             log.error("Failed to commit file with encodedPartition: {}, Removing the writer", encodedPartition);
@@ -270,7 +270,7 @@ public class TopicPartitionWriter {
             task is deleted. So ensureCommitted flag
             has to be set.
              */
-            writer.commit(true);
+            writer.commit();
         }
         writers.clear();
         startTimes.clear();

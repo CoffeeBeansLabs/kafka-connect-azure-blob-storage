@@ -3,9 +3,11 @@ package io.coffeebeans.connector.sink.format.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.coffeebeans.connector.sink.format.AzureBlobOutputStream;
+import io.coffeebeans.connector.sink.format.CompressionType;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,18 +26,27 @@ public class JsonRecordWriter implements RecordWriter {
     private final JsonConverter jsonConverter;
     private final JsonGenerator jsonGenerator;
     private final AzureBlobOutputStream outputStream;
+    private final OutputStream outputStreamCompressionWrapper;
 
     public JsonRecordWriter(StorageManager storageManager,
+                            CompressionType compressionType,
+                            int compressionLevel,
                             int partSize,
                             String blobName,
                             int schemasCacheSize) throws IOException {
 
         this.jsonConverter = new JsonConverter();
-        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, partSize);
+
+        this.outputStream = new AzureBlobOutputStream(storageManager, blobName, partSize)
+                .setCompressionLevel(compressionLevel)
+                .setCompressionType(compressionType);
+
+        this.outputStreamCompressionWrapper = this.outputStream
+                .wrapForCompression();
 
         this.jsonGenerator = new ObjectMapper()
                 .getFactory()
-                .createGenerator(outputStream)
+                .createGenerator(outputStreamCompressionWrapper)
                 .setRootValueSeparator(null);
 
         Map<String, String> converterConfig = new HashMap<>() {
@@ -57,8 +68,8 @@ public class JsonRecordWriter implements RecordWriter {
                     kafkaRecord.valueSchema(),
                     value
             );
-            outputStream.write(rawJson);
-            outputStream.write(LINE_SEPARATOR_BYTES);
+            outputStreamCompressionWrapper.write(rawJson);
+            outputStreamCompressionWrapper.write(LINE_SEPARATOR_BYTES);
             return;
         }
 
@@ -72,10 +83,10 @@ public class JsonRecordWriter implements RecordWriter {
     }
 
     @Override
-    public void commit(boolean ensureCommitted) throws IOException {
+    public void commit() throws IOException {
         jsonGenerator.flush();
-        outputStream.commit(ensureCommitted);
-        outputStream.close();
+        outputStream.commit();
+        outputStreamCompressionWrapper.close();
     }
 
     @Override
