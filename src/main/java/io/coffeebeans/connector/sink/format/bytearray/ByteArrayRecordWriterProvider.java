@@ -1,6 +1,7 @@
 package io.coffeebeans.connector.sink.format.bytearray;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.format.CompressionType;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.storage.StorageManager;
@@ -16,6 +17,8 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
 
     private int partSize;
     private String extension;
+    private int compressionLevel;
+    private CompressionType compressionType;
     private final StorageManager storageManager;
 
     /**
@@ -38,6 +41,11 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
 
         this.partSize = config.getPartSize();
         this.extension = config.getBinaryFileExtension();
+        this.compressionLevel = config.getCompressionLevel();
+
+        configureCompressionType(
+                config.getCompressionType()
+        );
     }
 
     /**
@@ -51,9 +59,18 @@ public class ByteArrayRecordWriterProvider implements RecordWriterProvider {
     public RecordWriter getRecordWriter(String blobName,
                                         String kafkaTopic) {
 
-        String blobNameWithExtension = blobName + extension;
+        String blobNameWithExtension = blobName + extension + compressionType.extension;
 
-        return new ByteArrayRecordWriter(storageManager, partSize, blobNameWithExtension, kafkaTopic);
+        return new ByteArrayRecordWriter(
+                storageManager,
+                compressionType,
+                compressionLevel,
+                partSize, blobNameWithExtension, kafkaTopic);
+    }
+
+    private void configureCompressionType(String compressionType) {
+        this.compressionType = CompressionType
+                .forName(compressionType);
     }
 
     /**

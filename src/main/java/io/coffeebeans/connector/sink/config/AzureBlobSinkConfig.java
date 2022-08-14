@@ -21,6 +21,7 @@ import io.coffeebeans.connector.sink.config.validators.NonNegativeValidator;
 import io.coffeebeans.connector.sink.config.validators.RetryTypeValidator;
 import io.coffeebeans.connector.sink.config.validators.TopicsDirValueValidator;
 import io.coffeebeans.connector.sink.config.validators.format.AvroCodecValidator;
+import io.coffeebeans.connector.sink.config.validators.format.CompressionTypeValidator;
 import io.coffeebeans.connector.sink.config.validators.format.ParquetCodecValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.PathFormatValidator;
 import io.coffeebeans.connector.sink.config.validators.partitioner.time.TimezoneValidator;
@@ -256,6 +257,16 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     public static final String FILE_DELIM_DEFAULT = "+";
     public static final String FILE_DELIM_DOC= "File delimiter";
 
+    public static final String COMPRESSION_TYPE_CONF = "az.compression.type";
+    public static final String COMPRESSION_TYPE_DEFAULT = "none";
+    public static final String COMPRESSION_TYPE_DOC = "Type of compression for formats that "
+            + "do not support it out of the box";
+    public static final Object COMPRESSION_TYPE_VALIDATOR = new CompressionTypeValidator();
+
+    public static final String COMPRESSION_LEVEL_CONF = "az.compression.level";
+    public static final int COMPRESSION_LEVEL_DEFAULT = -1;
+    public static final String COMPRESSION_LEVEL_DOC = "Level of comrpession";
+
     /**
      * Not a configuration. It's a suffix which when concatenated with the topic name, will act
      * as a configuration (dynamic).
@@ -305,6 +316,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
     private final String binaryFileExtension;
     private final String directoryDelim;
     private final String fileDelim;
+    private final String compressionType;
+    private final int compressionLevel;
 
     public AzureBlobSinkConfig(Map<String, String> parsedConfig) {
         this(getConfig(), parsedConfig);
@@ -347,6 +360,8 @@ public class AzureBlobSinkConfig extends AbstractConfig {
         this.binaryFileExtension = this.getString(FORMAT_BYTEARRAY_EXTENSION_CONF);
         this.directoryDelim = this.getString(DIRECTORY_DELIM_CONF);
         this.fileDelim = this.getString(FILE_DELIM_CONF);
+        this.compressionType = this.getString(COMPRESSION_TYPE_CONF);
+        this.compressionLevel = this.getInt(COMPRESSION_LEVEL_CONF);
     }
 
 
@@ -614,7 +629,25 @@ public class AzureBlobSinkConfig extends AbstractConfig {
                         FILE_DELIM_DEFAULT,
                         NON_EMPTY_STRING_VALIDATOR,
                         IMPORTANCE_LOW,
-                        FILE_DELIM_DOC);
+                        FILE_DELIM_DOC
+                ).define(
+                        COMPRESSION_TYPE_CONF,
+                        TYPE_STRING,
+                        COMPRESSION_TYPE_DEFAULT,
+                        (Validator) COMPRESSION_TYPE_VALIDATOR,
+                        IMPORTANCE_MEDIUM,
+                        COMPRESSION_TYPE_DOC,
+                        null,
+                        -1,
+                        ConfigDef.Width.NONE,
+                        COMPRESSION_TYPE_CONF,
+                        (Recommender) COMPRESSION_TYPE_VALIDATOR
+                ).define(
+                        COMPRESSION_LEVEL_CONF,
+                        TYPE_INT,
+                        COMPRESSION_LEVEL_DEFAULT,
+                        IMPORTANCE_MEDIUM,
+                        COMPRESSION_LEVEL_DOC);
     }
 
     public String getConnectionString() {
@@ -727,5 +760,13 @@ public class AzureBlobSinkConfig extends AbstractConfig {
 
     public String getFileDelim() {
         return this.fileDelim;
+    }
+
+    public String getCompressionType() {
+        return this.compressionType;
+    }
+
+    public int getCompressionLevel() {
+        return this.compressionLevel;
     }
 }

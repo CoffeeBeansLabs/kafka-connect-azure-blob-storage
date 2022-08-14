@@ -2,6 +2,7 @@ package io.coffeebeans.connector.sink.format;
 
 import io.coffeebeans.connector.sink.storage.StorageManager;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -23,7 +24,10 @@ public class AzureBlobOutputStream extends PositionOutputStream {
 
     private long position;
     private boolean isClosed;
+    private int compressionLevel;
     private boolean shouldThrowException;
+    private OutputStream compressionFilter;
+    private CompressionType compressionType;
 
     private final int partSize;
     private final String blobName;
@@ -42,6 +46,7 @@ public class AzureBlobOutputStream extends PositionOutputStream {
     public AzureBlobOutputStream(StorageManager storageManager, String blobName, int partSize) {
         this.position = 0L;
         this.isClosed = false;
+        this.compressionLevel = -1;
         this.shouldThrowException = false;
 
         this.partSize = partSize;
@@ -140,18 +145,20 @@ public class AzureBlobOutputStream extends PositionOutputStream {
     /**
      * Sends all the data to the output file and commits it.
      *
-     * @param shouldBlockAsyncOperation Should it block the async upload request
      * @throws IOException thrown if encounters any error while committing data
      */
-    public void commit(boolean shouldBlockAsyncOperation) throws IOException {
+    public void commit() throws IOException {
         if (isClosed) {
             log.warn("Commit operation invoked but the stream was closed, blob: {}", blobName);
             return;
         }
         try {
             log.info("Commit operation invoked for blob: {}", blobName);
+            if (compressionType != null) {
+                compressionType.finalize(compressionFilter);
+            }
             if (buffer.hasRemaining()) {
-                stageBlock(buffer.position(), true, shouldBlockAsyncOperation);
+                stageBlock(buffer.position(), true);
                 log.info("Data upload complete for blob: {}", blobName);
             }
         } catch (Exception e) {
@@ -167,6 +174,13 @@ public class AzureBlobOutputStream extends PositionOutputStream {
             buffer.clear();
             internalClose();
         }
+    }
+
+    public OutputStream wrapForCompression() {
+        if (compressionFilter == null) {
+            compressionFilter = compressionType.wrapForOutput(this, compressionLevel);
+        }
+        return compressionFilter;
     }
 
     private void uploadPart() throws IOException {
@@ -193,7 +207,7 @@ public class AzureBlobOutputStream extends PositionOutputStream {
     }
 
     private void stageBlock() throws IOException {
-        stageBlock(this.partSize, false, false);
+        stageBlock(this.partSize, false);
 
         /*
         Clearing the buffer does not erase the existing data in the buffer
@@ -203,7 +217,7 @@ public class AzureBlobOutputStream extends PositionOutputStream {
         buffer.clear();
     }
 
-    private void stageBlock(final int partSize, boolean shouldCommit, boolean shouldBlock) throws IOException {
+    private void stageBlock(final int partSize, boolean shouldCommit) throws IOException {
         try {
             /*
             Adding block id to the list before the staging operation is complete
@@ -216,16 +230,6 @@ public class AzureBlobOutputStream extends PositionOutputStream {
             log.info("Initiated staging block of id: {} for blob: {}", blockId, blobName);
 
             byte[] slicedBuf = Arrays.copyOfRange(buffer.array(), 0, partSize);
-
-            /*
-            Blocking is important when connector is being deleted. It will
-            ensure that all the data is staged and committed before stopping
-            the connector.
-             */
-            if (shouldBlock) {
-                this.storageManager.stageBlockAsync(blobName, blockId, slicedBuf)
-                        .block();
-            }
 
             this.storageManager.stageBlockAsync(blobName, blockId, slicedBuf)
                     .subscribe(
@@ -250,16 +254,6 @@ public class AzureBlobOutputStream extends PositionOutputStream {
              */
             if (!shouldCommit) {
                 return;
-            }
-
-            /*
-            Blocking is important when connector is being deleted. It will
-            ensure that all the data is staged and committed before stopping
-            the connector.
-             */
-            if (shouldBlock) {
-                this.storageManager.commitBlockIdsAsync(blobName, base64BlockIds, false)
-                        .block();
             }
 
             this.storageManager.commitBlockIdsAsync(blobName, base64BlockIds, false)
@@ -287,5 +281,15 @@ public class AzureBlobOutputStream extends PositionOutputStream {
             return;
         }
         throw new IOException("Failed staging one of the block for blob: {}" + blobName);
+    }
+
+    public AzureBlobOutputStream setCompressionType(CompressionType compressionType) {
+        this.compressionType = compressionType;
+        return this;
+    }
+
+    public AzureBlobOutputStream setCompressionLevel(int compressionLevel) {
+        this.compressionLevel = compressionLevel;
+        return this;
     }
 }

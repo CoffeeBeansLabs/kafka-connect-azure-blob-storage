@@ -1,6 +1,7 @@
 package io.coffeebeans.connector.sink.format.json;
 
 import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connector.sink.format.CompressionType;
 import io.coffeebeans.connector.sink.format.RecordWriter;
 import io.coffeebeans.connector.sink.format.RecordWriterProvider;
 import io.coffeebeans.connector.sink.storage.StorageManager;
@@ -18,6 +19,8 @@ public class JsonRecordWriterProvider implements RecordWriterProvider {
 
     private int partSize;
     private int schemasCacheSize;
+    private int compressionLevel;
+    private CompressionType compressionType;
     private final StorageManager storageManager;
 
     /**
@@ -40,6 +43,11 @@ public class JsonRecordWriterProvider implements RecordWriterProvider {
 
         this.partSize = config.getPartSize();
         this.schemasCacheSize = config.getSchemaCacheSize();
+        this.compressionLevel = config.getCompressionLevel();
+
+        configureCompressionType(
+                config.getCompressionType()
+        );
     }
 
     /**
@@ -52,14 +60,23 @@ public class JsonRecordWriterProvider implements RecordWriterProvider {
     @Override
     public RecordWriter getRecordWriter(String blobName, String kafkaTopic) {
 
-        String blobNameWithExtension = blobName + EXTENSION;
+        String blobNameWithExtension = blobName + EXTENSION + compressionType.extension;
 
         try {
-            return new JsonRecordWriter(storageManager, partSize, blobNameWithExtension, schemasCacheSize);
+            return new JsonRecordWriter(
+                    storageManager,
+                    compressionType,
+                    compressionLevel,
+                    partSize, blobNameWithExtension, schemasCacheSize);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void configureCompressionType(String compressionType) {
+        this.compressionType = CompressionType
+                .forName(compressionType);
     }
 
     /**

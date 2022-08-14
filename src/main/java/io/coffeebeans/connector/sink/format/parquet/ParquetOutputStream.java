@@ -34,7 +34,7 @@ public class ParquetOutputStream extends AzureBlobOutputStream {
      * is that it closes the output stream. A closed stream cannot perform
      * output operations and cannot be reopened.
      *
-     * <p>This implementation will invoke the {@link #commit(boolean)}  commit()} method to
+     * <p>This implementation will invoke the {@link #commit()}  commit()} method to
      * perform the commit and then clear and close any resource being used.
      *
      * @exception  IOException  if an I/O error occurs.
@@ -43,7 +43,7 @@ public class ParquetOutputStream extends AzureBlobOutputStream {
     public void close() throws IOException {
         log.info("Close operation invoked for blob: {}", blobName);
         if (commitFlag) {
-            super.commit(this.ensureCommittedFlag);
+            super.commit();
             commitFlag = false;
         } else {
             super.internalClose();
