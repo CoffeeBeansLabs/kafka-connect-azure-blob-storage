@@ -1,15 +1,18 @@
 {
   "name": "quickstart",
   "config": {
-    "connector.class": "io.coffeebeans.connector.sink.AzureBlobSinkConnector",
+    "connector.class": "io.coffeebeans.connect.azure.blob.sink.AzureBlobSinkConnector",
     "topics": "datagen-users",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schema.registry.url": "http://schema-registry:8081",
-    "connection.url": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
-    "container.name": "kafka-connect",
+    "azblob.connection.string": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+    "azblob.container.name": "kafka-connect",
+    "format": "AVRO",
+    "partition.strategy": "FIELD",
+    "partition.field.name": "gender",
     "topics.dir": "quickstart",
-    "file.format": "PARQUET",
-    "partition.strategy.field.name": "na"
+    "flush.size": 9000,
+    "avro.codec": "deflate"
   }
 }
