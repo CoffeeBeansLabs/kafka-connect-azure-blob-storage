@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink.storage;
+package io.coffeebeans.connect.azure.blob.sink.storage;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,8 +29,9 @@ import com.azure.storage.blob.options.AppendBlobCreateOptions;
 import com.azure.storage.blob.specialized.AppendBlobAsyncClient;
 import com.azure.storage.blob.specialized.AppendBlobClient;
 import com.azure.storage.blob.specialized.BlockBlobAsyncClient;
-import io.coffeebeans.connector.sink.exception.BlobStorageException;
-import io.coffeebeans.connector.sink.exception.UnsupportedOperationException;
+import io.coffeebeans.connect.azure.blob.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connect.azure.blob.sink.exception.BlobStorageException;
+import io.coffeebeans.connect.azure.blob.sink.exception.UnsupportedOperationException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -41,6 +42,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +93,9 @@ public class AzureBlobStorageManagerTest {
 
     @Mock
     private BlockBlobAsyncClient blockBlobAsyncClient;
+
+    @Mock
+    private Map<String, Object> config;
 
     @Mock
     private Response mockedResponse;
@@ -151,6 +156,15 @@ public class AzureBlobStorageManagerTest {
 
         when(blobAsyncClient.getBlockBlobAsyncClient())
                 .thenReturn(blockBlobAsyncClient);
+
+        // Default retry configs
+        config = new HashMap<>();
+
+        config.put(AzureBlobSinkConfig.RETRY_TYPE_CONF, "EXPONENTIAL");
+        config.put(AzureBlobSinkConfig.RETRIES_CONF, 3);
+        config.put(AzureBlobSinkConfig.RETRY_BACKOFF_MS_CONF, 4_000L);
+        config.put(AzureBlobSinkConfig.RETRY_MAX_BACKOFF_MS_CONF, 120_000L);
+        config.put(AzureBlobSinkConfig.CONNECTION_TIMEOUT_MS_CONF, 30_000L);
     }
 
     /**
@@ -560,7 +574,7 @@ public class AzureBlobStorageManagerTest {
     void appendAsync_givenBlobNameAndByteArray_whenBlobDoesNotExist_shouldCreateBlobAndAppendData() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
 
         String blobName = "test-blob";
         byte[] data = {1, 2, 3, 1, 5, 2};
@@ -617,7 +631,7 @@ public class AzureBlobStorageManagerTest {
     void appendAsync_givenBlobNameAndByteArray_whenBlobExist_shouldAppendData() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
 
         String blobName = "test-blob";
         byte[] data = {1, 2, 3, 1, 5, 2};
@@ -667,7 +681,7 @@ public class AzureBlobStorageManagerTest {
      * <ul>
      *     <li>Should retry for given number of retries (default is 3)</li>
      *     <li>{@link AzureBlobStorageManager#appendAsync(String, byte[])} should throw
-     *     {@link io.coffeebeans.connector.sink.exception.BlobStorageException}</li>
+     *     {@link BlobStorageException}</li>
      * </ul>
      */
     @Test
@@ -676,7 +690,7 @@ public class AzureBlobStorageManagerTest {
     void appendAsync_givenBlobNameAndByteArray_whenBlobDoesNotExist_assumingCreateRequestFails_shouldThrowException() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
 
         String blobName = "test-blob";
         byte[] data = {1, 2, 3, 1, 5, 2};
@@ -761,7 +775,7 @@ public class AzureBlobStorageManagerTest {
     void appendAsync_givenBlobNameAndByteArray_withSuccessfulRetry_shouldRetryCompleteSignal() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
 
         String blobName = "test-blob";
         byte[] data = {1, 2, 3, 1, 5, 2};
@@ -853,7 +867,7 @@ public class AzureBlobStorageManagerTest {
     void commitBlockIdsAsync_givenBlobNameAndListOfBlockIdsAndOverwriteFlag_monoShouldReturnCompleteSignal() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
         List<String> listOfBlockIds = getListOfBase64BlockIds();
 
         String blobName = "test-blob";
@@ -907,7 +921,7 @@ public class AzureBlobStorageManagerTest {
     void commitBlockIdsAsync_givenBlobNameAndListOfBlockIdsAndOverwriteFlag_shouldRetry3Times_andReturnError() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
         List<String> listOfBlockIds = getListOfBase64BlockIds();
 
         String blobName = "test-blob";
@@ -975,7 +989,7 @@ public class AzureBlobStorageManagerTest {
     void commitBlockIdsAsync_givenBlobNameAndBlockIdsAndOverwriteFlag_when2ndRetryIsSuccessful_shouldReturnComplete() {
 
         // Testing with default retry values
-        azureBlobStorageManager.configure(new HashMap<>());
+        azureBlobStorageManager.configure(config);
         List<String> listOfBlockIds = getListOfBase64BlockIds();
 
         String blobName = "test-blob";

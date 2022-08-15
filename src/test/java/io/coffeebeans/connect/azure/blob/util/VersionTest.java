@@ -1,19 +1,20 @@
-package io.coffeebeans.connector.sink.util;
+package io.coffeebeans.connect.azure.blob.util;
 
 import java.io.IOException;
 import java.util.Properties;
-
-import io.coffeebeans.connector.sink.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for Version.
+ * Unit tests for {@link Version}.
  */
 public class VersionTest {
 
+    /**
+     * <b>Method: {@link Version#getVersion()}</b>.
+     */
     @Test
-    public void test_getVersion() throws IOException {
+    public void getVersion_shouldReturnCorrectVersion() throws IOException {
         Properties properties = new Properties();
         properties.load(Version.class.getResourceAsStream("/application.properties"));
         String versionProperty = properties.getProperty("version").trim();

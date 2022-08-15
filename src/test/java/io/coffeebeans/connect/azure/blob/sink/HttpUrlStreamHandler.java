@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink;
+package io.coffeebeans.connect.azure.blob.sink;
 
 import java.net.URL;
 import java.net.URLConnection;

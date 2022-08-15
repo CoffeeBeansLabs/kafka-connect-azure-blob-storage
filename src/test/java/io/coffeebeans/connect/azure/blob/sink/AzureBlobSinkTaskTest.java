@@ -1,28 +1,24 @@
-package io.coffeebeans.connector.sink;
+package io.coffeebeans.connect.azure.blob.sink;
 
-import io.coffeebeans.connector.sink.format.Format;
-import io.coffeebeans.connector.sink.format.RecordWriterProvider;
-import io.coffeebeans.connector.sink.format.SchemaStore;
-import io.coffeebeans.connector.sink.format.avro.AvroSchemaStore;
-import io.coffeebeans.connector.sink.format.parquet.ParquetRecordWriterProvider;
-import io.coffeebeans.connector.sink.storage.AzureBlobStorageManager;
-import io.coffeebeans.connector.sink.storage.StorageManager;
+import io.coffeebeans.connect.azure.blob.sink.format.Format;
+import io.coffeebeans.connect.azure.blob.sink.format.RecordWriterProvider;
+import io.coffeebeans.connect.azure.blob.sink.format.SchemaStore;
+import io.coffeebeans.connect.azure.blob.sink.format.avro.AvroSchemaStore;
+import io.coffeebeans.connect.azure.blob.sink.format.parquet.ParquetRecordWriterProvider;
+import io.coffeebeans.connect.azure.blob.sink.storage.AzureBlobStorageManager;
+import io.coffeebeans.connect.azure.blob.sink.storage.StorageManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for AzureBlobSinkTask.
+ * Unit tests for {@link AzureBlobSinkTask}.
  */
 public class AzureBlobSinkTaskTest {
     private static final String CONNECTION_URL_VALID = "AccountName=devstoreaccount1;"
             + "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K"
             + "1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://"
             + "host.docker.internal:10000/devstoreaccount1;";
-
-    //    @Test
-    //    void getPartitioner_givenTimePartitionStrategy_shouldReturnTimePartitioner() {
-    //    }
 
     @Test
     @DisplayName("Given Parquet file format, getRecordWriterProvider should return ParquetRecordWriter instance")

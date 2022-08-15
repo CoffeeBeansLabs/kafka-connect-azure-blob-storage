@@ -1,4 +1,4 @@
-package io.coffeebeans.connector.sink.format.parquet;
+package io.coffeebeans.connect.azure.blob.sink.format.parquet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import io.coffeebeans.connector.sink.storage.StorageManager;
+import io.coffeebeans.connect.azure.blob.sink.storage.StorageManager;
 import java.io.IOException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

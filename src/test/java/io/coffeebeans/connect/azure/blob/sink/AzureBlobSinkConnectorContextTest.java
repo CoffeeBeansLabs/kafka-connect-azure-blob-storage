@@ -1,10 +1,10 @@
-package io.coffeebeans.connector.sink;
+package io.coffeebeans.connect.azure.blob.sink;
 
 import static org.mockito.Mockito.mock;
 
-import io.coffeebeans.connector.sink.config.AzureBlobSinkConfig;
-import io.coffeebeans.connector.sink.format.Format;
-import io.coffeebeans.connector.sink.format.SchemaStore;
+import io.coffeebeans.connect.azure.blob.sink.config.AzureBlobSinkConfig;
+import io.coffeebeans.connect.azure.blob.sink.format.Format;
+import io.coffeebeans.connect.azure.blob.sink.format.SchemaStore;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -13,14 +13,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for AzureBlobSinkConnectorContext.
+ * Unit tests for {@link AzureBlobSinkConnectorContext}.
  */
 public class AzureBlobSinkConnectorContextTest {
 
     private final Map<String, String> configProps = new HashMap<>();
 
     @Test
-    @DisplayName("Given config with multiple topics, default file format, "
+    @DisplayName("Given config with multiple topics, default Avro format, "
             + "but no schema url should not throw exception")
     void givenConfigProps_withMultipleTopics_withDefaultFileFormat_butNotSchemaUrl_shouldNotThrowException() {
 
@@ -29,7 +29,7 @@ public class AzureBlobSinkConnectorContextTest {
         String topics = "alpha, beta, lambda";
 
         String fileFormatConfig = AzureBlobSinkConfig.FORMAT_CONF;
-        String fileFormat = Format.NONE.toString();
+        String fileFormat = Format.AVRO.toString();
 
         configProps.put(topicConfig, topics);
         configProps.put(fileFormatConfig, fileFormat);
