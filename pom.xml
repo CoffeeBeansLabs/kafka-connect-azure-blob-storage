@@ -4,24 +4,39 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.coffeebeans.kafka.connector</groupId>
-    <artifactId>kafka-azure-blob-sink-connector</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>io.coffeebeans.kafka.connect</groupId>
+    <artifactId>kafka-connect-azure-blob-storage</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>kafka-connect-azure-blob-storage</name>
+    <description>Kafka Connect for Azure Blob Storage</description>
+
+    <organization>
+        <name>CoffeeBeans Consulting</name>
+        <url>https://coffeebeans.io/</url>
+    </organization>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <kafka-connect-api.version>3.2.1</kafka-connect-api.version>
-        <azure-storage-blob.version>12.18.0</azure-storage-blob.version>
-        <parquet-avro.version>1.12.3</parquet-avro.version>
-        <hadoop-hdfs.version>3.3.2</hadoop-hdfs.version>
-        <hadoop-common.version>3.3.2</hadoop-common.version>
-        <hadoop-mapreduce-client-core.version>3.3.2</hadoop-mapreduce-client-core.version>
+        <kafka.connect.api.version>3.2.1</kafka.connect.api.version>
+        <kafka.connect.avro.data.version>7.2.1</kafka.connect.avro.data.version>
+        <azure.storage.blob.version>12.18.0</azure.storage.blob.version>
+        <parquet.avro.version>1.12.3</parquet.avro.version>
+        <hadoop.hdfs.version>3.3.2</hadoop.hdfs.version>
+        <hadoop.common.version>3.3.2</hadoop.common.version>
+        <slf4j.reload4j.version>1.7.36</slf4j.reload4j.version>
+        <jackson.databind.version>2.13.3</jackson.databind.version>
+        <jackson.version>2.13.3</jackson.version>
+        <hadoop.mapreduce.client.core.version>3.3.2</hadoop.mapreduce.client.core.version>
+        <tech.allergo.json.avro.converter.version>0.2.15</tech.allergo.json.avro.converter.version>
         <junit.version>5.9.0</junit.version>
         <mockito.version>4.6.1</mockito.version>
-        <apache-commons-lang.version>3.12.0</apache-commons-lang.version>
-        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <reactor.test.version>3.4.21</reactor.test.version>
+        <apache.commons.lang.version>3.12.0</apache.commons.lang.version>
+        <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
     </properties>
 
     <repositories>
@@ -32,23 +47,33 @@
         </repository>
     </repositories>
 
+    <scm>
+        <url>https://github.com/CoffeeBeansLabs/kafka-azure-blob-sink-connector</url>
+    </scm>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
-            <version>${kafka-connect-api.version}</version>
+            <version>${kafka.connect.api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-runtime</artifactId>
-            <version>${kafka-connect-api.version}</version>
+            <version>${kafka.connect.api.version}</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
-            <version>${kafka-connect-api.version}</version>
+            <version>${kafka.connect.api.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -62,46 +87,129 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-connect-avro-data</artifactId>
+            <version>${kafka.connect.avro.data.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
-            <version>${azure-storage-blob.version}</version>
+            <version>${azure.storage.blob.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
-            <version>${parquet-avro.version}</version>
+            <version>${parquet.avro.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>${hadoop-common.version}</version>
+            <version>${hadoop.common.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.htrace</groupId>
+                    <artifactId>htrace-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.htrace</groupId>
+                    <artifactId>htrace-core4</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.mortbay.jetty</groupId>
+                    <artifactId>jetty-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop-mapreduce-client-core.version}</version>
+            <version>${hadoop.mapreduce.client.core.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${apache-commons-lang.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-connect-avro-data</artifactId>
-            <version>7.2.1</version>
+            <version>${apache.commons.lang.version}</version>
         </dependency>
         <dependency>
             <groupId>tech.allegro.schema.json2avro</groupId>
             <artifactId>converter</artifactId>
-            <version>0.2.15</version>
+            <version>${tech.allergo.json.avro.converter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+            <version>${slf4j.reload4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.databind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- Testing -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
-            <version>${hadoop-hdfs.version}</version>
+            <version>${hadoop.hdfs.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -125,7 +233,7 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
-            <version>3.4.21</version>
+            <version>${reactor.test.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -172,7 +280,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven-checkstyle-plugin.version}</version>
+                <version>${maven.checkstyle.plugin.version}</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
@@ -185,7 +293,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <failOnViolation>false</failOnViolation>
+                    <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
                     <violationSeverity>warning</violationSeverity>
                 </configuration>
@@ -226,7 +334,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven-checkstyle-plugin.version}</version>
+                <version>${maven.checkstyle.plugin.version}</version>
                 <configuration>
                     <configLocation>checkstyle/checkstyle.xml</configLocation>
                 </configuration>
