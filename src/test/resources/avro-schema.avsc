@@ -1,0 +1,23 @@
+{
+  "namespace": "topics.avro",
+  "type": "record",
+  "name": "test_schema",
+  "fields": [
+    {"name": "timestamp", "type": ["null", "string"], "default": null},
+    {"name": "latitude", "type": ["null", "double"], "default": null},
+    {"name": "longitude", "type": ["null", "double"], "default": null},
+    {"name": "isTest", "type": ["null", "boolean"], "default": null},
+    {"name": "offset", "type": ["null", "long"], "default": null},
+    {"name": "locationDetails", "type": {"name": "locationDetailsObj", "type": "record", "fields": [
+      {"name": "city", "type": ["null", "string"], "default": null},
+      {"name": "state", "type": ["null", "string"], "default": null},
+      {"name": "latitude", "type": ["null", "double"], "default": null},
+      {"name": "longitude", "type": ["null", "double"], "default": null},
+      {"name": "country", "type": ["null", "string"], "default": null},
+      {"name": "timezone", "type": ["null", "string"], "default": null}
+    ]}},
+    {"name": "analytics", "type": {"name": "analyticsObj", "type": "record", "fields": [
+      {"name": "analyticsChildObj", "type": ["null", "string"], "default": null}
+    ]}}
+  ]
+}
