@@ -1,53 +1,19 @@
-# Kafka Azure Blob Sink Connector
+# Kafka Connect Azure Blob Storage
 
-- [About](#about)
-- [Installing](#installing)
-- [Configurations](#configurations)
-  - [Connection](#configurations-connection)
-  - [Partition](#configurations-partition)
-    - [Default partitioning](#configurations-partition-default)
-    - [Field partitioning](#configurations-partition-field)
-    - [Time partitioning](#configurations-partition-time)
-  - [Rolling file](#configurations-rolling-file)
+A kafka connector for ingesting data from kafka topics to Azure Blob Storge.
 
-# About
-Kafka Azure Blob Sink Connector will consume records from kafka topic(s) and will
-store it to the azure blob storage.
+## Kafka Connect Sink Connector for Azure Blob Storage
 
-# Installing
-For quickstart please refer to this <a href="https://github.com/CoffeeBeansLabs/azure-kafka-connector/blob/main/quickstart/QUICKSTART.md" target="_blank">documentation</a>.
+Documentation for this connector can be found here.
 
-# Configurations
+# Development
 
-## Connection
-Azure blob storage connection related configurations.
+To build a development version you'll need a recent version of Kafka.
 
-### Connection url
-key: ```connection.url```<br>
-value: azure blob storage connection string
+You can build *kafka-connect-azure-blob-storage* with Maven using the standard lifecycle phases.
 
-### Container name
-key: ```container.name```<br>
-value: name of the container<br>
-default: ```default```
+# Contribute
 
-## Partition
-Configurations to perform partition operations on the incoming records
-
-### Parent directory
-key: ```topic.dir```<br>
-value: name of the parent directory
-
-### Partition strategy
-key: ```partition.strategy```<br>
-valid values: ```TIME,FIELD```<br>
-default: ```DEFAULT```
-
-### Default partitioning
-
-### Field partitioning
-
-### Time partitioning
-
-## Rolling file
-
+- Source Code: https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage
+- Issue Tracker: https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage/issues
+- Learn how to work with the connector's source code by reading our [Development and Contribution guidelines](CONTRIBUTING.md).
