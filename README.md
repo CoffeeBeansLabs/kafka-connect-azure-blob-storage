@@ -4,7 +4,7 @@ A kafka connector for ingesting data from kafka topics to Azure Blob Storge.
 
 ## Kafka Connect Sink Connector for Azure Blob Storage
 
-Documentation for this connector can be found here.
+Documentation for this connector can be found [here](https://coffeebeanslabs.github.io/kafka-connect-azure-blob-storage/).
 
 # Development
 
