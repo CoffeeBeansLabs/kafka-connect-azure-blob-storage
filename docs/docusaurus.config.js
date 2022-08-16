@@ -9,8 +9,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Kafka Connect Azure Blob Storage',
   tagline: 'Documentation',
-  url: 'https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage',
-  baseUrl: '/',
+  url: 'https://coffeebeanslabs.github.io',
+  baseUrl: '/kafka-connect-azure-blob-storage/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/logo@2x.png',
