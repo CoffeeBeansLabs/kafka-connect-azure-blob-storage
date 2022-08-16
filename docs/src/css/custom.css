@@ -47,6 +47,7 @@
   /*
     Customisation here for both Light and Dark themes
   */
+  --custom-p-li-color: rgb(79, 79, 79);
   --custom-font-base: 'custom-font', BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto',
     'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Helvetica',
     'Arial', sans-serif;
@@ -181,6 +182,7 @@
 }
 
 :root[data-theme='dark'] {
+  --custom-p-li-color: #cecccc;
   --custom-primary-darkest: #10633e;
   --custom-primary-darker: #1c8656;
   --custom-primary-dark: #38bc81;
@@ -941,7 +943,7 @@ a.hash-link {
 }
 
 p, li {
-  color: rgb(79, 79, 79);
+  color: var(--custom-p-li-color);
 }
 
 html[data-theme='light'] .DocSearch,
