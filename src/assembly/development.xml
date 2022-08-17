@@ -1,0 +1,25 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.1 https://maven.apache.org/xsd/assembly-2.1.1.xsd">
+
+    <id>development</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>share/java/kafka-connect-azure-blob-storage/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <excludes>
+                <exclude>org.mortbay.jetty:*</exclude>
+                <exclude>com.sun.jersey:*</exclude>
+                <exclude>org.eclipse.jetty.aggregate:jetty-all</exclude>
+                <exclude>com.sun.jersey.contribs:jersey-guice</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
