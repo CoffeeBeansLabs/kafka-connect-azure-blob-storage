@@ -5,6 +5,9 @@
 .idea
 *.iml
 
+# Maven wrapper
+*.jar
+
 # Build files
 target
 
