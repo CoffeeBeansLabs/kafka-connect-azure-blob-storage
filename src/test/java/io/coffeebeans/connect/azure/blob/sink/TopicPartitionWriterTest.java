@@ -12,7 +12,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.coffeebeans.connect.azure.blob.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connect.azure.blob.sink.format.RecordWriter;
 import org.apache.kafka.connect.errors.RetriableException;
@@ -47,11 +46,9 @@ public class TopicPartitionWriterTest {
 
     /**
      * Mocking the classes used by the {@link TopicPartitionWriter}.
-     *
-     * @throws JsonProcessingException Thrown if encounters error while encoding partition.
      */
     @BeforeEach
-    public void init() throws JsonProcessingException {
+    public void init() {
 
         // Mocking the call to get the config
         when(context.getConfig())
@@ -141,8 +138,8 @@ public class TopicPartitionWriterTest {
      */
     @Test
     @DisplayName("Given flush size as 1, with 4 sink records, "
-            + "write method should invoke RecordWriter commit 3 times")
-    void write_givenFlushSizeAsOne_withFourSinkRecords_shouldInvokeCommitThreeTimes() {
+            + "write method should invoke RecordWriter commit 4 times")
+    void write_givenFlushSizeAsOne_withFourSinkRecords_shouldInvokeCommitFourTimes() {
 
         SinkRecord firstSinkRecord = new SinkRecord(
                 "TEST-TOPIC", 0, null, null,
@@ -184,15 +181,10 @@ public class TopicPartitionWriterTest {
 
         assertDoesNotThrow(localTopicPartitionWriter::write);
 
-        /*
-        Buffering and writing fourth record after first write attempt because
-        condition for flush size will only be checked when a new record arrives or when
-        the writer is closed.
-         */
         localTopicPartitionWriter.buffer(fourthSinkRecord);
         assertDoesNotThrow(localTopicPartitionWriter::write);
 
-        verify(recordWriter, times(3))
+        verify(recordWriter, times(4))
                 .commit();
     }
 
