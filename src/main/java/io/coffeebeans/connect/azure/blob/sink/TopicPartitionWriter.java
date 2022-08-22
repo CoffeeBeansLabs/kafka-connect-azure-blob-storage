@@ -79,7 +79,6 @@ public class TopicPartitionWriter {
             try {
                 String encodedPartition = context.encodePartition(record);
                 try {
-                    rotateIfFlushConditionMet(encodedPartition);
 
                     RecordWriter writer = writers.get(encodedPartition);
 
@@ -99,6 +98,8 @@ public class TopicPartitionWriter {
                     startTimes.putIfAbsent(encodedPartition, now);
                     recordsCount.put(encodedPartition, recordsCount.getOrDefault(encodedPartition, 0L) + 1);
                     lastSuccessfulOffset = record.kafkaOffset();
+
+                    rotateIfFlushConditionMet(encodedPartition);
 
                 } catch (RetriableException e) {
                     log.error("Failed to write record with offset: {}, encodedPartition: {}, sending to DLQ",
