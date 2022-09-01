@@ -13,7 +13,7 @@ const config = {
   baseUrl: '/kafka-connect-azure-blob-storage/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/logo@2x.png',
+  favicon: 'img/cb-updated-nobg-logo.png',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -60,12 +60,12 @@ const config = {
       navbar: {
         logo: {
           alt: 'CoffeeBeans Consulting Logo',
-          src: 'img/logo@2x.png',
+          src: 'img/cb-updated-nobg-logo.png',
         },
         items: [
           {
             type: 'doc',
-            docId: 'documentation',
+            docId: 'deployment/kubernetes',
             position: 'left',
             label: 'Docs',
           },
@@ -87,7 +87,7 @@ const config = {
             items: [
               {
                 label: 'Documentation',
-                to: '/docs/documentation',
+                to: '/docs/deployment/kubernetes',
               },
             ],
           },

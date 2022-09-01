@@ -1,13 +1,14 @@
 ---
 id: documentation
+title: Configuration Properties
 sidebar_position: 1
 ---
 
-# Azure Blob Sink Connector Configuration properties
+# Azure Blob Sink Connector Configuration Properties
 
 To use this connector, specify the name of the connector class in the `connector.class` configuration property.
 
-```
+```yaml
 connector.class: io.coffeebeans.connect.azure.blob.sink.AzureBlobSinkConnector
 ```
 
@@ -20,7 +21,10 @@ For overview of the connector refer to this [documentation](https://docs.conflue
 
 `format`
 
-The format class to use when writing data to the store.
+The format class to use when writing data to the store. Please refer to this [doc](https://coffeebeanslabs.github.io/kafka-connect-azure-blob-storage/docs/configuration/schema-file) if your incoming data is of type `JSON` without schema
+or `JSON-String` and sink format is of type `PARQUET` or `AVRO`.
+`BINARY` format is only supported when incoming data is of binary type.
+
 * Type: String
 * Valid values: `AVRO`, `JSON`, `PARQUET`, `BINARY`
 * Importance: High
