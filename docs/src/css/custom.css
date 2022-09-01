@@ -545,9 +545,12 @@ a.card:hover {
   /* margin-left: calc(var(--ifm-menu-link-padding-horizontal) * -1);
   padding-left: var(--ifm-menu-link-padding-horizontal); */
 }
+.menu > .menu__list > .menu__list-item > .menu__link {
+  font-size: 0.85rem;
+}
 .menu > ul.menu__list > li > ul.menu__list {
   border-left: 0px none;
-  padding-left: 0;
+  /* padding-left: 0; */
 }
 .menu .menu__link,
 .menu .menu__link:hover,

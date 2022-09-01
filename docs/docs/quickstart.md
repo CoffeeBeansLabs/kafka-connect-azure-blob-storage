@@ -1,12 +1,14 @@
 ---
-sidebar_position: 2
+id: quickstart
+title: Quickstart
+sidebar_position: 3
 ---
 
 # Quickstart
 
 ## Pre-requisites
 
-1. Docker installed
+1. Docker
 2. Azure storage explorer
 
 
@@ -47,15 +49,15 @@ docker run -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob -
 
 > Your containers will be visible under blob containers
 
-## Start docker containers services
+## Start docker services
 Build the jar and start up all the containers.
 
-### Build the jar
+### Build jar
 
 Create jar with following command
 
 ```bash
-mvn clean package
+./mvnw clean package
 ```
 
 > Jar will be created in the target folder
@@ -93,8 +95,8 @@ For eg. if you want to produce Avro serialized records, run below command:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-    -d @quickstart/config/datagen/avro-format.json \
-    http://localhost:8084/connectors
+     -d @quickstart/config/datagen/avro-format.json \
+     http://localhost:8084/connectors
 ```
 
 
@@ -104,8 +106,8 @@ curl -X POST -H "Content-Type: application/json" \
 
     ```bash
     curl -X POST -H "Content-Type: application/json" \
-        -d @quickstart/config/connector/config.json \
-        http://localhost:8083/connectors
+         -d @quickstart/config/connector/config.json \
+         http://localhost:8083/connectors
     ```
 
     > Connector will be configured
@@ -122,13 +124,13 @@ curl -X POST -H "Content-Type: application/json" \
 1. Run below command to stop datagen connector
 
     ```bash
-        curl -X DELETE http://localhost:8084/connectors/format-avro
+    curl -X DELETE http://localhost:8084/connectors/format-avro
     ```
 
  1. Run below command to stop Azure blob sink connector
 
     ```bash
-        curl -X DELETE http://localhost:8083/connectors/quickstart
+    curl -X DELETE http://localhost:8083/connectors/quickstart
     ```
 
 
