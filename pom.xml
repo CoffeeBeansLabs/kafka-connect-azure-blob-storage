@@ -36,6 +36,11 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
             <id>confluent</id>
             <name>Confluent</name>
             <url>https://packages.confluent.io/maven/</url>
@@ -73,6 +78,7 @@
         <maven.site.plugin.version>3.11.0</maven.site.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
         <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
+        <license.maven.plugin>2.0.0</license.maven.plugin>
         <skip.unit.tests>false</skip.unit.tests>
         <skip.integration.tests>true</skip.integration.tests>
     </properties>
@@ -116,7 +122,6 @@
             <groupId>io.confluent</groupId>
             <artifactId>kafka-connect-avro-data</artifactId>
             <version>${kafka.connect.avro.data.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
@@ -519,6 +524,43 @@
                 <skip.unit.tests>true</skip.unit.tests>
                 <skip.integration.tests>false</skip.integration.tests>
             </properties>
+        </profile>
+        <profile>
+            <id>license-sources</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>license-maven-plugin</artifactId>
+                        <version>${license.maven.plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>add-third-party</id>
+                                <goals>
+                                    <goal>add-third-party</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>licenses</outputDirectory>
+                                    <thirdPartyFilename>LICENSES.txt</thirdPartyFilename>
+                                    <excludeTransitiveDependencies>true</excludeTransitiveDependencies>
+                                    <includeTransitiveDependencies>false</includeTransitiveDependencies>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-licenses</id>
+                                <goals>
+                                    <goal>download-licenses</goal>
+                                </goals>
+                                <configuration>
+                                    <licensesOutputFile>licenses/LICENSES.xml</licensesOutputFile>
+                                    <excludeTransitiveDependencies>true</excludeTransitiveDependencies>
+                                    <includeTransitiveDependencies>false</includeTransitiveDependencies>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
