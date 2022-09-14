@@ -49,6 +49,14 @@ docker run -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob -
 
 > Your containers will be visible under blob containers
 
+### Create a blob container
+
+To create a blob container follow the below steps:
+1. Expand your storage account
+2. Right click on the `Blob Containers`
+3. Click on `Create Blob Container`
+4. Name your blob container as 'kafka-connect' and create
+
 ## Start docker services
 Build the jar and start up all the containers.
 
