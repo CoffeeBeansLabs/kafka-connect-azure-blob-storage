@@ -18,8 +18,8 @@
     </organization>
 
     <scm>
-        <connection>https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage.git</connection>
-        <developerConnection>https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage.git</developerConnection>
+        <connection>scm:git:https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage.git</connection>
+        <developerConnection>scm:git:https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage.git</developerConnection>
         <url>https://github.com/CoffeeBeansLabs/kafka-connect-azure-blob-storage</url>
         <tag>HEAD</tag>
     </scm>
