@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class TopicPartitionWriter {
     private Long lastSuccessfulOffset;
     private final long rotationIntervalMs;
     private final Queue<SinkRecord> buffer;
+    private final TopicPartition topicPartition;
     private boolean isSchemaStoreConfigurationChecked;
     private final AzureBlobSinkConnectorContext context;
 
@@ -41,7 +43,10 @@ public class TopicPartitionWriter {
      *
      * @param azureBlobSinkConnectorContext Context object
      */
-    public TopicPartitionWriter(AzureBlobSinkConnectorContext azureBlobSinkConnectorContext) {
+    public TopicPartitionWriter(TopicPartition topicPartition,
+                                AzureBlobSinkConnectorContext azureBlobSinkConnectorContext) {
+
+        this.topicPartition = topicPartition;
 
         this.context = azureBlobSinkConnectorContext;
         AzureBlobSinkConfig config = azureBlobSinkConnectorContext.getConfig();
@@ -72,6 +77,13 @@ public class TopicPartitionWriter {
      */
     public void write() {
         long now = System.currentTimeMillis();
+
+        if (!buffer.isEmpty()) {
+
+            log.trace("Pausing consumer for topic: {}, partition: {}",
+                    topicPartition.topic(), topicPartition.partition());
+            this.context.pause(this.topicPartition);
+        }
 
         while (!buffer.isEmpty()) {
             SinkRecord record = buffer.poll();
@@ -112,8 +124,13 @@ public class TopicPartitionWriter {
 
                 log.error("Failed to encode partition for a record, sending it to DLQ");
                 context.sendToDeadLetterQueue(record, e);
+
             }
         }
+        log.trace("Resuming consumer for topic: {}, partition: {}",
+                topicPartition.topic(), topicPartition.partition());
+
+        this.context.resume(this.topicPartition);
         rotateIfRotateIntervalMsConditionMet(now);
     }
 

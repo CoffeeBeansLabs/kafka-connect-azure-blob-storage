@@ -124,7 +124,7 @@ public class AzureBlobSinkTask extends SinkTask {
             TopicPartitionWriter topicPartitionWriter = topicPartitionWriters.get(topicPartition);
 
             if (topicPartitionWriter == null) {
-                topicPartitionWriter = newTopicPartitionWriter();
+                topicPartitionWriter = newTopicPartitionWriter(topicPartition);
                 topicPartitionWriters.put(topicPartition, topicPartitionWriter);
             }
             topicPartitionWriter.buffer(record);
@@ -171,7 +171,7 @@ public class AzureBlobSinkTask extends SinkTask {
     @Override
     public void open(Collection<TopicPartition> topicPartitions) {
         for (TopicPartition topicPartition : topicPartitions) {
-            topicPartitionWriters.put(topicPartition, newTopicPartitionWriter());
+            topicPartitionWriters.put(topicPartition, newTopicPartitionWriter(topicPartition));
         }
     }
 
@@ -215,9 +215,9 @@ public class AzureBlobSinkTask extends SinkTask {
      *
      * @return new instance of TopicPartitionWriter
      */
-    private TopicPartitionWriter newTopicPartitionWriter() {
+    private TopicPartitionWriter newTopicPartitionWriter(TopicPartition topicPartition) {
 
-        return new TopicPartitionWriter(this.azureBlobSinkConnectorContext);
+        return new TopicPartitionWriter(topicPartition, this.azureBlobSinkConnectorContext);
     }
 
     /**
