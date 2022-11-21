@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import io.coffeebeans.connect.azure.blob.sink.config.AzureBlobSinkConfig;
 import io.coffeebeans.connect.azure.blob.sink.format.RecordWriter;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,8 @@ import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class TopicPartitionWriterTest {
+    private static final String TOPIC = "TEST_TOPIC";
+    private static final int PARTITION = 1;
 
     @Mock
     private RecordWriter recordWriter;
@@ -74,7 +77,7 @@ public class TopicPartitionWriterTest {
                 .when(context)
                 .sendToDeadLetterQueue(any(), any());
 
-        topicPartitionWriter = new TopicPartitionWriter(context);
+        topicPartitionWriter = new TopicPartitionWriter(new TopicPartition(TOPIC, PARTITION), context);
 
         when(config.getFlushSize())
                 .thenReturn(1);
@@ -173,7 +176,8 @@ public class TopicPartitionWriterTest {
                 .thenReturn(-1L);
 
         // instantiate topic partition writer
-        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(context);
+        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(
+                new TopicPartition(TOPIC, PARTITION), context);
 
         localTopicPartitionWriter.buffer(firstSinkRecord);
         localTopicPartitionWriter.buffer(secondSinkRecord);
@@ -230,7 +234,8 @@ public class TopicPartitionWriterTest {
                 .thenReturn(1L);
 
         // instantiate topic partition writer
-        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(context);
+        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(
+                new TopicPartition(TOPIC, PARTITION), context);
 
         // Buffering and writing first record
         localTopicPartitionWriter.buffer(firstSinkRecord);
@@ -309,7 +314,8 @@ public class TopicPartitionWriterTest {
                 .thenReturn(1L);
 
         // instantiate topic partition writer
-        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(context);
+        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(
+                new TopicPartition(TOPIC, PARTITION), context);
 
         // Buffering and writing first record
         localTopicPartitionWriter.buffer(firstSinkRecord);
@@ -395,7 +401,8 @@ public class TopicPartitionWriterTest {
                 .thenReturn(-1L);
 
         // instantiate topic partition writer
-        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(context);
+        TopicPartitionWriter localTopicPartitionWriter = new TopicPartitionWriter(
+                new TopicPartition(TOPIC, PARTITION), context);
 
         // Buffering the record
         localTopicPartitionWriter.buffer(firstSinkRecord);
