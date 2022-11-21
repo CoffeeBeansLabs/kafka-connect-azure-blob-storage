@@ -14,6 +14,7 @@ import io.coffeebeans.connect.azure.blob.sink.storage.StorageManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
@@ -231,6 +232,24 @@ public class AzureBlobSinkConnectorContext {
      */
     public static AzureBlobSinkConnectorContext.Builder builder(Map<String, String> configProps) {
         return new Builder(configProps);
+    }
+
+    /**
+     * Pauses the kafka-connect consumer for the given topic-partition.
+     *
+     * @param topicPartition TopicPartition for which consumer should stop consuming
+     */
+    public void pause(TopicPartition topicPartition) {
+        this.sinkTaskContext.pause(topicPartition);
+    }
+
+    /**
+     * Resumes the kafka-connect consumer for the given topic-partition.
+     *
+     * @param topicPartition TopicPartition for which consumer should start consuming
+     */
+    public void resume(TopicPartition topicPartition) {
+        this.sinkTaskContext.resume(topicPartition);
     }
 
     /**
