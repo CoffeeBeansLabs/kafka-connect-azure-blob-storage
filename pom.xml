@@ -4,7 +4,7 @@
 
     <groupId>io.coffeebeans.kafka.connect</groupId>
     <artifactId>kafka-connect-azure-blob-storage</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>kafka-connect-azure-blob-storage</name>
